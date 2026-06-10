@@ -4,7 +4,6 @@ import InterviewPrep from "./InterviewPrep.jsx";
 import Contacts from "./Contacts.jsx";
 import ArchBoard from "./ArchBoard.jsx";
 import StoryBank from "./StoryBank.jsx";
-import ImportLegacy from "./ImportLegacy.jsx";
 
 const pages = [
   { id: "prep", label: "📚 Prep" },
@@ -72,7 +71,6 @@ export default function App() {
                   </button>
                 ))}
               </nav>
-              <ImportLegacy />
               <button
                 onClick={() => supabase.auth.signOut()}
                 title={session.user.email}

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./api": "./src/api.js",
     "./prepData": "./src/prepData.js",
     "./techLinks": "./src/techLinks.js",
     "./arch": "./src/arch.js",
