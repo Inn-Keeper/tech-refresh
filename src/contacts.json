@@ -1,0 +1,31 @@
+[
+  {
+    "id": "1",
+    "name": "Sonya",
+    "status": "Contacted",
+    "role": "Senior Frontend Engineer",
+    "link": "https://jobs.talentbyte.com/jobs/7035072-senior-frontend-engineer",
+    "note": "Remote",
+    "date": "",
+    "nextAction": "",
+    "nextActionDate": ""
+  },
+  {
+    "id": "2",
+    "name": "Erik Larsson",
+    "status": "Contacted",
+    "role": "",
+    "link": "",
+    "note": "Former Nooga's recruiter",
+    "date": "10-06-2026"
+  },
+  {
+    "id": "3",
+    "name": "LinkedIn application",
+    "status": "Applied",
+    "role": "Senior Fullstack Engineer — Search & Discovery (Europe)",
+    "link": "https://www.linkedin.com/jobs/view/4417569518/",
+    "note": "",
+    "date": "10-06-2026"
+  }
+]
