@@ -102,7 +102,7 @@ export default function InterviewPrep() {
     const cur = drill.questions[drill.index];
     const isCorrect = optionIndex === cur.q.correct;
     setDrill({ ...drill, answered: optionIndex, correctCount: drill.correctCount + (isCorrect ? 1 : 0) });
-    record(cur.tech, isCorrect);
+    record(cur.tech, isCorrect, "drill");
   };
 
   const nextDrill = () => {

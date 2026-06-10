@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as api from "./api.js";
 
 const STATUSES = ["Contacted", "Applied", "Interviewing", "Offer", "Rejected"];
 
@@ -59,88 +61,65 @@ const inputStyle = {
 const textareaStyle = { ...inputStyle, minHeight: 56, resize: "vertical", lineHeight: 1.5 };
 
 export default function Contacts() {
-  const [contacts, setContacts] = useState(null);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState(null); // contact id, "new", or null
   const [retroFor, setRetroFor] = useState(null); // contact id with open retro form
 
-  useEffect(() => {
-    fetch("/api/contacts")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(setContacts)
-      .catch(() =>
-        setError("Couldn't reach the contacts API. Editing requires the dev server (npm run dev).")
-      );
-  }, []);
+  const { data: contacts = null, error: loadError } = useQuery({
+    queryKey: ["contacts"],
+    queryFn: api.listContacts,
+  });
 
-  const persist = async (next) => {
-    const previous = contacts;
-    setContacts(next);
-    setError(null);
-    try {
-      const r = await fetch("/api/contacts", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    } catch {
-      setContacts(previous);
-      setError("Save failed — changes were rolled back. Is the dev server running?");
-    }
-  };
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["contacts"] });
+  const saveMutation = useMutation({ mutationFn: api.upsertContact, onSettled: invalidate });
+  const deleteMutation = useMutation({ mutationFn: api.deleteContact, onSettled: invalidate });
+  const retroAddMutation = useMutation({
+    mutationFn: ({ contactId, retro }) => api.addRetro(contactId, retro),
+    onSettled: invalidate,
+  });
+  const retroDeleteMutation = useMutation({ mutationFn: api.deleteRetro, onSettled: invalidate });
+
+  const mutationError =
+    saveMutation.error || deleteMutation.error || retroAddMutation.error || retroDeleteMutation.error;
+  const error = loadError
+    ? `Couldn't load contacts: ${loadError.message}`
+    : mutationError
+      ? `Save failed: ${mutationError.message}`
+      : null;
 
   const handleSave = (form) => {
     if (!form.name.trim()) return;
-    if (editingId === "new") {
-      const entry = { ...form, id: crypto.randomUUID(), date: form.date || todayDDMMYYYY() };
-      persist([...contacts, entry]);
-    } else {
-      persist(contacts.map((c) => (c.id === editingId ? { ...c, ...form } : c)));
-    }
+    saveMutation.mutate({
+      ...form,
+      id: editingId === "new" ? undefined : editingId,
+      date: form.date || todayDDMMYYYY(),
+    });
     setEditingId(null);
   };
 
   const handleDelete = (c) => {
     if (window.confirm(`Delete "${c.name}"?`)) {
-      persist(contacts.filter((x) => x.id !== c.id));
+      deleteMutation.mutate(c.id);
     }
   };
 
   const handleAdvance = (c) => {
     const next = STATUSES[STATUSES.indexOf(c.status) + 1];
     if (!next) return;
-    persist(
-      contacts.map((x) => (x.id === c.id ? { ...x, status: next, date: todayDDMMYYYY() } : x))
-    );
+    saveMutation.mutate({ ...c, status: next, date: todayDDMMYYYY() });
   };
 
   const handleClearAction = (c) => {
-    persist(
-      contacts.map((x) => (x.id === c.id ? { ...x, nextAction: "", nextActionDate: "" } : x))
-    );
+    saveMutation.mutate({ ...c, nextAction: "", nextActionDate: "" });
   };
 
   const handleAddRetro = (contactId, retro) => {
-    persist(
-      contacts.map((c) =>
-        c.id === contactId
-          ? { ...c, retros: [...(c.retros || []), { ...retro, id: crypto.randomUUID(), date: todayDDMMYYYY() }] }
-          : c
-      )
-    );
+    retroAddMutation.mutate({ contactId, retro });
     setRetroFor(null);
   };
 
   const handleDeleteRetro = (contactId, retroId) => {
-    persist(
-      contacts.map((c) =>
-        c.id === contactId ? { ...c, retros: (c.retros || []).filter((r) => r.id !== retroId) } : c
-      )
-    );
+    retroDeleteMutation.mutate(retroId);
   };
 
   const sorted = contacts ? [...contacts].sort((a, b) => isDue(b) - isDue(a)) : null;
@@ -157,8 +136,7 @@ export default function Contacts() {
         </span>
       </div>
       <p style={{ margin: "0 0 20px", color: "#64748b", fontSize: 13 }}>
-        Recruiters contacted and applications submitted. Changes are saved to{" "}
-        <code style={{ color: "#94a3b8" }}>src/contacts.json</code>.
+        Recruiters contacted and applications submitted. Synced to Supabase.
       </p>
 
       {error && (

@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as api from "./api.js";
 
 const COMPETENCIES = [
   "Conflict",
@@ -66,53 +68,35 @@ const inputStyle = {
 const textareaStyle = { ...inputStyle, minHeight: 64, resize: "vertical", lineHeight: 1.5 };
 
 export default function StoryBank() {
-  const [stories, setStories] = useState(null);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState(null); // story id, "new", or null
   const [mode, setMode] = useState("stories"); // "stories" | "drill"
 
-  useEffect(() => {
-    fetch("/api/stories")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(setStories)
-      .catch(() =>
-        setError("Couldn't reach the stories API. Editing requires the dev server (npm run dev).")
-      );
-  }, []);
+  const { data: stories = null, error: loadError } = useQuery({
+    queryKey: ["stories"],
+    queryFn: api.listStories,
+  });
 
-  const persist = async (next) => {
-    const previous = stories;
-    setStories(next);
-    setError(null);
-    try {
-      const r = await fetch("/api/stories", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next),
-      });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    } catch {
-      setStories(previous);
-      setError("Save failed — changes were rolled back. Is the dev server running?");
-    }
-  };
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["stories"] });
+  const saveMutation = useMutation({ mutationFn: api.upsertStory, onSettled: invalidate });
+  const deleteMutation = useMutation({ mutationFn: api.deleteStory, onSettled: invalidate });
+
+  const mutationError = saveMutation.error || deleteMutation.error;
+  const error = loadError
+    ? `Couldn't load stories: ${loadError.message}`
+    : mutationError
+      ? `Save failed: ${mutationError.message}`
+      : null;
 
   const handleSave = (form) => {
     if (!form.title.trim()) return;
-    if (editingId === "new") {
-      persist([...stories, { ...form, id: crypto.randomUUID() }]);
-    } else {
-      persist(stories.map((s) => (s.id === editingId ? { ...s, ...form } : s)));
-    }
+    saveMutation.mutate({ ...form, id: editingId === "new" ? undefined : editingId });
     setEditingId(null);
   };
 
   const handleDelete = (s) => {
     if (window.confirm(`Delete "${s.title}"?`)) {
-      persist(stories.filter((x) => x.id !== s.id));
+      deleteMutation.mutate(s.id);
     }
   };
 
