@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
+import { CORRECT_XP } from "@tech-refresh/core/gamification";
 
 const STORAGE_KEY = "prep-scores";
 const EMPTY = { xp: 0, answers: {} };
-
-export const CORRECT_XP = 10;
-export const PERFECT_QUIZ_BONUS = 30;
 
 // Quiz score store. Persists via the dev-server file API (src/scores.json);
 // falls back to localStorage when the API isn't available (static builds).

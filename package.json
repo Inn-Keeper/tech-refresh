@@ -1,21 +1,9 @@
 {
-  "name": "interview-prep",
+  "name": "tech-refresh",
   "private": true,
-  "version": "0.0.1",
-  "type": "module",
+  "packageManager": "pnpm@10.6.5",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.7"
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build"
   }
 }

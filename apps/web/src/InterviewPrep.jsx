@@ -1,16 +1,8 @@
 import { useState } from "react";
-import { categories } from "./prepData.js";
-import { techLinks } from "./techLinks.js";
-import { useScores, CORRECT_XP, PERFECT_QUIZ_BONUS } from "./useScores.js";
-
-const RANKS = [
-  { name: "Intern", min: 0 },
-  { name: "Junior", min: 100 },
-  { name: "Mid-level", min: 250 },
-  { name: "Senior", min: 500 },
-  { name: "Staff", min: 900 },
-  { name: "Principal", min: 1500 },
-];
+import { categories } from "@tech-refresh/core/prepData";
+import { techLinks } from "@tech-refresh/core/techLinks";
+import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
+import { useScores } from "./useScores.js";
 
 const DRILL_TECHS = 5;
 const DRILL_SIZE = 10;

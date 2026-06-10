@@ -1,0 +1,12 @@
+{
+  "name": "@tech-refresh/core",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./prepData": "./src/prepData.js",
+    "./techLinks": "./src/techLinks.js",
+    "./arch": "./src/arch.js",
+    "./gamification": "./src/gamification.js"
+  }
+}
