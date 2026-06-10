@@ -1,0 +1,75 @@
+import { useEffect } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
+import { colors } from "@/theme";
+import type { Scores } from "@/lib/useScores";
+
+type Props = { scores: Scores; onDrill: () => void; drillActive: boolean };
+
+export function StatsBar({ scores, onDrill, drillActive }: Props) {
+  const rankIdx = [...RANKS].reverse().findIndex((r: { min: number }) => scores.xp >= r.min);
+  const rank = RANKS[RANKS.length - 1 - rankIdx];
+  const next = RANKS[RANKS.length - rankIdx];
+  const progress = next ? (scores.xp - rank.min) / (next.min - rank.min) : 1;
+
+  const fill = useSharedValue(0);
+  useEffect(() => {
+    fill.value = withSpring(progress, { damping: 18, stiffness: 90 });
+  }, [progress, fill]);
+  const fillStyle = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }));
+
+  const totals = Object.values(scores.answers).reduce(
+    (acc, s) => ({ correct: acc.correct + s.correct, wrong: acc.wrong + s.wrong }),
+    { correct: 0, wrong: 0 }
+  );
+  const attempts = totals.correct + totals.wrong;
+  const accuracy = attempts ? Math.round((totals.correct / attempts) * 100) : null;
+
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 12,
+        padding: 14,
+        gap: 8,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <Text style={{ fontSize: 14, fontWeight: "700", color: colors.textBright }}>🏆 {rank.name}</Text>
+        <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{scores.xp} XP</Text>
+        {accuracy !== null && (
+          <Text style={{ fontSize: 12, fontWeight: "600", color: accuracy >= 70 ? colors.green : colors.amber }}>
+            {accuracy}% · {attempts} answered
+          </Text>
+        )}
+        <TouchableOpacity
+          onPress={onDrill}
+          disabled={drillActive}
+          style={{
+            marginLeft: "auto",
+            paddingHorizontal: 12,
+            paddingVertical: 5,
+            backgroundColor: "#6366f125",
+            borderWidth: 1,
+            borderColor: "#6366f160",
+            borderRadius: 8,
+            opacity: drillActive ? 0.5 : 1,
+          }}
+        >
+          <Text style={{ fontSize: 11, fontWeight: "600", color: "#a5b4fc" }}>🎯 Drill weakest</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ height: 6, backgroundColor: "#252b3b", borderRadius: 3, overflow: "hidden" }}>
+        <Animated.View style={[{ height: "100%", backgroundColor: colors.accent, borderRadius: 3 }, fillStyle]} />
+      </View>
+
+      <Text style={{ fontSize: 10.5, color: colors.textFaint }}>
+        {next ? `${next.min - scores.xp} XP to ${next.name} · ` : ""}+{CORRECT_XP} per correct · +{PERFECT_QUIZ_BONUS} perfect quiz
+      </Text>
+    </View>
+  );
+}
