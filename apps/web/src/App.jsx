@@ -109,9 +109,11 @@ export default function App() {
 }
 
 function SignIn() {
+  const [mode, setMode] = useState("signin"); // "signin" | "signup"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
 
   const inputStyle = {
@@ -128,15 +130,31 @@ function SignIn() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    setNotice(null);
+    if (mode === "signin") {
+      const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) setError(err.message);
+    } else {
+      const { data, error: err } = await supabase.auth.signUp({ email, password });
+      if (err) {
+        setError(err.message);
+      } else if (!data.session) {
+        // "Confirm email" is still enabled in Supabase — without SMTP that mail never arrives.
+        setNotice(
+          "Account created, but email confirmation is enabled in Supabase. Disable “Confirm email” under Authentication → Sign In / Providers to activate accounts instantly."
+        );
+      }
+      // With confirmation disabled, signUp returns a session and the auth listener signs us in.
+    }
     setBusy(false);
-    if (err) setError(err.message);
   };
 
   return (
     <div style={{ maxWidth: 380, margin: "100px auto 0", padding: "0 24px", textAlign: "center" }}>
       <div style={{ fontSize: 36, marginBottom: 12 }}>🔐</div>
-      <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: "#f1f5f9" }}>Sign in</h1>
+      <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: "#f1f5f9" }}>
+        {mode === "signin" ? "Sign in" : "Create account"}
+      </h1>
       <p style={{ margin: "0 0 24px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
         Your pipeline and scores live behind your account.
       </p>
@@ -154,10 +172,11 @@ function SignIn() {
         <input
           type="password"
           required
+          minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="password"
-          autoComplete="current-password"
+          placeholder={mode === "signup" ? "password (8+ characters)" : "password"}
+          autoComplete={mode === "signup" ? "new-password" : "current-password"}
           style={inputStyle}
         />
         <button
@@ -175,10 +194,29 @@ function SignIn() {
             opacity: busy ? 0.6 : 1,
           }}
         >
-          Sign in
+          {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>
         {error && <p style={{ margin: 0, fontSize: 12, color: "#fca5a5" }}>{error}</p>}
+        {notice && <p style={{ margin: 0, fontSize: 12, color: "#fbbf24", lineHeight: 1.5 }}>{notice}</p>}
       </form>
+
+      <button
+        onClick={() => {
+          setMode(mode === "signin" ? "signup" : "signin");
+          setError(null);
+          setNotice(null);
+        }}
+        style={{
+          marginTop: 18,
+          background: "transparent",
+          border: "none",
+          color: "#94a3b8",
+          fontSize: 13,
+          cursor: "pointer",
+        }}
+      >
+        {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
+      </button>
     </div>
   );
 }

@@ -3,24 +3,44 @@ import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity } fro
 import { supabase } from "@/lib/supabase";
 import { colors } from "@/theme";
 
-// Plain email + password: no email delivery, no SMTP, sessions persist
-// in AsyncStorage so this screen appears roughly once per device.
+// Email + password with in-app account creation. No email delivery anywhere:
+// requires "Confirm email" to be disabled in Supabase so signUp returns a
+// live session immediately.
 export function SignIn() {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
-    });
+    setNotice(null);
+    if (mode === "signin") {
+      const { error: err } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (err) setError(err.message);
+    } else {
+      const { data, error: err } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+      });
+      if (err) {
+        setError(err.message);
+      } else if (!data.session) {
+        setNotice(
+          "Account created, but email confirmation is still enabled in Supabase — disable “Confirm email” to activate accounts instantly."
+        );
+      }
+    }
     setBusy(false);
-    if (err) setError(err.message);
   };
+
+  const canSubmit = email.includes("@") && password.length >= (mode === "signup" ? 8 : 1);
 
   return (
     <KeyboardAvoidingView
@@ -29,7 +49,7 @@ export function SignIn() {
     >
       <Text style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>⚡</Text>
       <Text style={{ color: colors.textBright, fontSize: 22, fontWeight: "700", textAlign: "center", marginBottom: 6 }}>
-        Interview Prep
+        {mode === "signin" ? "Sign in" : "Create account"}
       </Text>
       <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginBottom: 28 }}>
         Your pipeline and scores live behind your account.
@@ -48,31 +68,49 @@ export function SignIn() {
       <TextInput
         value={password}
         onChangeText={setPassword}
-        placeholder="password"
+        placeholder={mode === "signup" ? "password (8+ characters)" : "password"}
         placeholderTextColor={colors.textFaint}
         secureTextEntry
-        autoComplete="current-password"
+        autoComplete={mode === "signup" ? "new-password" : "current-password"}
         style={[inputStyle, { marginTop: 10 }]}
       />
 
       <TouchableOpacity
         onPress={submit}
-        disabled={busy || !email.includes("@") || !password}
+        disabled={busy || !canSubmit}
         style={{
           backgroundColor: colors.accent,
           borderRadius: 12,
           padding: 14,
           marginTop: 12,
-          opacity: busy ? 0.6 : 1,
+          opacity: busy || !canSubmit ? 0.6 : 1,
         }}
       >
         <Text style={{ color: "#fff", fontWeight: "600", textAlign: "center", fontSize: 15 }}>
-          {busy ? "…" : "Sign in"}
+          {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => {
+          setMode(mode === "signin" ? "signup" : "signin");
+          setError(null);
+          setNotice(null);
+        }}
+        style={{ marginTop: 18 }}
+      >
+        <Text style={{ color: colors.textDim, fontSize: 13, textAlign: "center" }}>
+          {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </Text>
       </TouchableOpacity>
 
       {error && (
         <Text style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginTop: 16 }}>{error}</Text>
+      )}
+      {notice && (
+        <Text style={{ color: "#fbbf24", fontSize: 13, textAlign: "center", marginTop: 16, lineHeight: 19 }}>
+          {notice}
+        </Text>
       )}
     </KeyboardAvoidingView>
   );
