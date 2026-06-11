@@ -9,6 +9,8 @@ import { NODE_H, NODE_W, NodeView } from "./NodeView";
 
 const EDGE_COLOR = "#94a3b8";
 const EDGE_TAP_TOLERANCE = 18;
+// Dropping a dragged wire within this distance of a node's center snaps to it.
+const SNAP_RADIUS = 90;
 
 type PendingEdge = { fromId: string; x: number; y: number };
 
@@ -59,6 +61,7 @@ function distanceToEdge(geometry: EdgeGeometry, px: number, py: number, samples 
 export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge, onTapEdge }: Props) {
   const [boardSize, setBoardSize] = useState({ width: 0, height: 0 });
   const [pending, setPending] = useState<PendingEdge | null>(null);
+  const [connectFrom, setConnectFrom] = useState<string | null>(null);
 
   // Marching-ants phase for the pending connector, looping on the UI thread.
   const dashPhase = useSharedValue(0);
@@ -68,17 +71,38 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
 
   const nodeById = Object.fromEntries(nodes.map((node) => [node.id, node]));
 
+  // Magnetic release: the finger usually covers the target, so the nearest
+  // node within SNAP_RADIUS wins rather than requiring a drop inside it.
   const handleConnectEnd = (x: number, y: number) => {
     setPending(null);
-    const target = nodes.find(
-      (node) => x >= node.x && x <= node.x + NODE_W && y >= node.y && y <= node.y + NODE_H
-    );
-    if (target && pending && target.id !== pending.fromId) {
-      onAddEdge(pending.fromId, target.id);
+    if (!pending) return;
+    let target: BoardNode | null = null;
+    let best = SNAP_RADIUS;
+    for (const node of nodes) {
+      if (node.id === pending.fromId) continue;
+      const distance = Math.hypot(node.x + NODE_W / 2 - x, node.y + NODE_H / 2 - y);
+      if (distance < best) {
+        best = distance;
+        target = node;
+      }
     }
+    if (target) onAddEdge(pending.fromId, target.id);
+  };
+
+  // Tap-to-connect: tap a handle to arm, tap a node body to complete.
+  const handleConnectTap = (id: string) => setConnectFrom((current) => (current === id ? null : id));
+
+  const handleBodyTap = (id: string) => {
+    if (!connectFrom) return;
+    if (id !== connectFrom) onAddEdge(connectFrom, id);
+    setConnectFrom(null);
   };
 
   const handleBoardTap = (px: number, py: number) => {
+    if (connectFrom) {
+      setConnectFrom(null);
+      return;
+    }
     for (const edge of edges) {
       const a = nodeById[edge.from];
       const b = nodeById[edge.to];
@@ -149,13 +173,37 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
             key={node.id}
             node={node}
             boardSize={boardSize}
+            isConnectSource={connectFrom === node.id}
             onMove={onMoveNode}
             onRemove={onRemoveNode}
+            onConnectTap={handleConnectTap}
+            onBodyTap={handleBodyTap}
             onConnectStart={(fromId) => setPending({ fromId, x: 0, y: 0 })}
             onConnectMove={(x, y) => setPending((current) => (current ? { ...current, x, y } : current))}
             onConnectEnd={handleConnectEnd}
           />
         ))}
+
+        {connectFrom && (
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 10,
+              alignSelf: "center",
+              paddingHorizontal: 14,
+              paddingVertical: 7,
+              backgroundColor: `${colors.accent}30`,
+              borderWidth: 1,
+              borderColor: colors.accent,
+              borderRadius: 20,
+            }}
+          >
+            <Text style={{ color: colors.textBright, fontSize: 12, fontWeight: "600" }}>
+              Tap a target to connect — tap elsewhere to cancel
+            </Text>
+          </View>
+        )}
       </View>
     </GestureDetector>
   );

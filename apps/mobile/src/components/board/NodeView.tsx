@@ -18,15 +18,32 @@ const HANDLE_SIZE = 22;
 type Props = {
   node: BoardNode;
   boardSize: { width: number; height: number };
+  /** Highlighted as the source while tap-to-connect is armed. */
+  isConnectSource: boolean;
   /** Live position updates while dragging, so Skia edges follow. */
   onMove: (id: string, x: number, y: number) => void;
   onRemove: (id: string) => void;
+  /** Tap on the ● handle: arm (or disarm) tap-to-connect from this node. */
+  onConnectTap: (id: string) => void;
+  /** Tap on the node body: completes a connection when one is armed. */
+  onBodyTap: (id: string) => void;
   onConnectStart: (id: string) => void;
   onConnectMove: (x: number, y: number) => void;
   onConnectEnd: (x: number, y: number) => void;
 };
 
-export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, onConnectMove, onConnectEnd }: Props) {
+export function NodeView({
+  node,
+  boardSize,
+  isConnectSource,
+  onMove,
+  onRemove,
+  onConnectTap,
+  onBodyTap,
+  onConnectStart,
+  onConnectMove,
+  onConnectEnd,
+}: Props) {
   const spec = meta(node.type);
   const color = TYPE_COLORS[node.type];
 
@@ -59,9 +76,20 @@ export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, on
       scale.value = withSpring(1, { damping: 14 });
     });
 
-  // Dragging out of the connect handle draws the dashed pending edge;
-  // releasing over another node creates the connection.
-  const connect = Gesture.Pan()
+  // Tap on the body completes an armed tap-to-connect; race with drag so a
+  // still finger taps and a moving one drags.
+  const bodyTap = Gesture.Tap().onEnd(() => {
+    runOnJS(onBodyTap)(node.id);
+  });
+  const body = Gesture.Race(drag, bodyTap);
+
+  // Handle ●: a tap arms tap-to-connect; a pull draws the dashed pending
+  // edge, and release snaps to the nearest node.
+  const handleTap = Gesture.Tap().onEnd(() => {
+    runOnJS(onConnectTap)(node.id);
+  });
+  const connectPan = Gesture.Pan()
+    .minDistance(6)
     .onStart(() => {
       runOnJS(onConnectStart)(node.id);
     })
@@ -71,6 +99,7 @@ export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, on
     .onEnd((event) => {
       runOnJS(onConnectEnd)(node.x + NODE_W + event.translationX, node.y + NODE_H / 2 + event.translationY);
     });
+  const connect = Gesture.Race(connectPan, handleTap);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: x.value }, { translateY: y.value }, { scale: scale.value }],
@@ -78,7 +107,7 @@ export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, on
   }));
 
   return (
-    <GestureDetector gesture={drag}>
+    <GestureDetector gesture={body}>
       <Animated.View
         style={[
           {
@@ -87,7 +116,7 @@ export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, on
             height: NODE_H,
             backgroundColor: colors.surface,
             borderWidth: 2,
-            borderColor: `${color}60`,
+            borderColor: isConnectSource ? colors.textBright : `${color}60`,
             borderRadius: 10,
             flexDirection: "row",
             alignItems: "center",
@@ -126,7 +155,7 @@ export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, on
 
         <GestureDetector gesture={connect}>
           <View
-            hitSlop={10}
+            hitSlop={14}
             style={{
               position: "absolute",
               right: -HANDLE_SIZE / 2,
@@ -134,9 +163,9 @@ export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, on
               width: HANDLE_SIZE,
               height: HANDLE_SIZE,
               borderRadius: HANDLE_SIZE / 2,
-              backgroundColor: color,
+              backgroundColor: isConnectSource ? colors.textBright : color,
               borderWidth: 3,
-              borderColor: colors.bg,
+              borderColor: isConnectSource ? color : colors.bg,
             }}
           />
         </GestureDetector>
