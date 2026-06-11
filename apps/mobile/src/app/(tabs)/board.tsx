@@ -19,8 +19,9 @@ export default function BoardScreen() {
   const [nodes, setNodes] = useState<BoardNode[]>([]);
   const [edges, setEdges] = useState<BoardEdge[]>([]);
   const [result, setResult] = useState<EvalResult | null>(null);
-  // Distraction-free mode: collapse the scenario pills + brief into one slim row.
-  const [chromeHidden, setChromeHidden] = useState(false);
+  // Chrome levels: full (pills + brief), compact (slim row), zen (board only,
+  // translucent title overlaid on the canvas).
+  const [chrome, setChrome] = useState<"full" | "compact" | "zen">("full");
 
   const scenario = SCENARIOS[scenarioIndex];
   const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
@@ -78,7 +79,7 @@ export default function BoardScreen() {
   return (
     <Screen>
       <View style={{ flex: 1, padding: 16, gap: 10, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}>
-      {!chromeHidden && (
+      {chrome === "full" && (
         <Animated.View entering={FadeInDown.duration(180)} style={{ gap: 10 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
             {SCENARIOS.map((item, index) => (
@@ -90,35 +91,78 @@ export default function BoardScreen() {
         </Animated.View>
       )}
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <MiniButton
-          label={chromeHidden ? "▸" : "▾"}
-          color={colors.textDim}
-          onPress={() => setChromeHidden((value) => !value)}
-        />
-        {chromeHidden && (
-          <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: colors.textDim, flexShrink: 1 }}>
-            {scenario.name}
+      {chrome !== "zen" && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <MiniButton
+            label={chrome === "full" ? "▾" : "▸"}
+            color={colors.textDim}
+            onPress={() => setChrome(chrome === "full" ? "compact" : "full")}
+          />
+          <MiniButton label="⛶" color={colors.textDim} onPress={() => setChrome("zen")} />
+          {chrome === "compact" && (
+            <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: colors.textDim, flexShrink: 1 }}>
+              {scenario.name}
+            </Text>
+          )}
+          <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.red : colors.textDim }}>
+            💰 {liveCost}/{scenario.budget}
           </Text>
-        )}
-        <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.red : colors.textDim }}>
-          💰 {liveCost}/{scenario.budget}
-        </Text>
-        <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>🔧 {liveMaint}</Text>
-        <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto" }}>
-          <Button label="Clear" variant="ghost" onPress={clearBoard} />
-          <Button label="Evaluate" onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
+          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>🔧 {liveMaint}</Text>
+          <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto" }}>
+            <Button label="Clear" variant="ghost" onPress={clearBoard} />
+            <Button label="Evaluate" onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
+          </View>
         </View>
-      </View>
+      )}
 
-      <BoardCanvas
-        nodes={nodes}
-        edges={edges}
-        onMoveNode={moveNode}
-        onRemoveNode={removeNode}
-        onAddEdge={addEdge}
-        onTapEdge={confirmRemoveEdge}
-      />
+      <View style={{ flex: 1 }}>
+        <BoardCanvas
+          nodes={nodes}
+          edges={edges}
+          onMoveNode={moveNode}
+          onRemoveNode={removeNode}
+          onAddEdge={addEdge}
+          onTapEdge={confirmRemoveEdge}
+        />
+
+        {chrome === "zen" && (
+          <>
+            <View
+              pointerEvents="none"
+              style={{
+                position: "absolute",
+                top: 8,
+                left: 8,
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                backgroundColor: "#13161fb8",
+                borderRadius: 16,
+              }}
+            >
+              <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>
+                {scenario.name} · 💰 {liveCost}/{scenario.budget}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setChrome("compact")}
+              hitSlop={8}
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                width: 30,
+                height: 30,
+                borderRadius: 15,
+                backgroundColor: "#13161fb8",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: colors.textDim, fontSize: 13 }}>✕</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 6 }}>
         {NODE_TYPES.map((spec) => (
