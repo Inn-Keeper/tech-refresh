@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { setTabBarHidden } from "@/lib/uiStore";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
@@ -22,6 +23,12 @@ export default function BoardScreen() {
   // Chrome levels: full (pills + brief), compact (slim row), zen (board only,
   // translucent title overlaid on the canvas).
   const [chrome, setChrome] = useState<"full" | "compact" | "zen">("full");
+
+  // Zen also hides the native tab bar; restore it when leaving the screen.
+  useEffect(() => {
+    setTabBarHidden(chrome === "zen");
+    return () => setTabBarHidden(false);
+  }, [chrome]);
 
   const scenario = SCENARIOS[scenarioIndex];
   const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
@@ -84,7 +91,7 @@ export default function BoardScreen() {
           paddingTop: 6,
           paddingHorizontal: 6,
           gap: 8,
-          paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
+          paddingBottom: chrome === "zen" ? insets.bottom + 4 : insets.bottom + TAB_BAR_CLEARANCE,
         }}
       >
       {chrome === "full" && (

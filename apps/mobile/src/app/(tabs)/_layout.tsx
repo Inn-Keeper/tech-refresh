@@ -1,12 +1,16 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { useTabBarHidden } from "@/lib/uiStore";
 
 const { Icon, Label } = NativeTabs.Trigger;
 
 // True native tab bar (UITabBarController on iOS — Liquid Glass on current
 // versions, native bottom navigation on Android) instead of JS-rendered tabs.
+// The Arch Board's zen mode hides it for an edge-to-edge canvas.
 export default function TabLayout() {
+  const hidden = useTabBarHidden();
+
   return (
-    <NativeTabs>
+    <NativeTabs hidden={hidden}>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "book", selected: "book.fill" }} />
         <Label>Prep</Label>
