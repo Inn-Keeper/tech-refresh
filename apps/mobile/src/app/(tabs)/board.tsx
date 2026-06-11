@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
-import { Button, Pill, Screen } from "@/components/ui";
+import { Button, MiniButton, Pill, Screen } from "@/components/ui";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
 import { ResultSheet } from "@/components/board/ResultSheet";
 
@@ -18,6 +19,8 @@ export default function BoardScreen() {
   const [nodes, setNodes] = useState<BoardNode[]>([]);
   const [edges, setEdges] = useState<BoardEdge[]>([]);
   const [result, setResult] = useState<EvalResult | null>(null);
+  // Distraction-free mode: collapse the scenario pills + brief into one slim row.
+  const [chromeHidden, setChromeHidden] = useState(false);
 
   const scenario = SCENARIOS[scenarioIndex];
   const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
@@ -75,15 +78,29 @@ export default function BoardScreen() {
   return (
     <Screen>
       <View style={{ flex: 1, padding: 16, gap: 10, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
-        {SCENARIOS.map((item, index) => (
-          <Pill key={item.id} label={item.name} active={scenarioIndex === index} onPress={() => switchScenario(index)} />
-        ))}
-      </ScrollView>
+      {!chromeHidden && (
+        <Animated.View entering={FadeInDown.duration(180)} style={{ gap: 10 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
+            {SCENARIOS.map((item, index) => (
+              <Pill key={item.id} label={item.name} active={scenarioIndex === index} onPress={() => switchScenario(index)} />
+            ))}
+          </ScrollView>
 
-      <Text style={{ fontSize: 12, lineHeight: 17, color: colors.textDim }}>{scenario.brief}</Text>
+          <Text style={{ fontSize: 12, lineHeight: 17, color: colors.textDim }}>{scenario.brief}</Text>
+        </Animated.View>
+      )}
 
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <MiniButton
+          label={chromeHidden ? "▸" : "▾"}
+          color={colors.textDim}
+          onPress={() => setChromeHidden((value) => !value)}
+        />
+        {chromeHidden && (
+          <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: colors.textDim, flexShrink: 1 }}>
+            {scenario.name}
+          </Text>
+        )}
         <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.red : colors.textDim }}>
           💰 {liveCost}/{scenario.budget}
         </Text>
