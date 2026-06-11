@@ -6,6 +6,7 @@ import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/cor
 import { api } from "@/lib/api";
 import { colors } from "@/theme";
 import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
+import { DateField } from "@/components/DateField";
 import type { Contact } from "@tech-refresh/core/api";
 
 const EMPTY_FORM: Contact = {
@@ -96,7 +97,7 @@ export default function ContactsScreen() {
             )}
 
             <TouchableOpacity
-              onPress={() => setEditing(EMPTY_FORM)}
+              onPress={() => setEditing({ ...EMPTY_FORM, date: todayDDMMYYYY() })}
               style={{
                 padding: 12,
                 backgroundColor: "#6366f125",
@@ -353,15 +354,7 @@ function ContactForm({ initial, onSave, onCancel }: ContactFormProps) {
       <Field label="Note">
         <TextInput style={inputStyle} value={form.note} onChangeText={set("note")} />
       </Field>
-      <Field label="Date (DD-MM-YYYY)">
-        <TextInput
-          style={inputStyle}
-          value={form.date}
-          onChangeText={set("date")}
-          placeholder="auto"
-          placeholderTextColor={colors.textFaint}
-        />
-      </Field>
+      <DateField label="Date" value={form.date} onChange={set("date")} />
       <Field label="Next action — what's the next move?">
         <TextInput
           style={inputStyle}
@@ -371,15 +364,7 @@ function ContactForm({ initial, onSave, onCancel }: ContactFormProps) {
           placeholderTextColor={colors.textFaint}
         />
       </Field>
-      <Field label="Next action due (DD-MM-YYYY)">
-        <TextInput
-          style={inputStyle}
-          value={form.nextActionDate}
-          onChangeText={set("nextActionDate")}
-          placeholder="11-06-2026"
-          placeholderTextColor={colors.textFaint}
-        />
-      </Field>
+      <DateField label="Next action due" value={form.nextActionDate} onChange={set("nextActionDate")} clearable />
 
       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
         <Button label="Cancel" variant="ghost" onPress={onCancel} />

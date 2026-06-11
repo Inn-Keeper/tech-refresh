@@ -11,10 +11,14 @@ export const STATUS_STYLES = {
   Rejected: { color: "#64748b", bg: "#64748b20" },
 };
 
-export function todayDDMMYYYY() {
-  const d = new Date();
+/** @param {Date} date */
+export function formatDDMMYYYY(date) {
   const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
+  return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()}`;
+}
+
+export function todayDDMMYYYY() {
+  return formatDDMMYYYY(new Date());
 }
 
 export function parseDDMMYYYY(s) {

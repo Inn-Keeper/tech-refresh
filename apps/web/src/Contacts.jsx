@@ -164,7 +164,11 @@ export default function Contacts() {
 
       {editingId === "new" && (
         <div style={{ marginBottom: 16 }}>
-          <ContactForm initial={EMPTY_FORM} onSave={handleSave} onCancel={() => setEditingId(null)} />
+          <ContactForm
+            initial={{ ...EMPTY_FORM, date: todayDDMMYYYY() }}
+            onSave={handleSave}
+            onCancel={() => setEditingId(null)}
+          />
         </div>
       )}
 
@@ -507,8 +511,8 @@ function ContactForm({ initial, onSave, onCancel }) {
         <Field label="Note">
           <input style={inputStyle} value={form.note} onChange={set("note")} />
         </Field>
-        <Field label="Date (DD-MM-YYYY)">
-          <input style={inputStyle} value={form.date} onChange={set("date")} placeholder="auto" />
+        <Field label="Date">
+          <DateInput value={form.date} onChange={(date) => setForm((f) => ({ ...f, date }))} />
         </Field>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
@@ -520,8 +524,11 @@ function ContactForm({ initial, onSave, onCancel }) {
             placeholder="Chase for feedback / send thank-you note / prep round 2…"
           />
         </Field>
-        <Field label="Due (DD-MM-YYYY)">
-          <input style={inputStyle} value={form.nextActionDate} onChange={set("nextActionDate")} placeholder="10-06-2026" />
+        <Field label="Due">
+          <DateInput
+            value={form.nextActionDate}
+            onChange={(nextActionDate) => setForm((f) => ({ ...f, nextActionDate }))}
+          />
         </Field>
       </div>
 
@@ -569,5 +576,17 @@ function Field({ label, children }) {
       <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.03em" }}>{label}</span>
       {children}
     </label>
+  );
+}
+
+// Native browser date picker bound to the app's DD-MM-YYYY format.
+function DateInput({ value, onChange }) {
+  return (
+    <input
+      type="date"
+      style={{ ...inputStyle, colorScheme: "dark" }}
+      value={api.dateToDb(value) ?? ""}
+      onChange={(e) => onChange(api.dateToUi(e.target.value))}
+    />
   );
 }
