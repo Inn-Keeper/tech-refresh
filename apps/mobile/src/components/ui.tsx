@@ -3,10 +3,26 @@ import { Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/theme";
 
-/** Tab screen root: app background + status-bar inset (native tabs render no header). */
+/**
+ * Tab screen root: app background + safe-area insets (native tabs render no
+ * header). Left/right matter in landscape, where the sensor housing sits
+ * on the side of the screen.
+ */
 export function Screen({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
-  return <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>{children}</View>;
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: colors.bg,
+        paddingTop: insets.top,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+      }}
+    >
+      {children}
+    </View>
+  );
 }
 
 export const inputStyle = {
