@@ -11,3 +11,11 @@ export const RANKS = [
   { name: "Staff", min: 900 },
   { name: "Principal", min: 1500 },
 ];
+
+/**
+ * Highest rank reached for a given XP total.
+ * @param {number} xp
+ */
+export function rankForXp(xp) {
+  return [...RANKS].reverse().find((rank) => xp >= rank.min) ?? RANKS[0];
+}

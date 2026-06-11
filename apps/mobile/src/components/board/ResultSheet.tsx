@@ -1,5 +1,6 @@
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import type { EvalResult, Scenario } from "@tech-refresh/core/arch";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@/theme";
 import { Button } from "@/components/ui";
 
@@ -10,9 +11,9 @@ type Props = {
 };
 
 function verdict(score: number): { label: string; color: string } {
-  if (score >= 80) return { label: "Ship it 🚀", color: colors.green };
-  if (score >= 50) return { label: "Needs review before the meeting", color: colors.amber };
-  return { label: "Back to the whiteboard", color: colors.red };
+  if (score >= 80) return { label: t("board.verdictShip"), color: colors.green };
+  if (score >= 50) return { label: t("board.verdictReview"), color: colors.amber };
+  return { label: t("board.verdictWhiteboard"), color: colors.red };
 }
 
 export function ResultSheet({ result, scenario, onClose }: Props) {
@@ -47,7 +48,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
         <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 14, paddingBottom: 8 }}>
           <View style={{ gap: 6 }}>
             <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textDim, letterSpacing: 0.6 }}>
-              DESIGN CHECKS
+              {t("board.designChecks")}
             </Text>
             {result.checks.map((check) => (
               <Text
@@ -62,7 +63,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
           {result.warnings.length > 0 && (
             <View style={{ gap: 6 }}>
               <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textDim, letterSpacing: 0.6 }}>
-                MEETING NOTES
+                {t("board.meetingNotes")}
               </Text>
               {result.warnings.map((warning) => (
                 <Text key={warning} style={{ fontSize: 12.5, lineHeight: 18, color: "#fbbf24" }}>
@@ -74,7 +75,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
         </ScrollView>
 
         <View style={{ marginTop: 12, alignItems: "flex-end" }}>
-          <Button label="Close" onPress={onClose} />
+          <Button label={t("common.close")} onPress={onClose} />
         </View>
       </View>
     </Modal>

@@ -6,6 +6,11 @@ const api = createApi(supabase);
 
 export { dateToUi, dateToDb };
 export const {
+  listBoards,
+  upsertBoard,
+  deleteBoard,
+  listStatusEvents,
+  getAccuracyTimeline,
   listContacts,
   upsertContact,
   deleteContact,

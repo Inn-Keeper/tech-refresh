@@ -13,7 +13,8 @@
     "./arch": "./src/arch.js",
     "./gamification": "./src/gamification.js",
     "./funnel": "./src/funnel.js",
-    "./accuracy": "./src/accuracy.js"
+    "./accuracy": "./src/accuracy.js",
+    "./i18n": "./src/i18n.js"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

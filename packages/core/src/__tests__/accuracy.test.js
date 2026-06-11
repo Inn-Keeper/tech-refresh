@@ -3,10 +3,10 @@ import { buildAccuracyTimeline } from "../accuracy.js";
 describe("buildAccuracyTimeline", () => {
   it("builds cumulative daily accuracy from answer events", () => {
     const timeline = buildAccuracyTimeline([
-      { correct: true, createdAt: "2026-01-02T10:00:00Z" },
-      { correct: false, createdAt: "2026-01-01T10:00:00Z" },
-      { correct: true, createdAt: "2026-01-01T12:00:00Z" },
-      { correct: true, createdAt: "2026-01-03T10:00:00Z" },
+      { correct: true, createdAt: "2026-01-02T10:00:00" },
+      { correct: false, createdAt: "2026-01-01T10:00:00" },
+      { correct: true, createdAt: "2026-01-01T12:00:00" },
+      { correct: true, createdAt: "2026-01-03T10:00:00" },
     ]);
 
     expect(timeline).toEqual([

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@/theme";
 
 // Email + password with in-app account creation. No email delivery anywhere:
@@ -33,7 +34,7 @@ export function SignIn() {
         setError(err.message);
       } else if (!data.session) {
         setNotice(
-          "Account created, but email confirmation is still enabled in Supabase — disable “Confirm email” to activate accounts instantly."
+          t("auth.confirmEmailNotice")
         );
       }
     }
@@ -49,16 +50,16 @@ export function SignIn() {
     >
       <Text style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>⚡</Text>
       <Text style={{ color: colors.textBright, fontSize: 22, fontWeight: "700", textAlign: "center", marginBottom: 6 }}>
-        {mode === "signin" ? "Sign in" : "Create account"}
+        {mode === "signin" ? t("auth.signIn") : t("auth.createAccount")}
       </Text>
       <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginBottom: 28 }}>
-        Your pipeline and scores live behind your account.
+        {t("auth.tagline")}
       </Text>
 
       <TextInput
         value={email}
         onChangeText={setEmail}
-        placeholder="you@email.com"
+        placeholder={t("auth.emailPlaceholder")}
         placeholderTextColor={colors.textFaint}
         autoCapitalize="none"
         keyboardType="email-address"
@@ -68,7 +69,7 @@ export function SignIn() {
       <TextInput
         value={password}
         onChangeText={setPassword}
-        placeholder={mode === "signup" ? "password (8+ characters)" : "password"}
+        placeholder={mode === "signup" ? t("auth.newPasswordPlaceholder") : t("auth.passwordPlaceholder")}
         placeholderTextColor={colors.textFaint}
         secureTextEntry
         autoComplete={mode === "signup" ? "new-password" : "current-password"}
@@ -87,7 +88,7 @@ export function SignIn() {
         }}
       >
         <Text style={{ color: "#fff", fontWeight: "600", textAlign: "center", fontSize: 15 }}>
-          {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+          {busy ? "…" : mode === "signin" ? t("auth.signIn") : t("auth.createAccount")}
         </Text>
       </TouchableOpacity>
 
@@ -100,7 +101,7 @@ export function SignIn() {
         style={{ marginTop: 18 }}
       >
         <Text style={{ color: colors.textDim, fontSize: 13, textAlign: "center" }}>
-          {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
+          {mode === "signin" ? t("auth.switchToSignUp") : t("auth.switchToSignIn")}
         </Text>
       </TouchableOpacity>
 

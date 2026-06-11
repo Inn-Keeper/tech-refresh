@@ -48,7 +48,7 @@
     "dev-client": "expo start --dev-client",
     "build:ios:dev": "npx eas-cli build --platform ios --profile development",
     "build:android:dev": "npx eas-cli build --platform android --profile development",
-    "ios:sim": "expo run:ios --device \"iPhone 16 Pro\"",
+    "ios:sim": "LC_ALL=C expo run:ios --device \"iPhone 16 Pro\"",
     "build:ios:sim": "npx eas-cli build --platform ios --profile simulator",
     "test": "jest",
     "test:watch": "jest --watch"

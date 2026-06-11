@@ -1,6 +1,11 @@
 // Accuracy analytics from normalized answer_events.
 
-const dayKey = (value) => new Date(value).toISOString().slice(0, 10);
+const dayKey = (value) => {
+  const date = new Date(value);
+  const pad = (n) => String(n).padStart(2, "0");
+  // Local day, not UTC: a late-evening session should not land on tomorrow.
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
 
 /**
  * Builds a cumulative daily accuracy line from answer events.

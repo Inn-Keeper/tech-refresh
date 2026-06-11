@@ -1,5 +1,8 @@
 import { useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NODE_TYPES, TYPE_COLORS, meta, SCENARIOS, evaluate } from "@tech-refresh/core/arch";
+import { t } from "@tech-refresh/core/i18n";
+import * as api from "./api.js";
 
 const NODE_W = 132;
 const NODE_H = 54;
@@ -10,12 +13,63 @@ export default function ArchBoard() {
   const [edges, setEdges] = useState([]);
   const [connectFrom, setConnectFrom] = useState(null);
   const [result, setResult] = useState(null);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [activeBoardId, setActiveBoardId] = useState(null);
+  const [activeBoardTitle, setActiveBoardTitle] = useState(null);
+  const queryClient = useQueryClient();
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
   const suppressClickRef = useRef(false);
 
   const scenario = SCENARIOS[scenarioIdx];
   const nodeById = Object.fromEntries(nodes.map((n) => [n.id, n]));
+
+  const { data: savedBoards = [], error: boardsError } = useQuery({
+    queryKey: ["arch-boards"],
+    queryFn: api.listBoards,
+  });
+  const invalidateBoards = () => queryClient.invalidateQueries({ queryKey: ["arch-boards"] });
+  const saveBoardMutation = useMutation({
+    mutationFn: () =>
+      api.upsertBoard({
+        id: activeBoardId ?? undefined,
+        title: activeBoardTitle ?? t("board.draftTitle", { scenario: scenario.name }),
+        scenarioId: scenario.id,
+        nodes,
+        edges,
+      }),
+    onSuccess: (board) => {
+      setActiveBoardId(board.id ?? null);
+      setActiveBoardTitle(board.title);
+      invalidateBoards();
+    },
+  });
+  const deleteBoardMutation = useMutation({
+    mutationFn: api.deleteBoard,
+    onSuccess: (_data, id) => {
+      if (id === activeBoardId) {
+        setActiveBoardId(null);
+        setActiveBoardTitle(null);
+      }
+      invalidateBoards();
+    },
+  });
+
+  const loadBoard = (board) => {
+    const nextScenarioIdx = SCENARIOS.findIndex((item) => item.id === board.scenarioId);
+    if (nextScenarioIdx < 0) {
+      window.alert(t("board.unknownScenarioMessage", { scenarioId: board.scenarioId }));
+      return;
+    }
+    setScenarioIdx(nextScenarioIdx);
+    setNodes(board.nodes);
+    setEdges(board.edges);
+    setConnectFrom(null);
+    setResult(null);
+    setActiveBoardId(board.id ?? null);
+    setActiveBoardTitle(board.title);
+    setSavedOpen(false);
+  };
   const liveCost = nodes.reduce((s, n) => s + meta(n.type).cost, 0);
   const liveMaint = nodes.reduce((s, n) => s + meta(n.type).maint, 0);
 
@@ -25,6 +79,8 @@ export default function ArchBoard() {
     setEdges([]);
     setConnectFrom(null);
     setResult(null);
+    setActiveBoardId(null);
+    setActiveBoardTitle(null);
   };
 
   const addNode = (type) => {
@@ -133,7 +189,26 @@ export default function ArchBoard() {
         <span style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8" }}>🔧 Maintenance load {liveMaint}</span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <button
-            onClick={() => { setNodes([]); setEdges([]); setConnectFrom(null); setResult(null); }}
+            onClick={() => setSavedOpen((value) => !value)}
+            style={{
+              padding: "7px 14px", background: "transparent", border: `1px solid ${savedOpen ? "#6366f1" : "#2d3748"}`,
+              borderRadius: 8, color: savedOpen ? "#a5b4fc" : "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            {t("board.saved")} ({savedBoards.length})
+          </button>
+          <button
+            onClick={() => saveBoardMutation.mutate()}
+            disabled={saveBoardMutation.isPending}
+            style={{
+              padding: "7px 14px", background: "transparent", border: "1px solid #22c55e60",
+              borderRadius: 8, color: "#86efac", fontSize: 12, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            {saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
+          </button>
+          <button
+            onClick={() => { setNodes([]); setEdges([]); setConnectFrom(null); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
             style={{
               padding: "7px 14px", background: "transparent", border: "1px solid #2d3748",
               borderRadius: 8, color: "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer",
@@ -154,6 +229,59 @@ export default function ArchBoard() {
           </button>
         </div>
       </div>
+
+
+      {(saveBoardMutation.error || boardsError) && (
+        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#fca5a5" }}>
+          {saveBoardMutation.error
+            ? `${t("board.saveFailedTitle")}: ${saveBoardMutation.error.message}`
+            : t("board.boardsError", { message: boardsError.message })}
+        </p>
+      )}
+
+      {savedOpen && (
+        <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 12 }}>
+          {savedBoards.length === 0 ? (
+            <p style={{ margin: 0, fontSize: 12, color: "#64748b" }}>{t("board.savedEmpty")}</p>
+          ) : (
+            savedBoards.map((board) => {
+              const boardScenario = SCENARIOS.find((item) => item.id === board.scenarioId);
+              const active = board.id === activeBoardId;
+              return (
+                <div
+                  key={board.id}
+                  style={{
+                    minWidth: 220, padding: "10px 12px", background: "#1a1f2e",
+                    border: `1px solid ${active ? "#6366f1" : "#2d3748"}`, borderRadius: 10,
+                    display: "flex", flexDirection: "column", gap: 6,
+                  }}
+                >
+                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {board.title}
+                  </span>
+                  <span style={{ fontSize: 10.5, color: "#64748b" }}>
+                    {t("board.boardMeta", { scenario: boardScenario?.name ?? board.scenarioId, nodes: board.nodes.length, edges: board.edges.length })}
+                  </span>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                    <button
+                      onClick={() => loadBoard(board)}
+                      style={{ padding: "3px 10px", background: "transparent", border: "1px solid #6366f160", borderRadius: 6, color: "#a5b4fc", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                    >
+                      {t("common.load")}
+                    </button>
+                    <button
+                      onClick={() => window.confirm(t("board.deleteMessage", { title: board.title })) && deleteBoardMutation.mutate(board.id)}
+                      style={{ padding: "3px 10px", background: "transparent", border: "1px solid #ef444450", borderRadius: 6, color: "#fca5a5", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                    >
+                      {t("common.delete")}
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 14, alignItems: "stretch", flexWrap: "wrap" }}>
         {/* Palette */}

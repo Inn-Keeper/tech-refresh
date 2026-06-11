@@ -1,30 +1,36 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
-import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
+import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
+import { buildDrill, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
+import { t } from "@tech-refresh/core/i18n";
+import * as api from "./api.js";
 import { useScores } from "./useScores.js";
-
-const DRILL_TECHS = 5;
-const DRILL_SIZE = 10;
-
-const SHUFFLE = (arr) => [...arr].sort(() => Math.random() - 0.5);
-
-function shuffleOptions(question) {
-  const indexed = question.options.map((opt, i) => ({ opt, isCorrect: i === question.correct }));
-  const shuffled = SHUFFLE(indexed);
-  return {
-    ...question,
-    options: shuffled.map((x) => x.opt),
-    correct: shuffled.findIndex((x) => x.isCorrect),
-  };
-}
+import { AccuracyChart } from "./AccuracyChart.jsx";
+import { CelebrationOverlay } from "./CelebrationOverlay.jsx";
 
 export default function InterviewPrep() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [cardState, setCardState] = useState({});
   const [search, setSearch] = useState("");
   const [drill, setDrill] = useState(null);
+  const [celebration, setCelebration] = useState(null);
+  const previousRank = useRef(null);
   const { scores, record, addXp } = useScores();
+  const { data: accuracy = [] } = useQuery({ queryKey: ["accuracy-timeline"], queryFn: api.getAccuracyTimeline });
+
+  useEffect(() => {
+    const current = rankForXp(scores.xp);
+    if (previousRank.current && current.min > previousRank.current.min) {
+      setCelebration({
+        title: t("celebration.rankTitle", { rank: current.name }),
+        subtitle: t("celebration.rankSubtitle", { xp: scores.xp }),
+        accent: "#6366f1",
+      });
+    }
+    previousRank.current = current;
+  }, [scores.xp]);
 
   const allItems = categories.flatMap((c) =>
     c.items.map((item) => ({ ...item, category: c.name, color: c.color, emoji: c.emoji }))
@@ -50,7 +56,7 @@ export default function InterviewPrep() {
         return { ...prev, [key]: { ...s, phase: "back" } };
       }
       if (s.phase === "back") {
-        const shuffled = SHUFFLE(item.quiz).map(shuffleOptions);
+        const shuffled = shuffle(item.quiz).map(shuffleOptions);
         return { ...prev, [key]: { ...s, phase: "quiz", quizIndex: 0, answered: null, runCorrect: 0, shuffled } };
       }
       return prev;
@@ -83,18 +89,11 @@ export default function InterviewPrep() {
   };
 
   const startDrill = () => {
-    const attempted = Object.entries(scores.answers)
-      .map(([tech, s]) => ({ tech, acc: s.correct / (s.correct + s.wrong) }))
-      .sort((a, b) => a.acc - b.acc)
-      .map((s) => s.tech);
-    const unattempted = SHUFFLE(allItems.map((i) => i.tech).filter((t) => !scores.answers[t]));
-    const targetTechs = [...attempted, ...unattempted].slice(0, DRILL_TECHS);
-    const pool = allItems
-      .filter((i) => targetTechs.includes(i.tech))
-      .flatMap((i) =>
-        i.quiz.map((q) => ({ tech: i.tech, color: i.color, link: techLinks[i.tech], q: shuffleOptions(q) }))
-      );
-    setDrill({ questions: SHUFFLE(pool).slice(0, DRILL_SIZE), index: 0, answered: null, correctCount: 0, done: false });
+    const questions = buildDrill(categories, scores.answers).map((entry) => ({
+      ...entry,
+      link: techLinks[entry.tech],
+    }));
+    setDrill({ questions, index: 0, answered: null, correctCount: 0, done: false });
   };
 
   const answerDrill = (optionIndex) => {
@@ -108,7 +107,14 @@ export default function InterviewPrep() {
   const nextDrill = () => {
     const nextIndex = drill.index + 1;
     if (nextIndex >= drill.questions.length) {
-      if (drill.correctCount === drill.questions.length) addXp(PERFECT_QUIZ_BONUS);
+      if (drill.correctCount === drill.questions.length) {
+        addXp(PERFECT_QUIZ_BONUS);
+        setCelebration({
+          title: t("celebration.perfectTitle"),
+          subtitle: t("celebration.perfectSubtitle", { bonus: PERFECT_QUIZ_BONUS }),
+          accent: "#22c55e",
+        });
+      }
       setDrill({ ...drill, done: true });
     } else {
       setDrill({ ...drill, index: nextIndex, answered: null });
@@ -126,6 +132,8 @@ export default function InterviewPrep() {
         </p>
 
         <StatsBar scores={scores} onDrill={startDrill} drillActive={!!drill} />
+
+        {!drill && <AccuracyChart points={accuracy} />}
 
         <div style={{ position: "relative", marginBottom: 24 }}>
           <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14 }}>🔍</span>
@@ -212,6 +220,15 @@ export default function InterviewPrep() {
             </div>
           </div>
         </>
+      )}
+
+      {celebration && (
+        <CelebrationOverlay
+          title={celebration.title}
+          subtitle={celebration.subtitle}
+          accent={celebration.accent}
+          onDone={() => setCelebration(null)}
+        />
       )}
     </div>
   );
@@ -448,9 +465,8 @@ function StatsBar({ scores, onDrill, drillActive }) {
   const attempts = totals.correct + totals.wrong;
   const accuracy = attempts ? Math.round((totals.correct / attempts) * 100) : null;
 
-  const rankIdx = RANKS.findLastIndex((r) => scores.xp >= r.min);
-  const rank = RANKS[rankIdx];
-  const next = RANKS[rankIdx + 1];
+  const rank = rankForXp(scores.xp);
+  const next = RANKS[RANKS.indexOf(rank) + 1];
   const progress = next ? Math.round(((scores.xp - rank.min) / (next.min - rank.min)) * 100) : 100;
 
   const ranked = entries

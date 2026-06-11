@@ -4,6 +4,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
+import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
 import { colors } from "@/theme";
 import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
@@ -29,7 +30,10 @@ export default function ContactsScreen() {
   const [retroFor, setRetroFor] = useState<string | null>(null);
 
   const { data: contacts, error } = useQuery<Contact[]>({ queryKey: ["contacts"], queryFn: api.listContacts });
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["contacts"] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    queryClient.invalidateQueries({ queryKey: ["status-events"] });
+  };
   const saveMutation = useMutation({ mutationFn: api.upsertContact, onSettled: invalidate });
   const deleteMutation = useMutation({ mutationFn: api.deleteContact, onSettled: invalidate });
   const addRetroMutation = useMutation({
@@ -39,14 +43,15 @@ export default function ContactsScreen() {
   });
   const deleteRetroMutation = useMutation({ mutationFn: api.deleteRetro, onSettled: invalidate });
 
-  const funnel = buildFunnelSummary(contacts ?? []);
+  const { data: statusEvents = [] } = useQuery({ queryKey: ["status-events"], queryFn: api.listStatusEvents });
+  const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
   const sorted = [...(contacts ?? [])].sort((a, b) => Number(isDue(b)) - Number(isDue(a)));
   const dueCount = funnel.due;
 
   const confirmDelete = (contact: Contact) =>
-    Alert.alert("Delete contact", `Delete "${contact.name}"?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(contact.id) },
+    Alert.alert(t("contacts.deleteTitle"), t("contacts.deleteMessage", { name: contact.name }), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => deleteMutation.mutate(contact.id) },
     ]);
 
   const handleSave = (form: Contact) => {
@@ -80,7 +85,7 @@ export default function ContactsScreen() {
         contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
-            {error && <Text style={{ color: "#fca5a5", fontSize: 13 }}>Couldn't load contacts: {error.message}</Text>}
+            {error && <Text style={{ color: "#fca5a5", fontSize: 13 }}>{t("contacts.loadError", { message: error.message })}</Text>}
 
             <FunnelDashboard summary={funnel} />
 
@@ -95,7 +100,7 @@ export default function ContactsScreen() {
                 }}
               >
                 <Text style={{ color: "#fca5a5", fontSize: 13, fontWeight: "600" }}>
-                  ⏰ {dueCount} follow-up{dueCount > 1 ? "s" : ""} due — these lose offers when they slip.
+                  {t("contacts.dueBanner", { count: dueCount, plural: dueCount > 1 ? "s" : "" })}
                 </Text>
               </View>
             )}
@@ -159,33 +164,33 @@ function FunnelDashboard({ summary }: { summary: FunnelSummary }) {
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.textBright }}>Funnel dashboard</Text>
-          <Text style={{ fontSize: 11, color: colors.textFaint }}>Current pipeline shape and weekly application pace</Text>
+          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.textBright }}>{t("funnel.title")}</Text>
+          <Text style={{ fontSize: 11, color: colors.textFaint }}>{t("funnel.subtitle")}</Text>
         </View>
-        <Badge label={`${summary.active} active`} color={colors.accent} />
+        <Badge label={t("funnel.active", { count: summary.active })} color={colors.accent} />
       </View>
 
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Metric label="Apps/week" value={String(summary.applicationsPerWeek)} color={colors.green} />
-        <Metric label="Interviews" value={String(summary.reached.Interviewing)} color={colors.amber} />
-        <Metric label="Offers" value={String(summary.reached.Offer)} color="#a78bfa" />
+        <Metric label={t("funnel.appsPerWeek")} value={String(summary.applicationsPerWeek)} color={colors.green} />
+        <Metric label={t("funnel.interviews")} value={String(summary.reached.Interviewing)} color={colors.amber} />
+        <Metric label={t("funnel.offers")} value={String(summary.reached.Offer)} color="#a78bfa" />
       </View>
 
       <View style={{ gap: 8 }}>
         <ConversionRow
-          label="Contacted -> Applied"
+          label={t("funnel.contactedToApplied")}
           value={summary.rates.contactedToApplied}
           detail={`${summary.reached.Applied}/${summary.reached.Contacted}`}
           color={colors.green}
         />
         <ConversionRow
-          label="Applied -> Interviewing"
+          label={t("funnel.appliedToInterviewing")}
           value={summary.rates.appliedToInterviewing}
           detail={`${summary.reached.Interviewing}/${summary.reached.Applied}`}
           color={colors.amber}
         />
         <ConversionRow
-          label="Interviewing -> Offer"
+          label={t("funnel.interviewingToOffer")}
           value={summary.rates.interviewingToOffer}
           detail={`${summary.reached.Offer}/${summary.reached.Interviewing}`}
           color="#a78bfa"
@@ -295,7 +300,7 @@ function ContactCard({
           {nextStatus && (
             <MiniButton label={`→ ${nextStatus}`} color={STATUS_STYLES[nextStatus].color} onPress={onAdvance} />
           )}
-          <MiniButton label="+ Retro" color="#a5b4fc" onPress={onToggleRetroForm} />
+          <MiniButton label={t("contacts.addRetro")} color="#a5b4fc" onPress={onToggleRetroForm} />
         </View>
       </View>
 
@@ -330,20 +335,20 @@ function ContactCard({
             {contact.nextAction}
             {!!contact.nextActionDate && ` · ${contact.nextActionDate}`}
           </Text>
-          <MiniButton label="Done ✓" color={due ? "#fca5a5" : "#fbbf24"} onPress={onClearAction} />
+          <MiniButton label={t("common.done")} color={due ? "#fca5a5" : "#fbbf24"} onPress={onClearAction} />
         </View>
       )}
 
       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
         {retros.length > 0 && (
           <MiniButton
-            label={`📓 Retros (${retros.length}) ${showRetros ? "▴" : "▾"}`}
+            label={`${t("contacts.retros", { count: retros.length })} ${showRetros ? "▴" : "▾"}`}
             color={colors.textDim}
             onPress={() => setShowRetros((value) => !value)}
           />
         )}
-        <MiniButton label="Edit" color={colors.textDim} onPress={onEdit} />
-        <MiniButton label="Delete" color={colors.red} onPress={onDelete} />
+        <MiniButton label={t("common.edit")} color={colors.textDim} onPress={onEdit} />
+        <MiniButton label={t("common.delete")} color={colors.red} onPress={onDelete} />
       </View>
 
       {showRetros &&
@@ -415,8 +420,8 @@ function RetroForm({ onSave, onCancel }: RetroFormProps) {
         <TextInput style={[inputStyle, multilineStyle]} value={form.toImprove} onChangeText={set("toImprove")} multiline />
       </Field>
       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
-        <Button label="Cancel" variant="ghost" onPress={onCancel} />
-        <Button label="Save retro" onPress={() => onSave(form)} />
+        <Button label={t("common.cancel")} variant="ghost" onPress={onCancel} />
+        <Button label={t("contacts.saveRetro")} onPress={() => onSave(form)} />
       </View>
     </View>
   );
@@ -480,8 +485,8 @@ function ContactForm({ initial, onSave, onCancel }: ContactFormProps) {
       <DateField label="Next action due" value={form.nextActionDate} onChange={set("nextActionDate")} clearable />
 
       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-        <Button label="Cancel" variant="ghost" onPress={onCancel} />
-        <Button label="Save" onPress={() => onSave(form)} disabled={!form.name.trim()} />
+        <Button label={t("common.cancel")} variant="ghost" onPress={onCancel} />
+        <Button label={t("common.save")} onPress={() => onSave(form)} disabled={!form.name.trim()} />
       </View>
     </ScrollView>
   );

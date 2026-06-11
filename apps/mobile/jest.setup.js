@@ -1,3 +1,8 @@
+// MAINTENANCE WARNING: the mocks below reach into React Native private
+// internals (react-native/Libraries/* paths) because jest-expo's preset
+// alone does not boot RN 0.85 components under the node test environment
+// (verified: removing them fails all suites). If tests break mysteriously
+// after an Expo SDK / RN upgrade, start here.
 global.__DEV__ = true;
 global.IS_REACT_ACT_ENVIRONMENT = true;
 global.IS_REACT_NATIVE_TEST_ENVIRONMENT = true;
@@ -92,7 +97,10 @@ jest.mock("react-native-reanimated", () => {
     },
     useAnimatedStyle: (worklet) => worklet(),
     useSharedValue: (value) => ({ value }),
+    useDerivedValue: (worklet) => ({ value: worklet() }),
     withSpring: (value) => value,
+    withTiming: (value) => value,
+    Easing: { linear: (value) => value, out: (fn) => fn, cubic: (value) => value },
   };
 });
 

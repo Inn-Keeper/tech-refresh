@@ -1,0 +1,67 @@
+import { t } from "@tech-refresh/core/i18n";
+
+const HEIGHT = 90;
+const WIDTH = 600; // viewBox units; scales to container width
+const PAD_X = 12;
+const PAD_Y = 14;
+
+// SVG twin of the mobile Skia chart: cumulative accuracy per day.
+export function AccuracyChart({ points }) {
+  const latest = points.at(-1);
+  const innerW = WIDTH - PAD_X * 2;
+  const innerH = HEIGHT - PAD_Y * 2;
+  const maxIndex = Math.max(1, points.length - 1);
+  const dots = points.map((point, index) => ({
+    key: point.date,
+    x: PAD_X + (index / maxIndex) * innerW,
+    y: PAD_Y + (1 - point.accuracy) * innerH,
+  }));
+  const path = dots.map((dot, index) => `${index === 0 ? "M" : "L"} ${dot.x} ${dot.y}`).join(" ");
+
+  return (
+    <div
+      style={{
+        background: "#1a1f2e",
+        border: "1px solid #2d3748",
+        borderRadius: 12,
+        padding: "12px 14px",
+        marginBottom: 20,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#f1f5f9" }}>{t("accuracy.title")}</div>
+          <div style={{ fontSize: 10.5, color: "#64748b" }}>{t("accuracy.subtitle")}</div>
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 800, color: latest && latest.accuracy >= 0.7 ? "#22c55e" : "#f59e0b" }}>
+          {latest ? `${Math.round(latest.accuracy * 100)}%` : "--"}
+        </span>
+      </div>
+
+      {points.length < 2 ? (
+        <div style={{ height: HEIGHT, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: 11 }}>
+          {t("accuracy.empty")}
+        </div>
+      ) : (
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} style={{ width: "100%", height: HEIGHT, display: "block" }}>
+          <path
+            d={`M ${PAD_X} ${PAD_Y} L ${PAD_X} ${HEIGHT - PAD_Y} L ${WIDTH - PAD_X} ${HEIGHT - PAD_Y}`}
+            fill="none"
+            stroke="#2d3748"
+            strokeWidth="1"
+          />
+          <path d={path} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinejoin="round" />
+          {dots.map((dot, index) => (
+            <circle
+              key={dot.key}
+              cx={dot.x}
+              cy={dot.y}
+              r={index === dots.length - 1 ? 4 : 2.5}
+              fill={index === dots.length - 1 ? "#22c55e" : "#6366f1"}
+            />
+          ))}
+        </svg>
+      )}
+    </div>
+  );
+}

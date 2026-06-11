@@ -1,7 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { StyleSheet, Text } from "react-native";
 import { Canvas, Circle } from "@shopify/react-native-skia";
-import Animated, { FadeIn, FadeOut, ZoomIn } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeIn,
+  FadeOut,
+  ZoomIn,
+  useDerivedValue,
+  useSharedValue,
+  withTiming,
+  type SharedValue,
+} from "react-native-reanimated";
 import { colors } from "@/theme";
 
 type Props = {
@@ -20,43 +29,50 @@ const PARTICLES = Array.from({ length: 54 }, (_, index) => ({
   color: PARTICLE_COLORS[index % PARTICLE_COLORS.length],
 }));
 
-const easeOut = (value: number) => 1 - Math.pow(1 - value, 3);
+const BURST_MS = 1250;
+const DISMISS_MS = 2100;
+
+const easeOutCubic = (value: number) => {
+  "worklet";
+  return 1 - Math.pow(1 - value, 3);
+};
+
+type ParticleProps = {
+  progress: SharedValue<number>;
+  center: { x: number; y: number };
+  angle: number;
+  distance: number;
+  size: number;
+  delay: number;
+  color: string;
+};
+
+/** One confetti dot: position and radius derive from the shared burst progress on the UI thread. */
+function Particle({ progress, center, angle, distance, size, delay, color }: ParticleProps) {
+  const local = useDerivedValue(() =>
+    Math.max(0, Math.min(1, (progress.value - delay) / (1 - delay)))
+  );
+  const cx = useDerivedValue(() => center.x + Math.cos(angle) * distance * easeOutCubic(local.value));
+  const cy = useDerivedValue(
+    () => center.y + Math.sin(angle) * distance * easeOutCubic(local.value) + local.value * 42
+  );
+  const r = useDerivedValue(() =>
+    local.value <= 0 || local.value >= 1 ? 0 : size * (1 - local.value * 0.35)
+  );
+  return <Circle cx={cx} cy={cy} r={r} color={color} />;
+}
 
 export function CelebrationOverlay({ title, subtitle, accent = colors.accent, onDone }: Props) {
   const [layout, setLayout] = useState({ width: 0, height: 0 });
-  const [progress, setProgress] = useState(0);
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    const started = Date.now();
-    let frame: number;
-    const tick = () => {
-      setProgress(Math.min(1, (Date.now() - started) / 1250));
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    const done = setTimeout(onDone, 2100);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(done);
-    };
-  }, [onDone]);
+    progress.value = withTiming(1, { duration: BURST_MS, easing: Easing.linear });
+    const done = setTimeout(onDone, DISMISS_MS);
+    return () => clearTimeout(done);
+  }, [onDone, progress]);
 
-  const particles = useMemo(() => {
-    const cx = layout.width / 2;
-    const cy = layout.height / 2 - 24;
-    return PARTICLES.map((particle, index) => {
-      const local = Math.max(0, Math.min(1, (progress - particle.delay) / (1 - particle.delay)));
-      const eased = easeOut(local);
-      return {
-        key: String(index),
-        x: cx + Math.cos(particle.angle) * particle.distance * eased,
-        y: cy + Math.sin(particle.angle) * particle.distance * eased + local * 42,
-        r: particle.size * (1 - local * 0.35),
-        color: particle.color,
-        visible: local > 0 && local < 1,
-      };
-    });
-  }, [layout.height, layout.width, progress]);
+  const center = { x: layout.width / 2, y: layout.height / 2 - 24 };
 
   return (
     <Animated.View
@@ -66,11 +82,13 @@ export function CelebrationOverlay({ title, subtitle, accent = colors.accent, on
       onLayout={(event) => setLayout(event.nativeEvent.layout)}
       style={styles.root}
     >
-      <Canvas style={StyleSheet.absoluteFill}>
-        {particles.map((particle) =>
-          particle.visible ? <Circle key={particle.key} cx={particle.x} cy={particle.y} r={particle.r} color={particle.color} /> : null
-        )}
-      </Canvas>
+      {layout.width > 0 && (
+        <Canvas style={StyleSheet.absoluteFill}>
+          {PARTICLES.map((particle, index) => (
+            <Particle key={String(index)} progress={progress} center={center} {...particle} />
+          ))}
+        </Canvas>
+      )}
 
       <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.badge, { borderColor: `${accent}90` }]}>
         <Text style={styles.title}>{title}</Text>

@@ -92,6 +92,7 @@ const fail = (error) => {
  *   listBoards(): Promise<SavedBoard[]>,
  *   upsertBoard(board: SavedBoard): Promise<SavedBoard>,
  *   deleteBoard(id: string | undefined): Promise<void>,
+ *   listStatusEvents(): Promise<{ contactId: string, status: string, createdAt: string }[]>,
  * }}
  */
 export function createApi(supabase) {
@@ -227,7 +228,6 @@ export function createApi(supabase) {
     scenario_id: b.scenarioId,
     nodes: b.nodes ?? [],
     edges: b.edges ?? [],
-    updated_at: new Date().toISOString(),
   });
 
   async function listBoards() {
@@ -249,6 +249,16 @@ export function createApi(supabase) {
   async function deleteBoard(id) {
     const { error } = await supabase.from("arch_boards").delete().eq("id", id);
     if (error) fail(error);
+  }
+
+  /** @returns {Promise<{ contactId: string, status: string, createdAt: string }[]>} */
+  async function listStatusEvents() {
+    const { data, error } = await supabase
+      .from("status_events")
+      .select("contact_id, status, created_at")
+      .order("created_at");
+    if (error) fail(error);
+    return data.map((row) => ({ contactId: row.contact_id, status: row.status, createdAt: row.created_at }));
   }
 
   // ── scores ────────────────────────────────────────────────────────────────────
@@ -290,5 +300,5 @@ export function createApi(supabase) {
     if (error) fail(error);
   }
 
-  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, getScores, getAccuracyTimeline, recordAnswer, addXp };
+  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, listStatusEvents, getScores, getAccuracyTimeline, recordAnswer, addXp };
 }

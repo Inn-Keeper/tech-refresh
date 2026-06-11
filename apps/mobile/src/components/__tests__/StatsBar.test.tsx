@@ -1,5 +1,6 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
+import { t } from "@tech-refresh/core/i18n";
 import { StatsBar } from "../StatsBar";
 
 const scores = { xp: 35, answers: { React: { correct: 3, wrong: 1 } } };
@@ -11,7 +12,7 @@ describe("StatsBar", () => {
 
     expect(view.getByText(/Intern/)).toBeTruthy();
     expect(view.getByText("35 XP")).toBeTruthy();
-    expect(view.getByText("75% · 4 answered")).toBeTruthy();
+    expect(view.getByText(t("prep.accuracySummary", { pct: 75, count: 4 }))).toBeTruthy();
 
     fireEvent.press(view.getByText(/Drill weakest/));
     expect(onDrill).toHaveBeenCalledTimes(1);

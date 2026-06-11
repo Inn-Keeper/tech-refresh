@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { t } from "@tech-refresh/core/i18n";
 import { supabase } from "./supabase.js";
 import InterviewPrep from "./InterviewPrep.jsx";
 import Contacts from "./Contacts.jsx";
@@ -6,10 +7,10 @@ import ArchBoard from "./ArchBoard.jsx";
 import StoryBank from "./StoryBank.jsx";
 
 const pages = [
-  { id: "prep", label: "📚 Prep" },
-  { id: "stories", label: "⭐ Stories" },
-  { id: "board", label: "🧩 Arch Board" },
-  { id: "contacts", label: "🤝 Contacts" },
+  { id: "prep", label: `📚 ${t("tabs.prep")}` },
+  { id: "stories", label: `⭐ ${t("tabs.stories")}` },
+  { id: "board", label: `🧩 ${t("tabs.board")}` },
+  { id: "contacts", label: `🤝 ${t("tabs.contacts")}` },
 ];
 
 export default function App() {
@@ -85,7 +86,7 @@ export default function App() {
                   cursor: "pointer",
                 }}
               >
-                Sign out
+                {t("auth.signOut")}
               </button>
             </>
           )}

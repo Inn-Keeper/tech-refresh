@@ -1,16 +1,16 @@
 import { useEffect } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
+import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@/theme";
 import type { Scores } from "@/lib/useScores";
 
 type Props = { scores: Scores; onDrill: () => void; drillActive: boolean };
 
 export function StatsBar({ scores, onDrill, drillActive }: Props) {
-  const rankIdx = [...RANKS].reverse().findIndex((r: { min: number }) => scores.xp >= r.min);
-  const rank = RANKS[RANKS.length - 1 - rankIdx];
-  const next = RANKS[RANKS.length - rankIdx];
+  const rank = rankForXp(scores.xp);
+  const next = RANKS[RANKS.indexOf(rank) + 1];
   const progress = next ? (scores.xp - rank.min) / (next.min - rank.min) : 1;
 
   const fill = useSharedValue(0);
@@ -42,7 +42,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
         <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{scores.xp} XP</Text>
         {accuracy !== null && (
           <Text style={{ fontSize: 12, fontWeight: "600", color: accuracy >= 70 ? colors.green : colors.amber }}>
-            {accuracy}% · {attempts} answered
+            {t("prep.accuracySummary", { pct: accuracy, count: attempts })}
           </Text>
         )}
         <TouchableOpacity
@@ -59,7 +59,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
             opacity: drillActive ? 0.5 : 1,
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: "600", color: "#a5b4fc" }}>🎯 Drill weakest</Text>
+          <Text style={{ fontSize: 11, fontWeight: "600", color: "#a5b4fc" }}>{t("prep.drillWeakest")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -68,7 +68,8 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
       </View>
 
       <Text style={{ fontSize: 10.5, color: colors.textFaint }}>
-        {next ? `${next.min - scores.xp} XP to ${next.name} · ` : ""}+{CORRECT_XP} per correct · +{PERFECT_QUIZ_BONUS} perfect quiz
+        {next ? `${t("prep.xpToNext", { xp: next.min - scores.xp, rank: next.name })} · ` : ""}
+        {t("prep.xpRules", { correct: CORRECT_XP, bonus: PERFECT_QUIZ_BONUS })}
       </Text>
     </View>
   );

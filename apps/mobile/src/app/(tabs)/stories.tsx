@@ -3,6 +3,7 @@ import { Alert, FlatList, ScrollView, Text, TextInput, TouchableOpacity, View } 
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
+import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
 import { colors } from "@/theme";
 import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
@@ -21,9 +22,9 @@ export default function StoriesScreen() {
   const deleteMutation = useMutation({ mutationFn: api.deleteStory, onSettled: invalidate });
 
   const confirmDelete = (story: Story) =>
-    Alert.alert("Delete story", `Delete "${story.title}"?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(story.id) },
+    Alert.alert(t("stories.deleteTitle"), t("stories.deleteMessage", { title: story.title }), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => deleteMutation.mutate(story.id) },
     ]);
 
   const handleSave = (form: Story) => {
@@ -48,11 +49,11 @@ export default function StoriesScreen() {
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
             <View style={{ flexDirection: "row", gap: 8 }}>
-              <Pill label="✍️ My stories" active={mode === "stories"} onPress={() => setMode("stories")} />
-              <Pill label="🎤 Drill prompts" active={mode === "drill"} onPress={() => setMode("drill")} />
+              <Pill label={t("stories.myStories")} active={mode === "stories"} onPress={() => setMode("stories")} />
+              <Pill label={t("stories.drillPrompts")} active={mode === "drill"} onPress={() => setMode("drill")} />
             </View>
 
-            {error && <Text style={{ color: "#fca5a5", fontSize: 13 }}>Couldn't load stories: {error.message}</Text>}
+            {error && <Text style={{ color: "#fca5a5", fontSize: 13 }}>{t("stories.loadError", { message: error.message })}</Text>}
 
             {mode === "stories" ? (
               <TouchableOpacity
@@ -75,7 +76,7 @@ export default function StoriesScreen() {
 
             {mode === "stories" && stories?.length === 0 && (
               <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginTop: 16 }}>
-                No stories yet. Start with your best "impact" story.
+                {t("stories.empty")}
               </Text>
             )}
           </View>
@@ -115,8 +116,8 @@ function StoryCard({ story, onEdit, onDelete }: StoryCardProps) {
           <Section label="Result" text={story.result} />
           {onEdit && onDelete && (
             <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
-              <MiniButton label="Edit" color={colors.textDim} onPress={onEdit} />
-              <MiniButton label="Delete" color={colors.red} onPress={onDelete} />
+              <MiniButton label={t("common.edit")} color={colors.textDim} onPress={onEdit} />
+              <MiniButton label={t("common.delete")} color={colors.red} onPress={onDelete} />
             </View>
           )}
         </View>
@@ -167,8 +168,8 @@ function StoryForm({ initial, onSave, onCancel }: StoryFormProps) {
       </Field>
 
       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end", marginTop: 8 }}>
-        <Button label="Cancel" variant="ghost" onPress={onCancel} />
-        <Button label="Save" onPress={() => onSave(form)} disabled={!form.title.trim()} />
+        <Button label={t("common.cancel")} variant="ghost" onPress={onCancel} />
+        <Button label={t("common.save")} onPress={() => onSave(form)} disabled={!form.title.trim()} />
       </View>
     </ScrollView>
   );
@@ -211,15 +212,15 @@ function PromptDrill({ stories }: { stories: Story[] }) {
           Answer out loud — aim for 90 seconds.
         </Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <Button label="Reveal my stories" onPress={() => setRevealed(true)} disabled={revealed} />
-          <Button label="Next →" variant="ghost" onPress={nextPrompt} />
+          <Button label={t("stories.reveal")} onPress={() => setRevealed(true)} disabled={revealed} />
+          <Button label={t("stories.nextPrompt")} variant="ghost" onPress={nextPrompt} />
         </View>
       </Animated.View>
 
       {revealed &&
         (matching.length === 0 ? (
           <Text style={{ color: "#fbbf24", fontSize: 13, textAlign: "center" }}>
-            ⚠️ No story tagged "{prompt.competency}" yet — that's a gap an interviewer will find first.
+            {t("stories.noStoryFor", { competency: prompt.competency })}
           </Text>
         ) : (
           matching.map((story) => <StoryCard key={story.id} story={story} />)

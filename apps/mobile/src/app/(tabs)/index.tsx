@@ -3,7 +3,8 @@ import { FlatList, ScrollView, Text, TouchableOpacity, View } from "react-native
 import { useQuery } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
-import { PERFECT_QUIZ_BONUS, RANKS } from "@tech-refresh/core/gamification";
+import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
+import { t } from "@tech-refresh/core/i18n";
 import { buildDrill } from "@tech-refresh/core/quiz";
 import { api } from "@/lib/api";
 import { useScores } from "@/lib/useScores";
@@ -14,10 +15,6 @@ import { DrillSession, type Drill } from "@/components/DrillSession";
 import { AccuracyChart } from "@/components/AccuracyChart";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
 import { Screen } from "@/components/ui";
-
-function rankForXp(xp: number) {
-  return [...RANKS].reverse().find((rank) => xp >= rank.min) ?? RANKS[0];
-}
 
 type Celebration = { title: string; subtitle: string; accent?: string };
 
@@ -35,8 +32,8 @@ export default function PrepScreen() {
     const current = rankForXp(scores.xp);
     if (previousRank.current && current.min > previousRank.current.min) {
       setCelebration({
-        title: `${current.name} unlocked`,
-        subtitle: `${scores.xp} XP reached. The ladder noticed.`,
+        title: t("celebration.rankTitle", { rank: current.name }),
+        subtitle: t("celebration.rankSubtitle", { xp: scores.xp }),
         accent: colors.accent,
       });
     }
@@ -66,8 +63,8 @@ export default function PrepScreen() {
       if (drill.correctCount === drill.questions.length) {
         addXp(PERFECT_QUIZ_BONUS);
         setCelebration({
-          title: "Perfect drill",
-          subtitle: `Clean run: +${PERFECT_QUIZ_BONUS} bonus XP landed.`,
+          title: t("celebration.perfectTitle"),
+          subtitle: t("celebration.perfectSubtitle", { bonus: PERFECT_QUIZ_BONUS }),
           accent: colors.green,
         });
       }

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
+import { buildFunnelSummary } from "@tech-refresh/core/funnel";
+import { FunnelDashboard } from "./FunnelDashboard.jsx";
 import * as api from "./api.js";
 
 const EMPTY_FORM = {
@@ -40,8 +42,13 @@ export default function Contacts() {
     queryKey: ["contacts"],
     queryFn: api.listContacts,
   });
+  const { data: statusEvents = [] } = useQuery({ queryKey: ["status-events"], queryFn: api.listStatusEvents });
+  const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["contacts"] });
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["contacts"] });
+    queryClient.invalidateQueries({ queryKey: ["status-events"] });
+  };
   const saveMutation = useMutation({ mutationFn: api.upsertContact, onSettled: invalidate });
   const deleteMutation = useMutation({ mutationFn: api.deleteContact, onSettled: invalidate });
   const retroAddMutation = useMutation({
@@ -125,6 +132,8 @@ export default function Contacts() {
           {error}
         </div>
       )}
+
+      <FunnelDashboard summary={funnel} />
 
       {dueCount > 0 && (
         <div

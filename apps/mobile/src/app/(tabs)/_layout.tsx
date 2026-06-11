@@ -1,4 +1,5 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
+import { t } from "@tech-refresh/core/i18n";
 import { useTabBarHidden } from "@/lib/uiStore";
 
 const { Icon, Label } = NativeTabs.Trigger;
@@ -13,19 +14,19 @@ export default function TabLayout() {
     <NativeTabs hidden={hidden}>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "book", selected: "book.fill" }} />
-        <Label>Prep</Label>
+        <Label>{t("tabs.prep")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="stories">
         <Icon sf={{ default: "star", selected: "star.fill" }} />
-        <Label>Stories</Label>
+        <Label>{t("tabs.stories")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="board">
         <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
-        <Label>Arch Board</Label>
+        <Label>{t("tabs.board")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="contacts">
         <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
-        <Label>Contacts</Label>
+        <Label>{t("tabs.contacts")}</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

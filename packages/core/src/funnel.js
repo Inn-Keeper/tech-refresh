@@ -1,10 +1,15 @@
-// Hiring funnel analytics derived from the contacts table.
-// Contacts store the current stage and its date, so these metrics are a
-// pragmatic pipeline read rather than a full historical stage-transition model.
+// Hiring funnel analytics.
+// Preferred input is status_events (one row per stage transition, written by
+// a DB trigger): conversions count every contact that *ever* reached a stage
+// (no survivorship bias) and pace counts actual Applied events. When no
+// events are available the summary falls back to a current-stage
+// approximation derived from the contacts list alone.
 import { STATUSES, isDue, parseDDMMYYYY } from "./contacts.js";
 
 const ACTIVE_STATUSES = STATUSES.filter((status) => status !== "Rejected");
 const STATUS_INDEX = Object.fromEntries(STATUSES.map((status, index) => [status, index]));
+const PACE_WINDOW_DAYS = 28;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const round1 = (value) => Math.round(value * 10) / 10;
 const rate = (numerator, denominator) => (denominator > 0 ? numerator / denominator : 0);
@@ -15,35 +20,76 @@ function startOfDay(date) {
   return copy;
 }
 
-function isWithinDays(ddmmyyyy, days, now) {
-  const date = parseDDMMYYYY(ddmmyyyy);
-  if (!date) return false;
+function isRecent(date, now) {
+  if (!date || Number.isNaN(date.getTime())) return false;
   const elapsed = startOfDay(now).getTime() - startOfDay(date).getTime();
-  return elapsed >= 0 && elapsed <= days * 24 * 60 * 60 * 1000;
+  return elapsed >= 0 && elapsed <= PACE_WINDOW_DAYS * DAY_MS;
 }
 
-function hasReached(contact, stage) {
-  if (contact.status === "Rejected") return false;
-  return (STATUS_INDEX[contact.status] ?? 0) >= STATUS_INDEX[stage];
+/**
+ * @typedef {object} StatusEvent
+ * @property {string} contactId
+ * @property {string} status
+ * @property {string} createdAt
+ */
+
+/** Exact reach + pace from transition events. */
+function reachFromEvents(events, now) {
+  const maxStageByContact = new Map();
+  let recentApplied = 0;
+  for (const event of events) {
+    const stage = STATUS_INDEX[event.status];
+    if (stage === undefined || event.status === "Rejected") continue;
+    const current = maxStageByContact.get(event.contactId) ?? -1;
+    if (stage > current) maxStageByContact.set(event.contactId, stage);
+    if (event.status === "Applied" && isRecent(new Date(event.createdAt), now)) recentApplied += 1;
+  }
+  const stages = [...maxStageByContact.values()];
+  const reachedAtLeast = (status) => stages.filter((stage) => stage >= STATUS_INDEX[status]).length;
+  return {
+    reached: {
+      Contacted: stages.length,
+      Applied: reachedAtLeast("Applied"),
+      Interviewing: reachedAtLeast("Interviewing"),
+      Offer: reachedAtLeast("Offer"),
+    },
+    recentApplied,
+  };
+}
+
+/** Approximation when no events exist: current stage only, rejected excluded. */
+function reachFromContacts(contacts, now) {
+  const active = contacts.filter((contact) => contact.status !== "Rejected");
+  const reachedAtLeast = (status) =>
+    active.filter((contact) => (STATUS_INDEX[contact.status] ?? 0) >= STATUS_INDEX[status]).length;
+  const reached = {
+    Contacted: active.length,
+    Applied: reachedAtLeast("Applied"),
+    Interviewing: reachedAtLeast("Interviewing"),
+    Offer: reachedAtLeast("Offer"),
+  };
+  const recentApplied = active.filter(
+    (contact) =>
+      (STATUS_INDEX[contact.status] ?? 0) >= STATUS_INDEX.Applied &&
+      isRecent(parseDDMMYYYY(contact.date), now)
+  ).length;
+  return { reached, recentApplied };
 }
 
 /**
  * @param {Array<{ status?: string, date?: string, nextAction?: string, nextActionDate?: string }>} contacts
+ * @param {StatusEvent[]} [events]
  * @param {Date} [now]
  */
-export function buildFunnelSummary(contacts = [], now = new Date()) {
+export function buildFunnelSummary(contacts = [], events = [], now = new Date()) {
   const counts = Object.fromEntries(STATUSES.map((status) => [status, 0]));
   for (const contact of contacts) {
-    counts[contact.status] = (counts[contact.status] ?? 0) + 1;
+    if (contact.status in counts) counts[contact.status] += 1;
   }
 
   const active = contacts.filter((contact) => contact.status !== "Rejected");
-  const reached = {
-    Contacted: active.length,
-    Applied: active.filter((contact) => hasReached(contact, "Applied")).length,
-    Interviewing: active.filter((contact) => hasReached(contact, "Interviewing")).length,
-    Offer: active.filter((contact) => hasReached(contact, "Offer")).length,
-  };
+  const exact = events.length > 0;
+  const { reached, recentApplied } = exact ? reachFromEvents(events, now) : reachFromContacts(contacts, now);
 
   const rates = {
     contactedToApplied: rate(reached.Applied, reached.Contacted),
@@ -51,8 +97,7 @@ export function buildFunnelSummary(contacts = [], now = new Date()) {
     interviewingToOffer: rate(reached.Offer, reached.Interviewing),
   };
 
-  const recentApplied = active.filter((contact) => hasReached(contact, "Applied") && isWithinDays(contact.date, 28, now)).length;
-  const applicationsPerWeek = round1(recentApplied / 4);
+  const applicationsPerWeek = round1(recentApplied / (PACE_WINDOW_DAYS / 7));
   const due = contacts.filter(isDue).length;
 
   const signals = [];
@@ -70,6 +115,7 @@ export function buildFunnelSummary(contacts = [], now = new Date()) {
   return {
     total: contacts.length,
     active: active.length,
+    exact,
     counts,
     reached,
     rates,

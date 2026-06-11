@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { setTabBarHidden } from "@/lib/uiStore";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
+import { t } from "@tech-refresh/core/i18n";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import type { SavedBoard } from "@tech-refresh/core/api";
 import { colors } from "@/theme";
@@ -38,13 +39,13 @@ export default function BoardScreen() {
   }, [chrome]);
 
   const scenario = SCENARIOS[scenarioIndex];
-  const { data: savedBoards = [] } = useQuery<SavedBoard[]>({ queryKey: ["arch-boards"], queryFn: api.listBoards });
+  const { data: savedBoards = [], error: boardsError } = useQuery<SavedBoard[]>({ queryKey: ["arch-boards"], queryFn: api.listBoards });
   const invalidateBoards = () => queryClient.invalidateQueries({ queryKey: ["arch-boards"] });
   const saveBoardMutation = useMutation({
     mutationFn: () =>
       api.upsertBoard({
         id: activeBoardId ?? undefined,
-        title: activeBoardTitle ?? `${scenario.name} draft`,
+        title: activeBoardTitle ?? t("board.draftTitle", { scenario: scenario.name }),
         scenarioId: scenario.id,
         nodes,
         edges,
@@ -54,6 +55,7 @@ export default function BoardScreen() {
       setActiveBoardTitle(board.title);
       invalidateBoards();
     },
+    onError: (error) => Alert.alert(t("board.saveFailedTitle"), error.message),
   });
   const deleteBoardMutation = useMutation({
     mutationFn: api.deleteBoard,
@@ -64,6 +66,7 @@ export default function BoardScreen() {
       }
       invalidateBoards();
     },
+    onError: (error) => Alert.alert(t("common.delete"), error.message),
   });
   const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
   const liveMaint = nodes.reduce((sum, node) => sum + meta(node.type).maint, 0);
@@ -102,7 +105,11 @@ export default function BoardScreen() {
 
   const loadBoard = (board: SavedBoard) => {
     const nextScenarioIndex = SCENARIOS.findIndex((item) => item.id === board.scenarioId);
-    if (nextScenarioIndex >= 0) setScenarioIndex(nextScenarioIndex);
+    if (nextScenarioIndex < 0) {
+      Alert.alert(t("board.unknownScenarioTitle"), t("board.unknownScenarioMessage", { scenarioId: board.scenarioId }));
+      return;
+    }
+    setScenarioIndex(nextScenarioIndex);
     setNodes(board.nodes);
     setEdges(board.edges);
     setResult(null);
@@ -112,9 +119,9 @@ export default function BoardScreen() {
   };
 
   const confirmDeleteBoard = (board: SavedBoard) =>
-    Alert.alert("Delete saved board", `Delete "${board.title}"?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Delete", style: "destructive", onPress: () => deleteBoardMutation.mutate(board.id) },
+    Alert.alert(t("board.deleteTitle"), t("board.deleteMessage", { title: board.title }), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("common.delete"), style: "destructive", onPress: () => deleteBoardMutation.mutate(board.id) },
     ]);
 
   const addEdge = (from: string, to: string) => {
@@ -127,10 +134,10 @@ export default function BoardScreen() {
   };
 
   const confirmRemoveEdge = (id: string) =>
-    Alert.alert("Remove connection", "Delete this arrow?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("board.removeConnectionTitle"), t("board.removeConnectionMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Delete",
+        text: t("common.delete"),
         style: "destructive",
         onPress: () => setEdges((current) => current.filter((edge) => edge.id !== id)),
       },
@@ -177,12 +184,18 @@ export default function BoardScreen() {
           </Text>
           <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>🔧 {liveMaint}</Text>
           <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto", alignItems: "center" }}>
-            <MiniButton label="Saved" color={savedOpen ? colors.accent : colors.textDim} onPress={() => setSavedOpen((value) => !value)} />
-            <MiniButton label={saveBoardMutation.isPending ? "Saving" : "Save"} color={colors.green} onPress={() => saveBoardMutation.mutate()} />
-            <MiniButton label="Clear" color={colors.textDim} onPress={clearBoard} />
-            <Button label="Evaluate" onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
+            <MiniButton label={t("board.saved")} color={savedOpen ? colors.accent : colors.textDim} onPress={() => setSavedOpen((value) => !value)} />
+            <MiniButton label={saveBoardMutation.isPending ? t("common.saving") : t("common.save")} color={colors.green} onPress={() => saveBoardMutation.mutate()} />
+            <MiniButton label={t("common.clear")} color={colors.textDim} onPress={clearBoard} />
+            <Button label={t("board.evaluate")} onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
           </View>
         </View>
+      )}
+
+      {boardsError && chrome !== "zen" && (
+        <Text style={{ fontSize: 12, color: "#fca5a5" }}>
+          {t("board.boardsError", { message: boardsError.message })}
+        </Text>
       )}
 
       {savedOpen && chrome !== "zen" && (
@@ -294,12 +307,12 @@ function SavedBoardsTray({ boards, activeId, onLoad, onDelete }: SavedBoardsTray
   return (
     <Animated.View entering={FadeInDown.duration(180)} style={{ gap: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text style={{ flex: 1, fontSize: 12, fontWeight: "700", color: colors.textDim }}>Saved boards</Text>
-        <Text style={{ fontSize: 11, color: colors.textFaint }}>{boards.length} total</Text>
+        <Text style={{ flex: 1, fontSize: 12, fontWeight: "700", color: colors.textDim }}>{t("board.savedBoards")}</Text>
+        <Text style={{ fontSize: 11, color: colors.textFaint }}>{t("board.savedTotal", { count: boards.length })}</Text>
       </View>
       {boards.length === 0 ? (
         <View style={{ padding: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
-          <Text style={{ fontSize: 12, color: colors.textFaint }}>Save a board to reuse or refine it later.</Text>
+          <Text style={{ fontSize: 12, color: colors.textFaint }}>{t("board.savedEmpty")}</Text>
         </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
@@ -323,11 +336,11 @@ function SavedBoardsTray({ boards, activeId, onLoad, onDelete }: SavedBoardsTray
                   {board.title}
                 </Text>
                 <Text numberOfLines={1} style={{ fontSize: 10.5, color: colors.textFaint }}>
-                  {scenario?.name ?? board.scenarioId} · {board.nodes.length} nodes · {board.edges.length} wires
+                  {t("board.boardMeta", { scenario: scenario?.name ?? board.scenarioId, nodes: board.nodes.length, edges: board.edges.length })}
                 </Text>
                 <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
-                  <MiniButton label="Load" color={colors.accent} onPress={() => onLoad(board)} />
-                  <MiniButton label="Delete" color={colors.red} onPress={() => onDelete(board)} />
+                  <MiniButton label={t("common.load")} color={colors.accent} onPress={() => onLoad(board)} />
+                  <MiniButton label={t("common.delete")} color={colors.red} onPress={() => onDelete(board)} />
                 </View>
               </View>
             );
