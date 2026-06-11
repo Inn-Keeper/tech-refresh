@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Platform, Text, TouchableOpacity, View } from "react-native";
+import { Modal, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
+import Animated, { SlideInDown } from "react-native-reanimated";
 import { formatDDMMYYYY, parseDDMMYYYY, todayDDMMYYYY } from "@tech-refresh/core/contacts";
 import { colors } from "@/theme";
 import { Field, MiniButton, inputStyle } from "@/components/ui";
@@ -15,49 +16,67 @@ type Props = {
 };
 
 /**
- * Native date picker bound to the app's DD-MM-YYYY string format.
- * Empty values show a "Set date" affordance that defaults to today;
- * iOS then renders the compact calendar control, Android a dialog.
+ * Date field styled like every other input; tapping opens the native
+ * calendar — iOS inline picker in a themed bottom sheet, Android's dialog.
+ * An empty field fills with today the moment it's tapped.
  */
 export function DateField({ label, value, onChange, clearable = false }: Props) {
-  const [androidPickerOpen, setAndroidPickerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const date = parseDDMMYYYY(value) ?? new Date();
 
-  const handlePicked = (event: DateTimePickerEvent, picked?: Date) => {
-    setAndroidPickerOpen(false);
-    if (event.type !== "dismissed" && picked) onChange(formatDDMMYYYY(picked));
+  const openPicker = () => {
+    if (!value) onChange(todayDDMMYYYY());
+    setPickerOpen(true);
   };
 
-  if (!value) {
-    return (
-      <Field label={label}>
-        <TouchableOpacity onPress={() => onChange(todayDDMMYYYY())} style={[inputStyle, { alignSelf: "flex-start" }]}>
-          <Text style={{ color: colors.textDim, fontSize: 13 }}>📅 Set date (today)</Text>
-        </TouchableOpacity>
-      </Field>
-    );
-  }
+  const handlePicked = (event: DateTimePickerEvent, picked?: Date) => {
+    if (event.type !== "dismissed" && picked) onChange(formatDDMMYYYY(picked));
+    setPickerOpen(false);
+  };
 
   return (
     <Field label={label}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        {Platform.OS === "ios" ? (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="compact"
-            themeVariant="dark"
-            accentColor={colors.accent}
-            onChange={handlePicked}
-          />
-        ) : (
-          <TouchableOpacity onPress={() => setAndroidPickerOpen(true)} style={inputStyle}>
-            <Text style={{ color: colors.text, fontSize: 13 }}>📅 {value}</Text>
-          </TouchableOpacity>
+        <TouchableOpacity onPress={openPicker} style={[inputStyle, { flex: 1 }]}>
+          <Text style={{ color: value ? colors.text : colors.textFaint, fontSize: 13 }}>
+            📅 {value || "Set date — defaults to today"}
+          </Text>
+        </TouchableOpacity>
+        {clearable && !!value && (
+          <MiniButton label="Clear" color={colors.textFaint} onPress={() => onChange("")} />
         )}
-        {clearable && <MiniButton label="Clear" color={colors.textFaint} onPress={() => onChange("")} />}
       </View>
-      {androidPickerOpen && <DateTimePicker value={date} mode="date" onChange={handlePicked} />}
+
+      {pickerOpen && Platform.OS === "android" && (
+        <DateTimePicker value={date} mode="date" onChange={handlePicked} />
+      )}
+
+      {pickerOpen && Platform.OS === "ios" && (
+        <Modal transparent animationType="fade" visible onRequestClose={() => setPickerOpen(false)}>
+          <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#00000090" }} />
+          <Animated.View
+            entering={SlideInDown.springify().damping(18)}
+            style={{
+              backgroundColor: colors.surfaceAlt,
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              padding: 16,
+              paddingBottom: 32,
+            }}
+          >
+            <DateTimePicker
+              value={date}
+              mode="date"
+              display="inline"
+              themeVariant="dark"
+              accentColor={colors.accent}
+              onChange={handlePicked}
+            />
+          </Animated.View>
+        </Modal>
+      )}
     </Field>
   );
 }
