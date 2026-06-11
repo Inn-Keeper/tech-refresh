@@ -11,7 +11,9 @@
     "./prepData": "./src/prepData.js",
     "./techLinks": "./src/techLinks.js",
     "./arch": "./src/arch.js",
-    "./gamification": "./src/gamification.js"
+    "./gamification": "./src/gamification.js",
+    "./funnel": "./src/funnel.js",
+    "./accuracy": "./src/accuracy.js"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

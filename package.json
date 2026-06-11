@@ -6,8 +6,10 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm --filter web build",
     "mobile": "pnpm --filter mobile start",
+    "postinstall": "pnpm --filter mobile exec install-skia",
     "typecheck": "pnpm --filter mobile exec tsc --noEmit",
-    "test": "pnpm --filter @tech-refresh/core test",
-    "clean:ghosts": "find . -name '._*' -delete"
+    "test": "pnpm --filter @tech-refresh/core test && pnpm --filter mobile test",
+    "clean:ghosts": "find . -name '._*' -delete",
+    "ci": "pnpm test && pnpm typecheck && pnpm build"
   }
 }

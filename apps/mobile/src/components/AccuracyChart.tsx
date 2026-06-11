@@ -1,0 +1,68 @@
+import { useMemo, useState } from "react";
+import { Text, View } from "react-native";
+import { Canvas, Circle, Path } from "@shopify/react-native-skia";
+import { colors } from "@/theme";
+
+type Point = { date: string; accuracy: number; total: number };
+
+type Props = { points: Point[] };
+
+const HEIGHT = 82;
+const PAD_X = 12;
+const PAD_Y = 14;
+
+export function AccuracyChart({ points }: Props) {
+  const [width, setWidth] = useState(0);
+  const latest = points.at(-1);
+  const chart = useMemo(() => {
+    if (width <= 0 || points.length === 0) return { path: "", dots: [] as { x: number; y: number; key: string }[] };
+    const innerW = Math.max(1, width - PAD_X * 2);
+    const innerH = HEIGHT - PAD_Y * 2;
+    const maxIndex = Math.max(1, points.length - 1);
+    const dots = points.map((point, index) => ({
+      key: point.date,
+      x: PAD_X + (index / maxIndex) * innerW,
+      y: PAD_Y + (1 - point.accuracy) * innerH,
+    }));
+    const path = dots.map((dot, index) => `${index === 0 ? "M" : "L"} ${dot.x} ${dot.y}`).join(" ");
+    return { path, dots };
+  }, [points, width]);
+
+  return (
+    <View
+      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+      style={{
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 12,
+        padding: 12,
+        gap: 8,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 12, fontWeight: "700", color: colors.textBright }}>Accuracy over time</Text>
+          <Text style={{ fontSize: 10.5, color: colors.textFaint }}>Cumulative from answer events</Text>
+        </View>
+        <Text style={{ fontSize: 13, fontWeight: "800", color: latest && latest.accuracy >= 0.7 ? colors.green : colors.amber }}>
+          {latest ? `${Math.round(latest.accuracy * 100)}%` : "--"}
+        </Text>
+      </View>
+
+      {points.length < 2 ? (
+        <View style={{ height: HEIGHT, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: colors.textFaint, fontSize: 11 }}>Answer a few cards to draw the line.</Text>
+        </View>
+      ) : (
+        <Canvas style={{ width: "100%", height: HEIGHT }}>
+          <Path path={`M ${PAD_X} ${PAD_Y} L ${PAD_X} ${HEIGHT - PAD_Y} L ${Math.max(PAD_X, width - PAD_X)} ${HEIGHT - PAD_Y}`} color="#2d3748" style="stroke" strokeWidth={1} />
+          <Path path={chart.path} color={colors.accent} style="stroke" strokeWidth={3} />
+          {chart.dots.map((dot, index) => (
+            <Circle key={dot.key} cx={dot.x} cy={dot.y} r={index === chart.dots.length - 1 ? 4 : 2.5} color={index === chart.dots.length - 1 ? colors.green : colors.accent} />
+          ))}
+        </Canvas>
+      )}
+    </View>
+  );
+}

@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { setTabBarHidden } from "@/lib/uiStore";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
+import type { SavedBoard } from "@tech-refresh/core/api";
 import { colors } from "@/theme";
 import { Button, MiniButton, Pill, Screen } from "@/components/ui";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
@@ -16,10 +19,14 @@ const TAB_BAR_CLEARANCE = 56;
 
 export default function BoardScreen() {
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [nodes, setNodes] = useState<BoardNode[]>([]);
   const [edges, setEdges] = useState<BoardEdge[]>([]);
   const [result, setResult] = useState<EvalResult | null>(null);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
+  const [activeBoardTitle, setActiveBoardTitle] = useState<string | null>(null);
   // Chrome levels: full (pills + brief), compact (slim row), zen (board only,
   // translucent title overlaid on the canvas).
   const [chrome, setChrome] = useState<"full" | "compact" | "zen">("full");
@@ -31,6 +38,33 @@ export default function BoardScreen() {
   }, [chrome]);
 
   const scenario = SCENARIOS[scenarioIndex];
+  const { data: savedBoards = [] } = useQuery<SavedBoard[]>({ queryKey: ["arch-boards"], queryFn: api.listBoards });
+  const invalidateBoards = () => queryClient.invalidateQueries({ queryKey: ["arch-boards"] });
+  const saveBoardMutation = useMutation({
+    mutationFn: () =>
+      api.upsertBoard({
+        id: activeBoardId ?? undefined,
+        title: activeBoardTitle ?? `${scenario.name} draft`,
+        scenarioId: scenario.id,
+        nodes,
+        edges,
+      }),
+    onSuccess: (board) => {
+      setActiveBoardId(board.id ?? null);
+      setActiveBoardTitle(board.title);
+      invalidateBoards();
+    },
+  });
+  const deleteBoardMutation = useMutation({
+    mutationFn: api.deleteBoard,
+    onSuccess: (_data, id) => {
+      if (id === activeBoardId) {
+        setActiveBoardId(null);
+        setActiveBoardTitle(null);
+      }
+      invalidateBoards();
+    },
+  });
   const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
   const liveMaint = nodes.reduce((sum, node) => sum + meta(node.type).maint, 0);
   const overBudget = liveCost > scenario.budget;
@@ -39,6 +73,8 @@ export default function BoardScreen() {
     setNodes([]);
     setEdges([]);
     setResult(null);
+    setActiveBoardId(null);
+    setActiveBoardTitle(null);
   };
 
   const switchScenario = (index: number) => {
@@ -63,6 +99,23 @@ export default function BoardScreen() {
     setEdges((current) => current.filter((edge) => edge.from !== id && edge.to !== id));
     setResult(null);
   };
+
+  const loadBoard = (board: SavedBoard) => {
+    const nextScenarioIndex = SCENARIOS.findIndex((item) => item.id === board.scenarioId);
+    if (nextScenarioIndex >= 0) setScenarioIndex(nextScenarioIndex);
+    setNodes(board.nodes);
+    setEdges(board.edges);
+    setResult(null);
+    setActiveBoardId(board.id ?? null);
+    setActiveBoardTitle(board.title);
+    setSavedOpen(false);
+  };
+
+  const confirmDeleteBoard = (board: SavedBoard) =>
+    Alert.alert("Delete saved board", `Delete "${board.title}"?`, [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: () => deleteBoardMutation.mutate(board.id) },
+    ]);
 
   const addEdge = (from: string, to: string) => {
     setEdges((current) =>
@@ -123,11 +176,17 @@ export default function BoardScreen() {
             💰 {liveCost}/{scenario.budget}
           </Text>
           <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>🔧 {liveMaint}</Text>
-          <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto" }}>
-            <Button label="Clear" variant="ghost" onPress={clearBoard} />
+          <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto", alignItems: "center" }}>
+            <MiniButton label="Saved" color={savedOpen ? colors.accent : colors.textDim} onPress={() => setSavedOpen((value) => !value)} />
+            <MiniButton label={saveBoardMutation.isPending ? "Saving" : "Save"} color={colors.green} onPress={() => saveBoardMutation.mutate()} />
+            <MiniButton label="Clear" color={colors.textDim} onPress={clearBoard} />
             <Button label="Evaluate" onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
           </View>
         </View>
+      )}
+
+      {savedOpen && chrome !== "zen" && (
+        <SavedBoardsTray boards={savedBoards} activeId={activeBoardId} onLoad={loadBoard} onDelete={confirmDeleteBoard} />
       )}
 
       <View style={{ flex: 1 }}>
@@ -221,5 +280,60 @@ export default function BoardScreen() {
         <ResultSheet result={result} scenario={scenario} onClose={() => setResult(null)} />
       </View>
     </Screen>
+  );
+}
+
+type SavedBoardsTrayProps = {
+  boards: SavedBoard[];
+  activeId: string | null;
+  onLoad: (board: SavedBoard) => void;
+  onDelete: (board: SavedBoard) => void;
+};
+
+function SavedBoardsTray({ boards, activeId, onLoad, onDelete }: SavedBoardsTrayProps) {
+  return (
+    <Animated.View entering={FadeInDown.duration(180)} style={{ gap: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text style={{ flex: 1, fontSize: 12, fontWeight: "700", color: colors.textDim }}>Saved boards</Text>
+        <Text style={{ fontSize: 11, color: colors.textFaint }}>{boards.length} total</Text>
+      </View>
+      {boards.length === 0 ? (
+        <View style={{ padding: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
+          <Text style={{ fontSize: 12, color: colors.textFaint }}>Save a board to reuse or refine it later.</Text>
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
+          {boards.map((board) => {
+            const scenario = SCENARIOS.find((item) => item.id === board.scenarioId);
+            const active = board.id === activeId;
+            return (
+              <View
+                key={board.id}
+                style={{
+                  width: 210,
+                  padding: 10,
+                  gap: 8,
+                  backgroundColor: colors.surfaceAlt,
+                  borderWidth: 1,
+                  borderColor: active ? colors.accent : colors.border,
+                  borderRadius: 8,
+                }}
+              >
+                <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "700", color: colors.textBright }}>
+                  {board.title}
+                </Text>
+                <Text numberOfLines={1} style={{ fontSize: 10.5, color: colors.textFaint }}>
+                  {scenario?.name ?? board.scenarioId} · {board.nodes.length} nodes · {board.edges.length} wires
+                </Text>
+                <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
+                  <MiniButton label="Load" color={colors.accent} onPress={() => onLoad(board)} />
+                  <MiniButton label="Delete" color={colors.red} onPress={() => onDelete(board)} />
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
+    </Animated.View>
   );
 }

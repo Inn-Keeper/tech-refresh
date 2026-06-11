@@ -3,6 +3,7 @@ import { Alert, FlatList, Linking, ScrollView, Text, TextInput, TouchableOpacity
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
+import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { api } from "@/lib/api";
 import { colors } from "@/theme";
 import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
@@ -38,8 +39,9 @@ export default function ContactsScreen() {
   });
   const deleteRetroMutation = useMutation({ mutationFn: api.deleteRetro, onSettled: invalidate });
 
+  const funnel = buildFunnelSummary(contacts ?? []);
   const sorted = [...(contacts ?? [])].sort((a, b) => Number(isDue(b)) - Number(isDue(a)));
-  const dueCount = (contacts ?? []).filter(isDue).length;
+  const dueCount = funnel.due;
 
   const confirmDelete = (contact: Contact) =>
     Alert.alert("Delete contact", `Delete "${contact.name}"?`, [
@@ -79,6 +81,8 @@ export default function ContactsScreen() {
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
             {error && <Text style={{ color: "#fca5a5", fontSize: 13 }}>Couldn't load contacts: {error.message}</Text>}
+
+            <FunnelDashboard summary={funnel} />
 
             {dueCount > 0 && (
               <View
@@ -132,6 +136,115 @@ export default function ContactsScreen() {
         )}
       />
     </Screen>
+  );
+}
+
+type FunnelSummary = ReturnType<typeof buildFunnelSummary>;
+
+function percent(value: number) {
+  return Math.round(value * 100);
+}
+
+function FunnelDashboard({ summary }: { summary: FunnelSummary }) {
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 12,
+        padding: 14,
+        gap: 12,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 15, fontWeight: "700", color: colors.textBright }}>Funnel dashboard</Text>
+          <Text style={{ fontSize: 11, color: colors.textFaint }}>Current pipeline shape and weekly application pace</Text>
+        </View>
+        <Badge label={`${summary.active} active`} color={colors.accent} />
+      </View>
+
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Metric label="Apps/week" value={String(summary.applicationsPerWeek)} color={colors.green} />
+        <Metric label="Interviews" value={String(summary.reached.Interviewing)} color={colors.amber} />
+        <Metric label="Offers" value={String(summary.reached.Offer)} color="#a78bfa" />
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <ConversionRow
+          label="Contacted -> Applied"
+          value={summary.rates.contactedToApplied}
+          detail={`${summary.reached.Applied}/${summary.reached.Contacted}`}
+          color={colors.green}
+        />
+        <ConversionRow
+          label="Applied -> Interviewing"
+          value={summary.rates.appliedToInterviewing}
+          detail={`${summary.reached.Interviewing}/${summary.reached.Applied}`}
+          color={colors.amber}
+        />
+        <ConversionRow
+          label="Interviewing -> Offer"
+          value={summary.rates.interviewingToOffer}
+          detail={`${summary.reached.Offer}/${summary.reached.Interviewing}`}
+          color="#a78bfa"
+        />
+      </View>
+
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+        {summary.statuses.map((status: string) => (
+          <Badge key={status} label={`${status}: ${summary.counts[status] ?? 0}`} color={STATUS_STYLES[status].color} />
+        ))}
+      </View>
+
+      <View style={{ gap: 5 }}>
+        {summary.signals.slice(0, 2).map((signal: string) => (
+          <Text key={signal} style={{ fontSize: 11.5, lineHeight: 16, color: colors.textDim }}>
+            - {signal}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function Metric({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <View
+      style={{
+        flex: 1,
+        minHeight: 56,
+        padding: 10,
+        backgroundColor: colors.surfaceAlt,
+        borderWidth: 1,
+        borderColor: `${color}40`,
+        borderRadius: 8,
+        justifyContent: "center",
+      }}
+    >
+      <Text style={{ fontSize: 18, fontWeight: "800", color }}>{value}</Text>
+      <Text numberOfLines={1} style={{ fontSize: 10, color: colors.textFaint }}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function ConversionRow({ label, value, detail, color }: { label: string; value: number; detail: string; color: string }) {
+  return (
+    <View style={{ gap: 4 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text style={{ flex: 1, fontSize: 11.5, fontWeight: "600", color: colors.textDim }}>{label}</Text>
+        <Text style={{ fontSize: 11, color: colors.textFaint }}>{detail}</Text>
+        <Text style={{ width: 38, textAlign: "right", fontSize: 11.5, fontWeight: "700", color }}>
+          {percent(value)}%
+        </Text>
+      </View>
+      <View style={{ height: 6, backgroundColor: colors.surfaceAlt, borderRadius: 999, overflow: "hidden" }}>
+        <View style={{ width: `${percent(value)}%`, height: "100%", backgroundColor: color, borderRadius: 999 }} />
+      </View>
+    </View>
   );
 }
 

@@ -117,6 +117,9 @@ export function NodeView({
   return (
     <GestureDetector gesture={body}>
       <Animated.View
+        accessible
+        accessibilityRole="button"
+        accessibilityLabel={`Board node ${spec.label}`}
         style={[
           {
             position: "absolute",
@@ -144,6 +147,8 @@ export function NodeView({
         </Text>
 
         <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={`Remove ${spec.label}`}
           onPress={() => onRemove(node.id)}
           hitSlop={8}
           style={{
@@ -163,6 +168,9 @@ export function NodeView({
 
         <GestureDetector gesture={connect}>
           <View
+            accessible
+            accessibilityRole="button"
+            accessibilityLabel={`Connect from ${spec.label}`}
             hitSlop={14}
             style={{
               position: "absolute",

@@ -32,6 +32,7 @@ export function useScores() {
         },
       })),
     onError: rollback,
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["accuracy-timeline"] }),
   });
 
   const xpMutation = useMutation({

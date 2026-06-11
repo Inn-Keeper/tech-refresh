@@ -1,0 +1,37 @@
+# Arch Board focused flow for the simulator/dev-client path.
+# Covers zen mode, node creation, tap-to-wire, and evaluation.
+#
+#   1. pnpm ios:sim       (after native changes)
+#   2. pnpm dev-client    (Metro running)
+#   3. maestro test apps/mobile/.maestro/board-zen-evaluate.yaml
+#
+appId: com.tech.refresher.mobile
+---
+- launchApp
+- extendedWaitUntil:
+    visible: ".*(Drill weakest|Sign in).*"
+    timeout: 30000
+
+- tapOn: "Arch Board"
+- assertVisible: "Evaluate"
+- assertVisible: ".*Payment end-to-end.*"
+
+# Zen mode hides the native tab bar and keeps the board usable edge-to-edge.
+- tapOn: "⛶"
+- assertVisible: ".*Payment end-to-end.*"
+- tapOn: "✕"
+- assertVisible: "Evaluate"
+
+# Create a tiny board and wire it through accessibility labels instead of coordinates.
+- tapOn: "Client"
+- tapOn: "API Gateway"
+- tapOn: "Connect from Client"
+- tapOn: "Board node API Gateway"
+
+- tapOn: "Evaluate"
+- extendedWaitUntil:
+    visible: ".*DESIGN CHECKS.*"
+    timeout: 10000
+- assertVisible: ".*A client initiates checkout.*"
+- assertVisible: ".*Traffic enters through a gateway.*"
+- tapOn: "Close"

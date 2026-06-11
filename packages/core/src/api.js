@@ -1,5 +1,6 @@
 // Data layer: Supabase queries + snake_case<->camelCase and date mapping.
 // UI keeps DD-MM-YYYY strings; Postgres stores real dates.
+import { buildAccuracyTimeline } from "./accuracy.js";
 import { CORRECT_XP } from "./gamification.js";
 
 /**
@@ -43,6 +44,25 @@ import { CORRECT_XP } from "./gamification.js";
  * @property {Record<string, { correct: number, wrong: number }>} answers
  */
 
+/**
+ * @typedef {object} AccuracyPoint
+ * @property {string} date
+ * @property {number} accuracy
+ * @property {number} correct
+ * @property {number} total
+ */
+
+/**
+ * @typedef {object} SavedBoard
+ * @property {string} [id]
+ * @property {string} title
+ * @property {string} scenarioId
+ * @property {import("./arch.js").BoardNode[]} nodes
+ * @property {import("./arch.js").BoardEdge[]} edges
+ * @property {string} [createdAt]
+ * @property {string} [updatedAt]
+ */
+
 export const dateToUi = (iso) => (iso ? iso.split("-").reverse().join("-") : "");
 export const dateToDb = (ddmmyyyy) => {
   const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(ddmmyyyy || "");
@@ -66,8 +86,12 @@ const fail = (error) => {
  *   upsertStory(story: Story): Promise<void>,
  *   deleteStory(id: string | undefined): Promise<void>,
  *   getScores(): Promise<Scores>,
+ *   getAccuracyTimeline(): Promise<AccuracyPoint[]>,
  *   recordAnswer(tech: string, correct: boolean, source?: string): Promise<void>,
  *   addXp(points: number): Promise<void>,
+ *   listBoards(): Promise<SavedBoard[]>,
+ *   upsertBoard(board: SavedBoard): Promise<SavedBoard>,
+ *   deleteBoard(id: string | undefined): Promise<void>,
  * }}
  */
 export function createApi(supabase) {
@@ -186,6 +210,47 @@ export function createApi(supabase) {
     if (error) fail(error);
   }
 
+  // ── arch boards ───────────────────────────────────────────────────────────────
+
+  const boardToUi = (r) => ({
+    id: r.id,
+    title: r.title,
+    scenarioId: r.scenario_id,
+    nodes: r.nodes ?? [],
+    edges: r.edges ?? [],
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  });
+
+  const boardToDb = (b) => ({
+    title: b.title,
+    scenario_id: b.scenarioId,
+    nodes: b.nodes ?? [],
+    edges: b.edges ?? [],
+    updated_at: new Date().toISOString(),
+  });
+
+  async function listBoards() {
+    const { data, error } = await supabase.from("arch_boards").select("*").order("updated_at", { ascending: false });
+    if (error) fail(error);
+    return data.map(boardToUi);
+  }
+
+  async function upsertBoard(board) {
+    const row = boardToDb(board);
+    const q = board.id
+      ? supabase.from("arch_boards").update(row).eq("id", board.id)
+      : supabase.from("arch_boards").insert(row);
+    const { data, error } = await q.select("*").single();
+    if (error) fail(error);
+    return boardToUi(data);
+  }
+
+  async function deleteBoard(id) {
+    const { error } = await supabase.from("arch_boards").delete().eq("id", id);
+    if (error) fail(error);
+  }
+
   // ── scores ────────────────────────────────────────────────────────────────────
 
   async function getScores() {
@@ -205,6 +270,15 @@ export function createApi(supabase) {
     return { xp: profile.data?.xp ?? 0, answers };
   }
 
+  async function getAccuracyTimeline() {
+    const { data, error } = await supabase
+      .from("answer_events")
+      .select("correct, created_at")
+      .order("created_at");
+    if (error) fail(error);
+    return buildAccuracyTimeline(data);
+  }
+
   async function recordAnswer(tech, correct, source = "card") {
     const { error } = await supabase.from("answer_events").insert({ tech, correct, source });
     if (error) fail(error);
@@ -216,5 +290,5 @@ export function createApi(supabase) {
     if (error) fail(error);
   }
 
-  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, getScores, recordAnswer, addXp };
+  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, getScores, getAccuracyTimeline, recordAnswer, addXp };
 }

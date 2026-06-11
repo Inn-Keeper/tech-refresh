@@ -50,9 +50,10 @@ RLS on every table: `user_id = auth.uid()`. Retros become a proper 1:N table
 
 ## Phases
 
-Status: **phases 0–4 shipped** (11-06-2026). Phase 5 in progress — NativeTabs,
-offline reads, and the modern-features audit are done; EAS/OTA and the Skia
-accuracy chart remain.
+Status: **phases 0-4 shipped** (11-06-2026). Phase 5 in progress — NativeTabs,
+offline reads, the modern-features audit, simulator dev-client setup, the job-hunt
+funnel dashboard, saved boards, baseline CI, celebrations, the accuracy chart, the
+second Maestro flow, and RNTL screen tests are done; EAS/OTA remains deliberately parked.
 
 **Phase 0 — Foundations (1 evening)** ✅
 git init + first commit (protect everything before restructuring). pnpm + Corepack pinned.
@@ -90,15 +91,37 @@ playable on the phone.*
   **React Compiler** (`experiments.reactCompiler` + babel-plugin-react-compiler 1.0 —
   auto-memoization, so no hand-written React.memo/useMemo policing), typed routes,
   precompiled RN for iOS, Android edge-to-edge. All verified active.
-- ✅ **Testing layer** — Jest on `packages/core` (28 tests: quiz mechanics, arch
-  evaluator, due-date rules, data layer against a fake Supabase client — caught a real
-  `dateToDb` validation bug on day one) + a Maestro E2E smoke flow
-  (`apps/mobile/.maestro/smoke.yaml`) covering sign-in and all four tabs.
-  Gates: `pnpm test` + `pnpm typecheck` + web build + expo export.
-- ⬜ **EAS build + OTA updates** — install on the physical device without Metro, then
-  expo-updates for OTA (App Store / Play Store study card). Needs an Expo account login.
-- ⬜ **Accuracy-over-time chart** — Skia line chart from `answer_events` timestamps.
-- ⬜ **jest-expo + RNTL component tests** — screen-level coverage once worth it.
+- ✅ **Testing layer** — Jest on `packages/core` (37 tests: quiz mechanics, arch
+  evaluator, due-date rules, funnel/accuracy analytics, saved-board data, data layer against a fake Supabase client — caught a real
+  `dateToDb` validation bug on day one) plus `jest-expo` + RNTL on mobile
+  (7 screen/component tests covering Prep, StatsBar, DrillSession, and the Skia
+  accuracy chart). Maestro E2E smoke coverage includes sign-in and all four tabs.
+  Gates: `pnpm test` + `pnpm typecheck` + web build.
+- ✅ **Simulator dev-client path** — `expo-dev-client` is installed for Skia/native-module
+  development, with explicit simulator scripts (`pnpm ios:sim`, `pnpm dev-client`) so the
+  day-to-day loop avoids physical-device signing, provisioning, Developer Mode, and iPhone
+  platform-support issues.
+- ✅ **Job-hunt funnel dashboard** — Contacts now surfaces active pipeline counts,
+  Contacted -> Applied -> Interviewing -> Offer conversion, applications/week, due
+  follow-ups, and bottleneck signals. Current limitation: the contacts table stores the
+  current stage date, not historical transition dates, so the dashboard is a pragmatic
+  current-pipeline read rather than a complete event-sourced funnel.
+- ✅ **Baseline CI** — GitHub Actions runs `pnpm test`, `pnpm typecheck`, and `pnpm build`
+  on pushes/PRs. This intentionally avoids native mobile builds for now; simulator/EAS
+  builds stay manual until delivery stabilizes.
+- ✅ **Saved Arch Boards** — `arch_boards` persists scenario id plus node/edge JSONB
+  snapshots with RLS; the mobile board can save, load, update, and delete drafts.
+- ⬜ **EAS build + OTA updates** — optional cloud delivery path, then expo-updates for OTA
+  (App Store / Play Store study card). Needs an Expo account login and a deliberate
+  decision to re-enter device/cloud build work.
+- ✅ **Rank-up + perfect-drill celebration** — Prep now has a reusable celebration overlay
+  with Skia-drawn confetti particles for perfect drills and rank unlocks.
+- ✅ **Accuracy-over-time chart** — Prep renders a Skia line chart from cumulative
+  `answer_events.created_at` accuracy, with the data transformation covered in core tests.
+- ✅ **Second Maestro flow** — `board-zen-evaluate.yaml` covers Arch Board zen mode,
+  node creation, tap-to-wire, and evaluate.
+- ✅ **jest-expo + RNTL component tests** — screen-level coverage is wired into
+  CI for Prep plus stable drill/chart/stat components.
 
 ## Product seed — Arch Board
 
@@ -107,15 +130,14 @@ cost/maintainability scoring) may have legs as a standalone product — system d
 top-tier hiring skill and the practice-tool space is thin (ByteByteGo teaches, excalidraw
 draws, nothing *scores decisions*). Engineering bar is therefore product-grade, not
 demo-grade: the viewport (focal-point zoom/pan, fit-to-content) is built on a virtual
-canvas for that reason. Obvious next steps if pursued: more scenarios, saved boards
-(Supabase), shareable evaluations, scenario authoring.
+canvas for that reason. Obvious next steps if pursued: more scenarios, shareable evaluations, scenario authoring. Saved boards now persist node/edge snapshots to Supabase and are the base for later sharing.
 
 ## Study-case map (what each piece rehearses)
 
 - **pnpm workspaces / Corepack** → monorepo card
 - **TanStack Query** → server-state, optimistic updates, invalidation
 - **Supabase/Postgres** → RLS, schema design, migrations; PostgREST ≈ REST card
-- **Auth** → magic link, JWT validation, RLS authorization
+- **Auth** → JWT validation, RLS authorization
 - **Reanimated worklets** → JSI vs bridge story, told from experience
 - **Skia canvas** → rendering performance, gesture systems
 - **EAS/OTA (stretch)** → mobile delivery pipeline card
@@ -136,6 +158,21 @@ Animations are a first-class goal — each one is built to be shown in an interv
 | Arch Board nodes | Drag with subtle scale-up + shadow lift, magnetic snap on release | Gesture + Skia integration |
 
 Stretch: a hidden **Showcase screen** that replays each demo in sequence — a self-running portfolio piece for interviews.
+
+## Current priority read (11-06-2026)
+
+1. ✅ **Funnel dashboard** — shipped first because it serves the job hunt directly: volume,
+   conversion, and follow-up discipline are now visible from existing contact data.
+2. ✅ **CI** — shipped next because it is cheap, resume-coherent, and protects the repo while
+   the mobile/product surface keeps changing.
+3. ✅ **Saved boards** — Arch Board node/edge snapshots now persist to Supabase, so the
+   board graduates from single-session toy to reusable tool.
+4. ✅ **Rank-up + perfect-drill confetti** — Prep now shows a Skia confetti burst for
+   perfect drills and a celebration overlay when XP crosses a rank threshold.
+5. ✅ **Accuracy-over-time Skia chart** — Prep now makes `answer_events` analytically
+   visible with a compact Skia trend line.
+6. ✅ **Second Maestro flow** — Arch Board zen/wiring/evaluate is covered.
+7. ✅ **RNTL screen tests** — mobile Jest now covers Prep plus stable drill/chart/stat components; EAS/OTA stays parked by choice.
 
 ## Risks
 
