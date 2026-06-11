@@ -1,0 +1,146 @@
+import { useEffect } from "react";
+import { Text, TouchableOpacity, View } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
+import { TYPE_COLORS, meta } from "@tech-refresh/core/arch";
+import type { BoardNode } from "@tech-refresh/core/arch";
+import { colors } from "@/theme";
+
+export const NODE_W = 124;
+export const NODE_H = 52;
+const HANDLE_SIZE = 22;
+
+type Props = {
+  node: BoardNode;
+  boardSize: { width: number; height: number };
+  /** Live position updates while dragging, so Skia edges follow. */
+  onMove: (id: string, x: number, y: number) => void;
+  onRemove: (id: string) => void;
+  onConnectStart: (id: string) => void;
+  onConnectMove: (x: number, y: number) => void;
+  onConnectEnd: (x: number, y: number) => void;
+};
+
+export function NodeView({ node, boardSize, onMove, onRemove, onConnectStart, onConnectMove, onConnectEnd }: Props) {
+  const spec = meta(node.type);
+  const color = TYPE_COLORS[node.type];
+
+  const x = useSharedValue(node.x);
+  const y = useSharedValue(node.y);
+  const startX = useSharedValue(0);
+  const startY = useSharedValue(0);
+  const scale = useSharedValue(1);
+
+  // Keep shared values in sync when positions change outside a drag
+  // (e.g. board reset or scenario switch reusing node ids).
+  useEffect(() => {
+    x.value = node.x;
+    y.value = node.y;
+  }, [node.x, node.y, x, y]);
+
+  const drag = Gesture.Pan()
+    .minDistance(4)
+    .onStart(() => {
+      startX.value = x.value;
+      startY.value = y.value;
+      scale.value = withSpring(1.07, { damping: 14 });
+    })
+    .onUpdate((event) => {
+      x.value = Math.max(0, Math.min(boardSize.width - NODE_W, startX.value + event.translationX));
+      y.value = Math.max(0, Math.min(boardSize.height - NODE_H, startY.value + event.translationY));
+      runOnJS(onMove)(node.id, x.value, y.value);
+    })
+    .onEnd(() => {
+      scale.value = withSpring(1, { damping: 14 });
+    });
+
+  // Dragging out of the connect handle draws the dashed pending edge;
+  // releasing over another node creates the connection.
+  const connect = Gesture.Pan()
+    .onStart(() => {
+      runOnJS(onConnectStart)(node.id);
+    })
+    .onUpdate((event) => {
+      runOnJS(onConnectMove)(node.x + NODE_W + event.translationX, node.y + NODE_H / 2 + event.translationY);
+    })
+    .onEnd((event) => {
+      runOnJS(onConnectEnd)(node.x + NODE_W + event.translationX, node.y + NODE_H / 2 + event.translationY);
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }, { translateY: y.value }, { scale: scale.value }],
+    shadowOpacity: scale.value > 1 ? 0.5 : 0.15,
+  }));
+
+  return (
+    <GestureDetector gesture={drag}>
+      <Animated.View
+        style={[
+          {
+            position: "absolute",
+            width: NODE_W,
+            height: NODE_H,
+            backgroundColor: colors.surface,
+            borderWidth: 2,
+            borderColor: `${color}60`,
+            borderRadius: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 6,
+            paddingHorizontal: 8,
+            shadowColor: color,
+            shadowRadius: 8,
+            shadowOffset: { width: 0, height: 2 },
+            elevation: 4,
+          },
+          animatedStyle,
+        ]}
+      >
+        <Text style={{ fontSize: 16 }}>{spec.emoji}</Text>
+        <Text style={{ flex: 1, fontSize: 10, fontWeight: "600", color: "#cbd5e1", lineHeight: 13 }}>
+          {spec.label}
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => onRemove(node.id)}
+          hitSlop={8}
+          style={{
+            position: "absolute",
+            top: -8,
+            right: -8,
+            width: 18,
+            height: 18,
+            borderRadius: 9,
+            backgroundColor: colors.border,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Text style={{ color: colors.textDim, fontSize: 11, lineHeight: 13 }}>×</Text>
+        </TouchableOpacity>
+
+        <GestureDetector gesture={connect}>
+          <View
+            hitSlop={10}
+            style={{
+              position: "absolute",
+              right: -HANDLE_SIZE / 2,
+              top: NODE_H / 2 - HANDLE_SIZE / 2 - 2,
+              width: HANDLE_SIZE,
+              height: HANDLE_SIZE,
+              borderRadius: HANDLE_SIZE / 2,
+              backgroundColor: color,
+              borderWidth: 3,
+              borderColor: colors.bg,
+            }}
+          />
+        </GestureDetector>
+      </Animated.View>
+    </GestureDetector>
+  );
+}

@@ -1,6 +1,72 @@
 // Arch Board domain: component palette, scenarios, evaluator.
 // Shared by web and mobile — keep free of UI/framework imports.
 
+/**
+ * @typedef {object} NodeSpec
+ * @property {string} type
+ * @property {string} label
+ * @property {string} emoji
+ * @property {number} cost
+ * @property {number} maint
+ */
+
+/**
+ * @typedef {object} BoardNode
+ * @property {string} id
+ * @property {string} type
+ * @property {number} x
+ * @property {number} y
+ */
+
+/**
+ * @typedef {object} BoardEdge
+ * @property {string} id
+ * @property {string} from
+ * @property {string} to
+ */
+
+/**
+ * @typedef {object} Check
+ * @property {"node" | "edge"} kind
+ * @property {string[]} [type]
+ * @property {string[]} [from]
+ * @property {string[]} [to]
+ * @property {boolean} [bidi]
+ * @property {string} label
+ * @property {number} points
+ */
+
+/**
+ * @typedef {object} WarningRule
+ * @property {(helpers: {
+ *   hasNode: (types: string[]) => boolean,
+ *   hasEdge: (from: string[], to: string[], bidi?: boolean) => boolean,
+ * }) => boolean} when
+ * @property {string} text
+ */
+
+/**
+ * @typedef {object} Scenario
+ * @property {string} id
+ * @property {string} name
+ * @property {string} brief
+ * @property {number} budget
+ * @property {Check[]} checks
+ * @property {WarningRule[]} [warnings]
+ */
+
+/**
+ * @typedef {object} EvalResult
+ * @property {(Check & { passed: boolean })[]} checks
+ * @property {number} earned
+ * @property {number} totalPts
+ * @property {number} score
+ * @property {number} cost
+ * @property {number} maint
+ * @property {string[]} warnings
+ */
+
+/** @type {NodeSpec[]} */
 export const NODE_TYPES = [
   { type: "client", label: "Client", emoji: "📱", cost: 0, maint: 0 },
   { type: "cdn", label: "CDN", emoji: "🌐", cost: 1, maint: 1 },
@@ -17,14 +83,22 @@ export const NODE_TYPES = [
   { type: "monitor", label: "Monitoring", emoji: "📊", cost: 1, maint: 1 },
 ];
 
+/** @type {Record<string, string>} */
 export const TYPE_COLORS = {
   client: "#0ea5e9", cdn: "#38bdf8", lb: "#f59e0b", gateway: "#f97316",
   auth: "#8b5cf6", service: "#10b981", worker: "#14b8a6", queue: "#eab308",
   cache: "#ef4444", sql: "#64748b", nosql: "#84cc16", psp: "#ec4899", monitor: "#a855f7",
 };
 
-export const meta = (type) => NODE_TYPES.find((t) => t.type === type);
+/**
+ * Palette lookup. Board nodes are only ever created from NODE_TYPES,
+ * so a miss is a programmer error.
+ * @param {string} type
+ * @returns {NodeSpec}
+ */
+export const meta = (type) => NODE_TYPES.find((t) => t.type === type) ?? NODE_TYPES[0];
 
+/** @type {Scenario[]} */
 export const SCENARIOS = [
   {
     id: "payment",
@@ -106,6 +180,13 @@ export const SCENARIOS = [
   },
 ];
 
+/**
+ * Scores a board against a scenario's checks, budget, and global design rules.
+ * @param {Scenario} scenario
+ * @param {BoardNode[]} nodes
+ * @param {BoardEdge[]} edges
+ * @returns {EvalResult}
+ */
 export function evaluate(scenario, nodes, edges) {
   const typeOf = Object.fromEntries(nodes.map((n) => [n.id, n.type]));
   const hasNode = (types) => nodes.some((n) => types.includes(n.type));

@@ -1,12 +1,126 @@
-import { Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
+import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
+import { Button, Pill } from "@/components/ui";
+import { BoardCanvas } from "@/components/board/BoardCanvas";
+import { ResultSheet } from "@/components/board/ResultSheet";
 
-export default function Placeholder() {
+export default function BoardScreen() {
+  const [scenarioIndex, setScenarioIndex] = useState(0);
+  const [nodes, setNodes] = useState<BoardNode[]>([]);
+  const [edges, setEdges] = useState<BoardEdge[]>([]);
+  const [result, setResult] = useState<EvalResult | null>(null);
+
+  const scenario = SCENARIOS[scenarioIndex];
+  const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
+  const liveMaint = nodes.reduce((sum, node) => sum + meta(node.type).maint, 0);
+  const overBudget = liveCost > scenario.budget;
+
+  const clearBoard = () => {
+    setNodes([]);
+    setEdges([]);
+    setResult(null);
+  };
+
+  const switchScenario = (index: number) => {
+    setScenarioIndex(index);
+    clearBoard();
+  };
+
+  const addNode = (type: string) => {
+    const index = nodes.length;
+    setNodes((current) => [
+      ...current,
+      { id: `${Date.now()}-${index}`, type, x: 20 + (index % 2) * 150, y: 20 + Math.floor(index / 2) * 80 },
+    ]);
+    setResult(null);
+  };
+
+  const moveNode = (id: string, x: number, y: number) =>
+    setNodes((current) => current.map((node) => (node.id === id ? { ...node, x, y } : node)));
+
+  const removeNode = (id: string) => {
+    setNodes((current) => current.filter((node) => node.id !== id));
+    setEdges((current) => current.filter((edge) => edge.from !== id && edge.to !== id));
+    setResult(null);
+  };
+
+  const addEdge = (from: string, to: string) => {
+    setEdges((current) =>
+      current.some((edge) => edge.from === from && edge.to === to)
+        ? current
+        : [...current, { id: `${from}->${to}`, from, to }]
+    );
+    setResult(null);
+  };
+
+  const confirmRemoveEdge = (id: string) =>
+    Alert.alert("Remove connection", "Delete this arrow?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => setEdges((current) => current.filter((edge) => edge.id !== id)),
+      },
+    ]);
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", gap: 8, padding: 32 }}>
-      <Text style={{ fontSize: 36 }}>🧩</Text>
-      <Text style={{ color: colors.textBright, fontSize: 17, fontWeight: "700" }}>Arch Board</Text>
-      <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center" }}>Coming in Phase 4 — with Skia canvas + gestures. Use the web app meanwhile.</Text>
+    <View style={{ flex: 1, backgroundColor: colors.bg, padding: 16, gap: 10 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
+        {SCENARIOS.map((item, index) => (
+          <Pill key={item.id} label={item.name} active={scenarioIndex === index} onPress={() => switchScenario(index)} />
+        ))}
+      </ScrollView>
+
+      <Text style={{ fontSize: 12, lineHeight: 17, color: colors.textDim }}>{scenario.brief}</Text>
+
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.red : colors.textDim }}>
+          💰 {liveCost}/{scenario.budget}
+        </Text>
+        <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>🔧 {liveMaint}</Text>
+        <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto" }}>
+          <Button label="Clear" variant="ghost" onPress={clearBoard} />
+          <Button label="Evaluate" onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
+        </View>
+      </View>
+
+      <BoardCanvas
+        nodes={nodes}
+        edges={edges}
+        onMoveNode={moveNode}
+        onRemoveNode={removeNode}
+        onAddEdge={addEdge}
+        onTapEdge={confirmRemoveEdge}
+      />
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 6 }}>
+        {NODE_TYPES.map((spec) => (
+          <TouchableOpacity
+            key={spec.type}
+            onPress={() => addNode(spec.type)}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: `${TYPE_COLORS[spec.type]}40`,
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ fontSize: 14 }}>{spec.emoji}</Text>
+            <Text style={{ fontSize: 11, fontWeight: "600", color: "#cbd5e1" }}>{spec.label}</Text>
+            <Text style={{ fontSize: 9, color: colors.textFaint }}>{"$".repeat(spec.cost) || "free"}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
+      <ResultSheet result={result} scenario={scenario} onClose={() => setResult(null)} />
     </View>
   );
 }
