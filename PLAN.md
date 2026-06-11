@@ -50,36 +50,49 @@ RLS on every table: `user_id = auth.uid()`. Retros become a proper 1:N table
 
 ## Phases
 
-**Phase 0 — Foundations (1 evening)**
+Status: **phases 0–4 shipped** (11-06-2026). Phase 5 in progress — NativeTabs,
+offline reads, and the modern-features audit are done; EAS/OTA and the Skia
+accuracy chart remain.
+
+**Phase 0 — Foundations (1 evening)** ✅
 git init + first commit (protect everything before restructuring). pnpm + Corepack pinned.
 Monorepo skeleton; move web app to `apps/web`; extract `packages/core` (prepData, techLinks,
 scenarios, scoring). Verify web build is identical. *Exit: web runs from the monorepo.*
 
-**Phase 1 — Single DB (1–2 evenings)**
+**Phase 1 — Single DB (1–2 evenings)** ✅
 Supabase project, schema migration, RLS, magic-link auth. Seed script imports the three JSON
 files. Web app swaps the file-API for Supabase via TanStack Query (optimistic updates replace
 the hand-rolled rollback). Retire the Vite middleware. *Exit: web reads/writes Supabase;
 phone-readiness is now free.*
 
-**Phase 2 — Expo app: Prep tab (2–3 evenings)**
+**Phase 2 — Expo app: Prep tab (2–3 evenings)** ✅
 Expo + expo-router tabs + TanStack Query + Supabase client. Prep tab: card grid, **Reanimated
 3D flip** (rotateY worklet — the flip the web version lost), quiz flow, weakest-drill, XP bar.
 Stats from `answer_events`. *Exit: full quiz loop on the phone over LAN.*
 
-**Phase 3 — Stories + Contacts tabs (1–2 evenings)**
+**Phase 3 — Stories + Contacts tabs (1–2 evenings)** ✅
 Standard RN forms/lists; prompt drill with Reanimated transitions; next-action due
 highlighting and retro forms. *Exit: full CRUD parity on mobile.*
 
-**Phase 4 — Arch Board with Skia (2–3 evenings, hardest)**
+**Phase 4 — Arch Board with Skia (2–3 evenings, hardest)** ✅
 Skia `Canvas` for nodes + bezier edges + arrowheads; gesture-handler for drag (worklets —
 JSI in practice); evaluation panel in RN views. Fallback if gestures fight the scroll view:
 mobile v1 is evaluate/view-focused, web stays the primary editor. *Exit: at least one scenario
 playable on the phone.*
 
-**Phase 5 — Stretch (the delivery study topics)**
-Offline-first: TanStack Query persist + expo-sqlite cache (SQLite card!). EAS build to the
-physical device, then OTA updates (App Store / Play Store card). Accuracy-over-time chart
-from `answer_events` drawn in Skia.
+**Phase 5 — Platform polish & delivery (in progress)**
+
+- ✅ **NativeTabs** — true `UITabBarController` (Liquid Glass on current iOS) via
+  `expo-router/unstable-native-tabs`, SF Symbol icons; screens own their safe-area insets.
+- ✅ **Offline reads** — TanStack Query cache persisted to AsyncStorage
+  (`PersistQueryClientProvider`, 24h TTL): instant cold-start render, data visible offline.
+- ✅ **Modern-Expo audit** — New Architecture (only option in SDK 56), Hermes,
+  **React Compiler** (`experiments.reactCompiler` + babel-plugin-react-compiler 1.0 —
+  auto-memoization, so no hand-written React.memo/useMemo policing), typed routes,
+  precompiled RN for iOS, Android edge-to-edge. All verified active.
+- ⬜ **EAS build + OTA updates** — install on the physical device without Metro, then
+  expo-updates for OTA (App Store / Play Store study card). Needs an Expo account login.
+- ⬜ **Accuracy-over-time chart** — Skia line chart from `answer_events` timestamps.
 
 ## Study-case map (what each piece rehearses)
 

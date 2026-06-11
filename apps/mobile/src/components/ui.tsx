@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@/theme";
+
+/** Tab screen root: app background + status-bar inset (native tabs render no header). */
+export function Screen({ children }: { children: ReactNode }) {
+  const insets = useSafeAreaInsets();
+  return <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: insets.top }}>{children}</View>;
+}
 
 export const inputStyle = {
   backgroundColor: colors.surfaceAlt,

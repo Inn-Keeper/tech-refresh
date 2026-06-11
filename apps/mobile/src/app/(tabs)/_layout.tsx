@@ -1,29 +1,28 @@
-import { Tabs } from "expo-router";
-import { Text } from "react-native";
-import { colors } from "@/theme";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 
-const tabIcon = (emoji: string) =>
-  function TabIcon({ focused }: { focused: boolean }) {
-    return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.45 }}>{emoji}</Text>;
-  };
+const { Icon, Label } = NativeTabs.Trigger;
 
+// True native tab bar (UITabBarController on iOS — Liquid Glass on current
+// versions, native bottom navigation on Android) instead of JS-rendered tabs.
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: "#13161f" },
-        headerTitleStyle: { color: colors.textBright, fontSize: 16, fontWeight: "700" },
-        headerShadowVisible: false,
-        tabBarStyle: { backgroundColor: "#13161f", borderTopColor: colors.surface },
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textFaint,
-        sceneStyle: { backgroundColor: colors.bg },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: "Prep", headerTitle: "⚡ Interview Prep", tabBarIcon: tabIcon("📚") }} />
-      <Tabs.Screen name="stories" options={{ title: "Stories", tabBarIcon: tabIcon("⭐") }} />
-      <Tabs.Screen name="board" options={{ title: "Arch Board", tabBarIcon: tabIcon("🧩") }} />
-      <Tabs.Screen name="contacts" options={{ title: "Contacts", tabBarIcon: tabIcon("🤝") }} />
-    </Tabs>
+    <NativeTabs>
+      <NativeTabs.Trigger name="index">
+        <Icon sf={{ default: "book", selected: "book.fill" }} />
+        <Label>Prep</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="stories">
+        <Icon sf={{ default: "star", selected: "star.fill" }} />
+        <Label>Stories</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="board">
+        <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
+        <Label>Arch Board</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="contacts">
+        <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
+        <Label>Contacts</Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }

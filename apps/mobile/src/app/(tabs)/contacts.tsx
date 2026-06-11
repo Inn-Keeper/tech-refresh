@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { api } from "@/lib/api";
 import { colors } from "@/theme";
-import { Badge, Button, Field, MiniButton, Pill, Section, inputStyle, multilineStyle } from "@/components/ui";
+import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
 import type { Contact } from "@tech-refresh/core/api";
 
 const EMPTY_FORM: Contact = {
@@ -62,11 +62,15 @@ export default function ContactsScreen() {
     saveMutation.mutate({ ...contact, nextAction: "", nextActionDate: "" });
 
   if (editing) {
-    return <ContactForm initial={editing} onSave={handleSave} onCancel={() => setEditing(null)} />;
+    return (
+      <Screen>
+        <ContactForm initial={editing} onSave={handleSave} onCancel={() => setEditing(null)} />
+      </Screen>
+    );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <Screen>
       <FlatList
         data={sorted}
         keyExtractor={(contact) => contact.id!}
@@ -126,7 +130,7 @@ export default function ContactsScreen() {
           </Animated.View>
         )}
       />
-    </View>
+    </Screen>
   );
 }
 

@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
 import { api } from "@/lib/api";
 import { colors } from "@/theme";
-import { Badge, Button, Field, MiniButton, Pill, Section, inputStyle, multilineStyle } from "@/components/ui";
+import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
 import type { Story } from "@tech-refresh/core/api";
 
 const EMPTY_FORM: Story = { title: "", competency: "Conflict", situation: "", task: "", action: "", result: "" };
@@ -32,11 +32,15 @@ export default function StoriesScreen() {
   };
 
   if (editing) {
-    return <StoryForm initial={editing} onSave={handleSave} onCancel={() => setEditing(null)} />;
+    return (
+      <Screen>
+        <StoryForm initial={editing} onSave={handleSave} onCancel={() => setEditing(null)} />
+      </Screen>
+    );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <Screen>
       <FlatList
         data={mode === "stories" ? (stories ?? []) : []}
         keyExtractor={(story) => story.id!}
@@ -82,7 +86,7 @@ export default function StoriesScreen() {
           </Animated.View>
         )}
       />
-    </View>
+    </Screen>
   );
 }
 

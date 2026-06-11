@@ -9,6 +9,7 @@ import { colors } from "@/theme";
 import { FlipCard } from "@/components/FlipCard";
 import { StatsBar } from "@/components/StatsBar";
 import { DrillSession, type Drill } from "@/components/DrillSession";
+import { Screen } from "@/components/ui";
 
 export default function PrepScreen() {
   const [activeCategory, setActiveCategory] = useState(0);
@@ -45,7 +46,7 @@ export default function PrepScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <Screen>
       <FlatList
         data={drill ? [] : category.items.map((item) => ({ ...item, color: category.color }))}
         keyExtractor={(item) => `${activeCategory}-${item.tech}`}
@@ -90,6 +91,6 @@ export default function PrepScreen() {
           </Animated.View>
         )}
       />
-    </View>
+    </Screen>
   );
 }
