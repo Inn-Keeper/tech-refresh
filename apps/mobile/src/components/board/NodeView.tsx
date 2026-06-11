@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  type SharedValue,
 } from "react-native-reanimated";
 import { TYPE_COLORS, meta } from "@tech-refresh/core/arch";
 import type { BoardNode } from "@tech-refresh/core/arch";
@@ -17,7 +18,10 @@ const HANDLE_SIZE = 22;
 
 type Props = {
   node: BoardNode;
-  boardSize: { width: number; height: number };
+  /** Virtual canvas bounds the node is clamped to (canvas coordinates). */
+  canvasSize: { width: number; height: number };
+  /** Current viewport zoom — finger translations are screen px and must be unscaled. */
+  zoomScale: SharedValue<number>;
   /** Highlighted as the source while tap-to-connect is armed. */
   isConnectSource: boolean;
   /** Live position updates while dragging, so Skia edges follow. */
@@ -34,7 +38,8 @@ type Props = {
 
 export function NodeView({
   node,
-  boardSize,
+  canvasSize,
+  zoomScale,
   isConnectSource,
   onMove,
   onRemove,
@@ -68,8 +73,9 @@ export function NodeView({
       scale.value = withSpring(1.07, { damping: 14 });
     })
     .onUpdate((event) => {
-      x.value = Math.max(0, Math.min(boardSize.width - NODE_W, startX.value + event.translationX));
-      y.value = Math.max(0, Math.min(boardSize.height - NODE_H, startY.value + event.translationY));
+      const s = zoomScale.value;
+      x.value = Math.max(0, Math.min(canvasSize.width - NODE_W, startX.value + event.translationX / s));
+      y.value = Math.max(0, Math.min(canvasSize.height - NODE_H, startY.value + event.translationY / s));
       runOnJS(onMove)(node.id, x.value, y.value);
     })
     .onEnd(() => {
@@ -94,10 +100,12 @@ export function NodeView({
       runOnJS(onConnectStart)(node.id);
     })
     .onUpdate((event) => {
-      runOnJS(onConnectMove)(node.x + NODE_W + event.translationX, node.y + NODE_H / 2 + event.translationY);
+      const s = zoomScale.value;
+      runOnJS(onConnectMove)(node.x + NODE_W + event.translationX / s, node.y + NODE_H / 2 + event.translationY / s);
     })
     .onEnd((event) => {
-      runOnJS(onConnectEnd)(node.x + NODE_W + event.translationX, node.y + NODE_H / 2 + event.translationY);
+      const s = zoomScale.value;
+      runOnJS(onConnectEnd)(node.x + NODE_W + event.translationX / s, node.y + NODE_H / 2 + event.translationY / s);
     });
   const connect = Gesture.Race(connectPan, handleTap);
 

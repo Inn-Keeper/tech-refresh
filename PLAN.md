@@ -100,6 +100,16 @@ playable on the phone.*
 - ⬜ **Accuracy-over-time chart** — Skia line chart from `answer_events` timestamps.
 - ⬜ **jest-expo + RNTL component tests** — screen-level coverage once worth it.
 
+## Product seed — Arch Board
+
+Market note (11-06-2026): the Arch Board (scenario-driven system-design practice with
+cost/maintainability scoring) may have legs as a standalone product — system design is a
+top-tier hiring skill and the practice-tool space is thin (ByteByteGo teaches, excalidraw
+draws, nothing *scores decisions*). Engineering bar is therefore product-grade, not
+demo-grade: the viewport (focal-point zoom/pan, fit-to-content) is built on a virtual
+canvas for that reason. Obvious next steps if pursued: more scenarios, saved boards
+(Supabase), shareable evaluations, scenario authoring.
+
 ## Study-case map (what each piece rehearses)
 
 - **pnpm workspaces / Corepack** → monorepo card

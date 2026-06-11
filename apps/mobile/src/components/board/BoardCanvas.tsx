@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
-import { Text, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { Canvas, DashPathEffect, Group, Path } from "@shopify/react-native-skia";
-import { Easing, runOnJS, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
 import type { BoardEdge, BoardNode } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
 import { NODE_H, NODE_W, NodeView } from "./NodeView";
@@ -11,6 +19,13 @@ const EDGE_COLOR = "#94a3b8";
 const EDGE_TAP_TOLERANCE = 18;
 // Dropping a dragged wire within this distance of a node's center snaps to it.
 const SNAP_RADIUS = 90;
+
+// Virtual canvas: nodes live in this coordinate space; the viewport
+// (scale + translate) maps it onto the screen.
+export const CANVAS = { width: 1600, height: 1200 };
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 2.5;
+const FIT_PADDING = 48;
 
 type PendingEdge = { fromId: string; x: number; y: number };
 
@@ -63,6 +78,13 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
   const [pending, setPending] = useState<PendingEdge | null>(null);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
 
+  // Viewport: screen = canvas * scale + translate (origin top-left).
+  const scale = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const pinchStart = useSharedValue({ s: 1, tx: 0, ty: 0, fx: 0, fy: 0 });
+  const panStart = useSharedValue({ tx: 0, ty: 0 });
+
   // Marching-ants phase for the pending connector, looping on the UI thread.
   const dashPhase = useSharedValue(0);
   useEffect(() => {
@@ -70,6 +92,76 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
   }, [dashPhase]);
 
   const nodeById = Object.fromEntries(nodes.map((node) => [node.id, node]));
+
+  const clampTranslate = (value: number, viewport: number, content: number, s: number) => {
+    "worklet";
+    const lo = Math.min(0, viewport - content * s);
+    const hi = Math.max(0, viewport - content * s);
+    return Math.max(lo, Math.min(hi, value));
+  };
+
+  // Pinch: zoom around the focal point; moving both fingers also pans,
+  // because the canvas point under the initial focal stays under the finger.
+  const pinch = Gesture.Pinch()
+    .onStart((event) => {
+      pinchStart.value = {
+        s: scale.value,
+        tx: translateX.value,
+        ty: translateY.value,
+        fx: event.focalX,
+        fy: event.focalY,
+      };
+    })
+    .onUpdate((event) => {
+      const start = pinchStart.value;
+      const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, start.s * event.scale));
+      const ratio = next / start.s;
+      scale.value = next;
+      translateX.value = clampTranslate(
+        event.focalX - (start.fx - start.tx) * ratio, boardSize.width, CANVAS.width, next
+      );
+      translateY.value = clampTranslate(
+        event.focalY - (start.fy - start.ty) * ratio, boardSize.height, CANVAS.height, next
+      );
+    });
+
+  // One-finger pan on empty space. Node drags win the race on nodes
+  // because their pan activates at a shorter distance.
+  const panBackground = Gesture.Pan()
+    .maxPointers(1)
+    .minDistance(12)
+    .onStart(() => {
+      panStart.value = { tx: translateX.value, ty: translateY.value };
+    })
+    .onUpdate((event) => {
+      translateX.value = clampTranslate(
+        panStart.value.tx + event.translationX, boardSize.width, CANVAS.width, scale.value
+      );
+      translateY.value = clampTranslate(
+        panStart.value.ty + event.translationY, boardSize.height, CANVAS.height, scale.value
+      );
+    });
+
+  /** Frames every node in the viewport — the "see everything in one shot" button. */
+  const fitAll = () => {
+    if (nodes.length === 0) {
+      scale.value = withSpring(1, { damping: 18 });
+      translateX.value = withSpring(0, { damping: 18 });
+      translateY.value = withSpring(0, { damping: 18 });
+      return;
+    }
+    const minX = Math.min(...nodes.map((n) => n.x)) - FIT_PADDING;
+    const minY = Math.min(...nodes.map((n) => n.y)) - FIT_PADDING;
+    const maxX = Math.max(...nodes.map((n) => n.x + NODE_W)) + FIT_PADDING;
+    const maxY = Math.max(...nodes.map((n) => n.y + NODE_H)) + FIT_PADDING;
+    const fitScale = Math.max(
+      MIN_SCALE,
+      Math.min(boardSize.width / (maxX - minX), boardSize.height / (maxY - minY), 1.4)
+    );
+    scale.value = withSpring(fitScale, { damping: 18 });
+    translateX.value = withSpring((boardSize.width - (maxX - minX) * fitScale) / 2 - minX * fitScale, { damping: 18 });
+    translateY.value = withSpring((boardSize.height - (maxY - minY) * fitScale) / 2 - minY * fitScale, { damping: 18 });
+  };
 
   // Magnetic release: the finger usually covers the target, so the nearest
   // node within SNAP_RADIUS wins rather than requiring a drop inside it.
@@ -98,11 +190,14 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
     setConnectFrom(null);
   };
 
-  const handleBoardTap = (px: number, py: number) => {
+  // Taps arrive in screen coordinates; edges live in canvas coordinates.
+  const handleBoardTap = (screenX: number, screenY: number) => {
     if (connectFrom) {
       setConnectFrom(null);
       return;
     }
+    const px = (screenX - translateX.value) / scale.value;
+    const py = (screenY - translateY.value) / scale.value;
     for (const edge of edges) {
       const a = nodeById[edge.from];
       const b = nodeById[edge.to];
@@ -118,6 +213,16 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
     runOnJS(handleBoardTap)(event.x, event.y);
   });
 
+  const boardGesture = Gesture.Race(boardTap, pinch, panBackground);
+
+  const viewportStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: scale.value },
+    ],
+  }));
+
   const pendingGeometry = ((): EdgeGeometry | null => {
     if (!pending || pending.x === 0) return null;
     const source = nodeById[pending.fromId];
@@ -128,7 +233,7 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
   })();
 
   return (
-    <GestureDetector gesture={boardTap}>
+    <GestureDetector gesture={boardGesture}>
       <View
         onLayout={(event) => setBoardSize(event.nativeEvent.layout)}
         style={{
@@ -140,49 +245,63 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
           overflow: "hidden",
         }}
       >
-        <Canvas style={{ position: "absolute", width: "100%", height: "100%" }}>
-          {edges.map((edge) => {
-            const a = nodeById[edge.from];
-            const b = nodeById[edge.to];
-            if (!a || !b) return null;
-            const geometry = edgeGeometry(a, b);
-            return (
-              <Group key={edge.id}>
-                <Path path={bezierPath(geometry)} color={EDGE_COLOR} style="stroke" strokeWidth={2} />
-                <Path path={arrowheadPath(geometry)} color={EDGE_COLOR} />
-              </Group>
-            );
-          })}
-          {pendingGeometry && (
-            <Path path={bezierPath(pendingGeometry)} color={colors.accent} style="stroke" strokeWidth={2}>
-              <DashPathEffect intervals={[10, 8]} phase={dashPhase} />
-            </Path>
-          )}
-        </Canvas>
+        <Animated.View
+          style={[
+            {
+              position: "absolute",
+              width: CANVAS.width,
+              height: CANVAS.height,
+              transformOrigin: "top left",
+            },
+            viewportStyle,
+          ]}
+        >
+          <Canvas style={{ position: "absolute", width: CANVAS.width, height: CANVAS.height }}>
+            {edges.map((edge) => {
+              const a = nodeById[edge.from];
+              const b = nodeById[edge.to];
+              if (!a || !b) return null;
+              const geometry = edgeGeometry(a, b);
+              return (
+                <Group key={edge.id}>
+                  <Path path={bezierPath(geometry)} color={EDGE_COLOR} style="stroke" strokeWidth={2} />
+                  <Path path={arrowheadPath(geometry)} color={EDGE_COLOR} />
+                </Group>
+              );
+            })}
+            {pendingGeometry && (
+              <Path path={bezierPath(pendingGeometry)} color={colors.accent} style="stroke" strokeWidth={2}>
+                <DashPathEffect intervals={[10, 8]} phase={dashPhase} />
+              </Path>
+            )}
+          </Canvas>
+
+          {nodes.map((node) => (
+            <NodeView
+              key={node.id}
+              node={node}
+              canvasSize={CANVAS}
+              zoomScale={scale}
+              isConnectSource={connectFrom === node.id}
+              onMove={onMoveNode}
+              onRemove={onRemoveNode}
+              onConnectTap={handleConnectTap}
+              onBodyTap={handleBodyTap}
+              onConnectStart={(fromId) => setPending({ fromId, x: 0, y: 0 })}
+              onConnectMove={(x, y) => setPending((current) => (current ? { ...current, x, y } : current))}
+              onConnectEnd={handleConnectEnd}
+            />
+          ))}
+        </Animated.View>
 
         {nodes.length === 0 && (
-          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View pointerEvents="none" style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
             <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", paddingHorizontal: 24 }}>
-              Add components below, drag to arrange,{"\n"}pull from a node's ● handle to wire them up.
+              Add components below, drag to arrange,{"\n"}tap a node's ● handle then a target to wire them up.
+              {"\n"}Pinch to zoom · drag empty space to pan.
             </Text>
           </View>
         )}
-
-        {nodes.map((node) => (
-          <NodeView
-            key={node.id}
-            node={node}
-            boardSize={boardSize}
-            isConnectSource={connectFrom === node.id}
-            onMove={onMoveNode}
-            onRemove={onRemoveNode}
-            onConnectTap={handleConnectTap}
-            onBodyTap={handleBodyTap}
-            onConnectStart={(fromId) => setPending({ fromId, x: 0, y: 0 })}
-            onConnectMove={(x, y) => setPending((current) => (current ? { ...current, x, y } : current))}
-            onConnectEnd={handleConnectEnd}
-          />
-        ))}
 
         {connectFrom && (
           <View
@@ -203,6 +322,25 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
               Tap a target to connect — tap elsewhere to cancel
             </Text>
           </View>
+        )}
+
+        {nodes.length > 0 && (
+          <TouchableOpacity
+            onPress={fitAll}
+            style={{
+              position: "absolute",
+              right: 10,
+              bottom: 10,
+              paddingHorizontal: 12,
+              paddingVertical: 7,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+              borderRadius: 18,
+            }}
+          >
+            <Text style={{ color: colors.textDim, fontSize: 12, fontWeight: "600" }}>⛶ Fit</Text>
+          </TouchableOpacity>
         )}
       </View>
     </GestureDetector>
