@@ -1,0 +1,45 @@
+# Happy-path smoke: sign in (if needed), then visit every tab and assert
+# its key affordance renders. Run against Expo Go in the iOS simulator:
+#
+#   1. pnpm mobile          (Metro running)
+#   2. press `i`            (app open in the simulator)
+#   3. EMAIL=you@mail.com PASSWORD=yourpass maestro test apps/mobile/.maestro/smoke.yaml
+#
+# Credentials are only used when the sign-in screen is visible — a persisted
+# session skips that block entirely.
+appId: host.exp.Exponent
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      text: ".*(Sign in|Drill weakest).*"
+    timeout: 30000
+
+- runFlow:
+    when:
+      visible: "Sign in"
+    commands:
+      - tapOn: "you@email.com"
+      - inputText: ${EMAIL}
+      - tapOn: "password"
+      - inputText: ${PASSWORD}
+      - tapOn: "Sign in"
+
+# Prep tab: stats bar and at least one quiz card are up.
+- extendedWaitUntil:
+    visible: ".*Drill weakest.*"
+    timeout: 20000
+- assertVisible: ".*XP.*"
+
+# Stories tab.
+- tapOn: "Stories"
+- assertVisible: ".*My stories.*"
+
+# Arch Board tab: palette and evaluate button render.
+- tapOn: "Arch Board"
+- assertVisible: "Evaluate"
+- assertVisible: ".*Payment end-to-end.*"
+
+# Contacts tab.
+- tapOn: "Contacts"
+- assertVisible: ".*Add contact.*"

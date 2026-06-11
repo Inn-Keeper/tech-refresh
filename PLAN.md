@@ -90,9 +90,15 @@ playable on the phone.*
   **React Compiler** (`experiments.reactCompiler` + babel-plugin-react-compiler 1.0 —
   auto-memoization, so no hand-written React.memo/useMemo policing), typed routes,
   precompiled RN for iOS, Android edge-to-edge. All verified active.
+- ✅ **Testing layer** — Jest on `packages/core` (28 tests: quiz mechanics, arch
+  evaluator, due-date rules, data layer against a fake Supabase client — caught a real
+  `dateToDb` validation bug on day one) + a Maestro E2E smoke flow
+  (`apps/mobile/.maestro/smoke.yaml`) covering sign-in and all four tabs.
+  Gates: `pnpm test` + `pnpm typecheck` + web build + expo export.
 - ⬜ **EAS build + OTA updates** — install on the physical device without Metro, then
   expo-updates for OTA (App Store / Play Store study card). Needs an Expo account login.
 - ⬜ **Accuracy-over-time chart** — Skia line chart from `answer_events` timestamps.
+- ⬜ **jest-expo + RNTL component tests** — screen-level coverage once worth it.
 
 ## Study-case map (what each piece rehearses)
 

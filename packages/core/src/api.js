@@ -45,8 +45,8 @@ import { CORRECT_XP } from "./gamification.js";
 
 export const dateToUi = (iso) => (iso ? iso.split("-").reverse().join("-") : "");
 export const dateToDb = (ddmmyyyy) => {
-  const [d, m, y] = (ddmmyyyy || "").split("-");
-  return d && m && y ? `${y}-${m}-${d}` : null;
+  const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(ddmmyyyy || "");
+  return match ? `${match[3]}-${match[2]}-${match[1]}` : null;
 };
 
 const fail = (error) => {
