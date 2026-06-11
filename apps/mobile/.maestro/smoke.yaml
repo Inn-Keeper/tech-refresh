@@ -7,9 +7,18 @@
 #
 # Credentials are only used when the sign-in screen is visible — a persisted
 # session skips that block entirely.
+#
+# GOTCHA: if maestro hangs silently right after its "System Info" banner, check
+# for a non-ADB process listening in the Android emulator port range —
+#   lsof -nP -iTCP:5555-5685 -sTCP:LISTEN
+# Native Instruments' NTKDaemon binds a port there; maestro's Android discovery
+# connects to it and blocks forever waiting for an ADB reply. Kill the daemon
+# (it relaunches at login) and maestro proceeds to iOS discovery instantly.
 appId: host.exp.Exponent
 ---
 - launchApp
+# Expo Go opens on its own home screen — deep-link into the project on Metro.
+- openLink: exp://127.0.0.1:8081
 - extendedWaitUntil:
     visible:
       text: ".*(Sign in|Drill weakest).*"
