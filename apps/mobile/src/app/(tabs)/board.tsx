@@ -78,7 +78,15 @@ export default function BoardScreen() {
 
   return (
     <Screen>
-      <View style={{ flex: 1, padding: 16, gap: 10, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}>
+      <View
+        style={{
+          flex: 1,
+          paddingTop: 6,
+          paddingHorizontal: 6,
+          gap: 8,
+          paddingBottom: insets.bottom + TAB_BAR_CLEARANCE,
+        }}
+      >
       {chrome === "full" && (
         <Animated.View entering={FadeInDown.duration(180)} style={{ gap: 10 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
@@ -162,31 +170,46 @@ export default function BoardScreen() {
             </TouchableOpacity>
           </>
         )}
-      </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 6 }}>
-        {NODE_TYPES.map((spec) => (
-          <TouchableOpacity
-            key={spec.type}
-            onPress={() => addNode(spec.type)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 6,
-              paddingHorizontal: 10,
-              paddingVertical: 8,
-              backgroundColor: colors.surface,
-              borderWidth: 1,
-              borderColor: `${TYPE_COLORS[spec.type]}40`,
-              borderRadius: 8,
-            }}
-          >
-            <Text style={{ fontSize: 14 }}>{spec.emoji}</Text>
-            <Text style={{ fontSize: 11, fontWeight: "600", color: "#cbd5e1" }}>{spec.label}</Text>
-            <Text style={{ fontSize: 9, color: colors.textFaint }}>{"$".repeat(spec.cost) || "free"}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+        {/* Floating palette: the canvas extends underneath, so this row costs
+            no layout height — translucent so the board reads through it. */}
+        <View
+          style={{
+            position: "absolute",
+            bottom: 8,
+            left: 8,
+            right: 8,
+            backgroundColor: "#13161fd9",
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 12,
+          }}
+        >
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, padding: 6 }}>
+            {NODE_TYPES.map((spec) => (
+              <TouchableOpacity
+                key={spec.type}
+                onPress={() => addNode(spec.type)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  paddingHorizontal: 10,
+                  paddingVertical: 7,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: `${TYPE_COLORS[spec.type]}40`,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ fontSize: 14 }}>{spec.emoji}</Text>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: "#cbd5e1" }}>{spec.label}</Text>
+                <Text style={{ fontSize: 9, color: colors.textFaint }}>{"$".repeat(spec.cost) || "free"}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </View>
 
         <ResultSheet result={result} scenario={scenario} onClose={() => setResult(null)} />
       </View>

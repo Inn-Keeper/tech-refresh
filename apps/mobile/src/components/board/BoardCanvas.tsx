@@ -330,7 +330,8 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
             style={{
               position: "absolute",
               right: 10,
-              bottom: 10,
+              // Clears the floating palette bar docked at the canvas bottom.
+              bottom: 66,
               paddingHorizontal: 12,
               paddingVertical: 7,
               backgroundColor: colors.surface,
