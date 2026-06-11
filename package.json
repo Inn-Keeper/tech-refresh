@@ -7,6 +7,7 @@
     "build": "pnpm --filter web build",
     "mobile": "pnpm --filter mobile start",
     "typecheck": "pnpm --filter mobile exec tsc --noEmit",
-    "test": "pnpm --filter @tech-refresh/core test"
+    "test": "pnpm --filter @tech-refresh/core test",
+    "clean:ghosts": "find . -name '._*' -delete"
   }
 }
