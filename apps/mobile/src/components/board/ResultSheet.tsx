@@ -1,5 +1,4 @@
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
-import Animated, { SlideInDown } from "react-native-reanimated";
 import type { EvalResult, Scenario } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
 import { Button } from "@/components/ui";
@@ -22,10 +21,11 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
   const maintLabel = result.maint <= 8 ? "lean" : result.maint <= 14 ? "moderate" : "heavy";
 
   return (
-    <Modal transparent animationType="fade" visible onRequestClose={onClose}>
+    // Modal's native slide animation — Reanimated entering animations
+    // don't fire reliably inside RN Modals.
+    <Modal transparent animationType="slide" visible onRequestClose={onClose}>
       <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "#00000090" }} />
-      <Animated.View
-        entering={SlideInDown.springify().damping(18)}
+      <View
         style={{
           maxHeight: "75%",
           backgroundColor: colors.surfaceAlt,
@@ -76,7 +76,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
         <View style={{ marginTop: 12, alignItems: "flex-end" }}>
           <Button label="Close" onPress={onClose} />
         </View>
-      </Animated.View>
+      </View>
     </Modal>
   );
 }

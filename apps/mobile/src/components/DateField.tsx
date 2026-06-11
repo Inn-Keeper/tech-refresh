@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Modal, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
-import Animated, { SlideInDown } from "react-native-reanimated";
 import { formatDDMMYYYY, parseDDMMYYYY, todayDDMMYYYY } from "@tech-refresh/core/contacts";
 import { colors } from "@/theme";
 import { Field, MiniButton, inputStyle } from "@/components/ui";
@@ -52,10 +51,11 @@ export function DateField({ label, value, onChange, clearable = false }: Props) 
       )}
 
       {pickerOpen && Platform.OS === "ios" && (
-        <Modal transparent animationType="fade" visible onRequestClose={() => setPickerOpen(false)}>
+        // Modal's native slide animation — Reanimated entering animations
+        // don't fire reliably inside RN Modals.
+        <Modal transparent animationType="slide" visible onRequestClose={() => setPickerOpen(false)}>
           <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#00000090" }} />
-          <Animated.View
-            entering={SlideInDown.springify().damping(18)}
+          <View
             style={{
               backgroundColor: colors.surfaceAlt,
               borderTopLeftRadius: 20,
@@ -74,7 +74,7 @@ export function DateField({ label, value, onChange, clearable = false }: Props) 
               accentColor={colors.accent}
               onChange={handlePicked}
             />
-          </Animated.View>
+          </View>
         </Modal>
       )}
     </Field>

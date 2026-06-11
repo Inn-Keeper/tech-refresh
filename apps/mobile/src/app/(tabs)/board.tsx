@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
@@ -7,7 +8,12 @@ import { Button, Pill, Screen } from "@/components/ui";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
 import { ResultSheet } from "@/components/board/ResultSheet";
 
+// The native tab bar floats over the content area; non-scrolling screens
+// must clear it themselves (scroll views get automatic content insets).
+const TAB_BAR_CLEARANCE = 56;
+
 export default function BoardScreen() {
+  const insets = useSafeAreaInsets();
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [nodes, setNodes] = useState<BoardNode[]>([]);
   const [edges, setEdges] = useState<BoardEdge[]>([]);
@@ -68,7 +74,7 @@ export default function BoardScreen() {
 
   return (
     <Screen>
-      <View style={{ flex: 1, padding: 16, gap: 10 }}>
+      <View style={{ flex: 1, padding: 16, gap: 10, paddingBottom: insets.bottom + TAB_BAR_CLEARANCE }}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
         {SCENARIOS.map((item, index) => (
           <Pill key={item.id} label={item.name} active={scenarioIndex === index} onPress={() => switchScenario(index)} />
