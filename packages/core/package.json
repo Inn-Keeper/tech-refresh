@@ -6,6 +6,8 @@
   "exports": {
     "./api": "./src/api.js",
     "./quiz": "./src/quiz.js",
+    "./stories": "./src/stories.js",
+    "./contacts": "./src/contacts.js",
     "./prepData": "./src/prepData.js",
     "./techLinks": "./src/techLinks.js",
     "./arch": "./src/arch.js",

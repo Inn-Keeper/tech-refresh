@@ -1,16 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import * as api from "./api.js";
-
-const STATUSES = ["Contacted", "Applied", "Interviewing", "Offer", "Rejected"];
-
-const STATUS_STYLES = {
-  Contacted: { color: "#0ea5e9", bg: "#0ea5e920" },
-  Applied: { color: "#10b981", bg: "#10b98120" },
-  Interviewing: { color: "#f59e0b", bg: "#f59e0b20" },
-  Offer: { color: "#8b5cf6", bg: "#8b5cf620" },
-  Rejected: { color: "#64748b", bg: "#64748b20" },
-};
 
 const EMPTY_FORM = {
   name: "",
@@ -24,26 +15,6 @@ const EMPTY_FORM = {
 };
 
 const EMPTY_RETRO = { round: "", questions: "", wentWell: "", toImprove: "" };
-
-function todayDDMMYYYY() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}-${pad(d.getMonth() + 1)}-${d.getFullYear()}`;
-}
-
-function parseDDMMYYYY(s) {
-  const [d, m, y] = (s || "").split("-").map(Number);
-  if (!d || !m || !y) return null;
-  return new Date(y, m - 1, d);
-}
-
-function isDue(contact) {
-  const due = parseDDMMYYYY(contact.nextActionDate);
-  if (!due || !contact.nextAction) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return due <= today;
-}
 
 const inputStyle = {
   width: "100%",

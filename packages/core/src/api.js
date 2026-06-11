@@ -2,6 +2,47 @@
 // UI keeps DD-MM-YYYY strings; Postgres stores real dates.
 import { CORRECT_XP } from "./gamification.js";
 
+/**
+ * @typedef {object} Retro
+ * @property {string} id
+ * @property {string} round
+ * @property {string} questions
+ * @property {string} wentWell
+ * @property {string} toImprove
+ * @property {string} date
+ */
+
+/**
+ * @typedef {object} Contact
+ * @property {string} [id]
+ * @property {string} name
+ * @property {string} status
+ * @property {string} role
+ * @property {string} link
+ * @property {string} note
+ * @property {string} date
+ * @property {string} nextAction
+ * @property {string} nextActionDate
+ * @property {Retro[]} [retros]
+ */
+
+/**
+ * @typedef {object} Story
+ * @property {string} [id]
+ * @property {string} title
+ * @property {string} competency
+ * @property {string} situation
+ * @property {string} task
+ * @property {string} action
+ * @property {string} result
+ */
+
+/**
+ * @typedef {object} Scores
+ * @property {number} xp
+ * @property {Record<string, { correct: number, wrong: number }>} answers
+ */
+
 export const dateToUi = (iso) => (iso ? iso.split("-").reverse().join("-") : "");
 export const dateToDb = (ddmmyyyy) => {
   const [d, m, y] = (ddmmyyyy || "").split("-");
@@ -12,6 +53,23 @@ const fail = (error) => {
   throw new Error(error.message);
 };
 
+/**
+ * Binds the data layer to a Supabase client (browser or React Native).
+ * @param {any} supabase
+ * @returns {{
+ *   listContacts(): Promise<Contact[]>,
+ *   upsertContact(contact: Contact): Promise<void>,
+ *   deleteContact(id: string | undefined): Promise<void>,
+ *   addRetro(contactId: string, retro: Omit<Retro, "id" | "date"> & { date?: string }): Promise<void>,
+ *   deleteRetro(id: string): Promise<void>,
+ *   listStories(): Promise<Story[]>,
+ *   upsertStory(story: Story): Promise<void>,
+ *   deleteStory(id: string | undefined): Promise<void>,
+ *   getScores(): Promise<Scores>,
+ *   recordAnswer(tech: string, correct: boolean, source?: string): Promise<void>,
+ *   addXp(points: number): Promise<void>,
+ * }}
+ */
 export function createApi(supabase) {
   // ── contacts ──────────────────────────────────────────────────────────────────
 

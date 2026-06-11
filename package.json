@@ -4,6 +4,8 @@
   "packageManager": "pnpm@10.6.5",
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build"
+    "build": "pnpm --filter web build",
+    "mobile": "pnpm --filter mobile start",
+    "typecheck": "pnpm --filter mobile exec tsc --noEmit"
   }
 }

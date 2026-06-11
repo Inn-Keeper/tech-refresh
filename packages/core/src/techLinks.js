@@ -1,4 +1,5 @@
 // Official docs / canonical reference per tech, shown when a quiz answer is revealed.
+/** @type {Record<string, string>} */
 export const techLinks = {
   TypeScript: "https://www.typescriptlang.org/docs/",
   JavaScript: "https://developer.mozilla.org/en-US/docs/Web/JavaScript",

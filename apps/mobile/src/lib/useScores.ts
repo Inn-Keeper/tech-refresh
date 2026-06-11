@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CORRECT_XP } from "@tech-refresh/core/gamification";
+import type { Scores } from "@tech-refresh/core/api";
 import { api } from "./api";
 
-export type Scores = { xp: number; answers: Record<string, { correct: number; wrong: number }> };
+export type { Scores };
 
 const EMPTY: Scores = { xp: 0, answers: {} };
 
