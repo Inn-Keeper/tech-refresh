@@ -110,18 +110,27 @@ export default function App() {
 
 function SignIn() {
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
 
-  const sendLink = async (e) => {
+  const inputStyle = {
+    padding: "11px 14px",
+    background: "#1e2330",
+    border: "1px solid #2d3748",
+    borderRadius: 10,
+    color: "#e2e8f0",
+    fontSize: 14,
+    outline: "none",
+  };
+
+  const submit = async (e) => {
     e.preventDefault();
+    setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin },
-    });
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(false);
     if (err) setError(err.message);
-    else setSent(true);
   };
 
   return (
@@ -129,49 +138,47 @@ function SignIn() {
       <div style={{ fontSize: 36, marginBottom: 12 }}>🔐</div>
       <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: "#f1f5f9" }}>Sign in</h1>
       <p style={{ margin: "0 0 24px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
-        Your pipeline and scores live behind your account. Enter your email and we'll send a magic link.
+        Your pipeline and scores live behind your account.
       </p>
 
-      {sent ? (
-        <p style={{ fontSize: 14, color: "#22c55e", fontWeight: 600 }}>
-          ✓ Link sent — check your inbox and click it on this device.
-        </p>
-      ) : (
-        <form onSubmit={sendLink} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@email.com"
-            style={{
-              padding: "11px 14px",
-              background: "#1e2330",
-              border: "1px solid #2d3748",
-              borderRadius: 10,
-              color: "#e2e8f0",
-              fontSize: 14,
-              outline: "none",
-            }}
-          />
-          <button
-            type="submit"
-            style={{
-              padding: "11px 14px",
-              background: "#6366f1",
-              border: "none",
-              borderRadius: 10,
-              color: "#fff",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Send magic link
-          </button>
-          {error && <p style={{ margin: 0, fontSize: 12, color: "#fca5a5" }}>{error}</p>}
-        </form>
-      )}
+      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@email.com"
+          autoComplete="email"
+          style={inputStyle}
+        />
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="password"
+          autoComplete="current-password"
+          style={inputStyle}
+        />
+        <button
+          type="submit"
+          disabled={busy}
+          style={{
+            padding: "11px 14px",
+            background: "#6366f1",
+            border: "none",
+            borderRadius: 10,
+            color: "#fff",
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: busy ? "wait" : "pointer",
+            opacity: busy ? 0.6 : 1,
+          }}
+        >
+          Sign in
+        </button>
+        {error && <p style={{ margin: 0, fontSize: 12, color: "#fca5a5" }}>{error}</p>}
+      </form>
     </div>
   );
 }

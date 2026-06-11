@@ -1,33 +1,22 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { colors } from "@/theme";
 
-// Email OTP flow: magic links don't deep-link cleanly into Expo Go, so the
-// phone signs in with the 6-digit code from the same email.
+// Plain email + password: no email delivery, no SMTP, sessions persist
+// in AsyncStorage so this screen appears roughly once per device.
 export function SignIn() {
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [stage, setStage] = useState<"email" | "code">("email");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const sendCode = async () => {
+  const submit = async () => {
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.auth.signInWithOtp({ email: email.trim() });
-    setBusy(false);
-    if (err) setError(err.message);
-    else setStage("code");
-  };
-
-  const verify = async () => {
-    setBusy(true);
-    setError(null);
-    const { error: err } = await supabase.auth.verifyOtp({
+    const { error: err } = await supabase.auth.signInWithPassword({
       email: email.trim(),
-      token: code.trim(),
-      type: "email",
+      password,
     });
     setBusy(false);
     if (err) setError(err.message);
@@ -42,38 +31,33 @@ export function SignIn() {
       <Text style={{ color: colors.textBright, fontSize: 22, fontWeight: "700", textAlign: "center", marginBottom: 6 }}>
         Interview Prep
       </Text>
-      <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginBottom: 28, lineHeight: 19 }}>
-        {stage === "email"
-          ? "Sign in with your email — we'll send a 6-digit code."
-          : `Enter the code sent to ${email.trim()}.`}
+      <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginBottom: 28 }}>
+        Your pipeline and scores live behind your account.
       </Text>
 
-      {stage === "email" ? (
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="you@email.com"
-          placeholderTextColor={colors.textFaint}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          autoComplete="email"
-          style={inputStyle}
-        />
-      ) : (
-        <TextInput
-          value={code}
-          onChangeText={setCode}
-          placeholder="123456"
-          placeholderTextColor={colors.textFaint}
-          keyboardType="number-pad"
-          maxLength={6}
-          style={[inputStyle, { textAlign: "center", letterSpacing: 8, fontSize: 20 }]}
-        />
-      )}
+      <TextInput
+        value={email}
+        onChangeText={setEmail}
+        placeholder="you@email.com"
+        placeholderTextColor={colors.textFaint}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        autoComplete="email"
+        style={inputStyle}
+      />
+      <TextInput
+        value={password}
+        onChangeText={setPassword}
+        placeholder="password"
+        placeholderTextColor={colors.textFaint}
+        secureTextEntry
+        autoComplete="current-password"
+        style={[inputStyle, { marginTop: 10 }]}
+      />
 
       <TouchableOpacity
-        onPress={stage === "email" ? sendCode : verify}
-        disabled={busy || (stage === "email" ? !email.includes("@") : code.length < 6)}
+        onPress={submit}
+        disabled={busy || !email.includes("@") || !password}
         style={{
           backgroundColor: colors.accent,
           borderRadius: 12,
@@ -83,15 +67,9 @@ export function SignIn() {
         }}
       >
         <Text style={{ color: "#fff", fontWeight: "600", textAlign: "center", fontSize: 15 }}>
-          {busy ? "…" : stage === "email" ? "Send code" : "Verify"}
+          {busy ? "…" : "Sign in"}
         </Text>
       </TouchableOpacity>
-
-      {stage === "code" && (
-        <TouchableOpacity onPress={() => setStage("email")} style={{ marginTop: 16 }}>
-          <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center" }}>← Different email</Text>
-        </TouchableOpacity>
-      )}
 
       {error && (
         <Text style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginTop: 16 }}>{error}</Text>
