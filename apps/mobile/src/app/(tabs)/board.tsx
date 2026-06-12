@@ -10,7 +10,7 @@ import { t } from "@tech-refresh/core/i18n";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import type { SavedBoard } from "@tech-refresh/core/api";
 import { colors } from "@/theme";
-import { Button, MiniButton, Pill, Screen } from "@/components/ui";
+import { Button, MiniButton, Screen, ScreenHeader, SegmentedPills } from "@/components/ui";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
 import { ResultSheet } from "@/components/board/ResultSheet";
 
@@ -145,27 +145,27 @@ export default function BoardScreen() {
 
   return (
     <Screen>
+      {chrome === "full" && (
+        <Animated.View entering={FadeInDown.duration(180)}>
+          <ScreenHeader title={t("tabs.board")} subtitle={scenario.brief}>
+            <SegmentedPills
+              options={SCENARIOS.map((item, index) => ({ key: index, label: item.name }))}
+              activeKey={scenarioIndex}
+              onChange={(key) => switchScenario(Number(key))}
+            />
+          </ScreenHeader>
+        </Animated.View>
+      )}
+
       <View
         style={{
           flex: 1,
-          paddingTop: 6,
+          paddingTop: chrome === "full" ? 8 : 6,
           paddingHorizontal: 6,
           gap: 8,
           paddingBottom: chrome === "zen" ? insets.bottom + 4 : insets.bottom + TAB_BAR_CLEARANCE,
         }}
       >
-      {chrome === "full" && (
-        <Animated.View entering={FadeInDown.duration(180)} style={{ gap: 10 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 8 }}>
-            {SCENARIOS.map((item, index) => (
-              <Pill key={item.id} label={item.name} active={scenarioIndex === index} onPress={() => switchScenario(index)} />
-            ))}
-          </ScrollView>
-
-          <Text style={{ fontSize: 12, lineHeight: 17, color: colors.textDim }}>{scenario.brief}</Text>
-        </Animated.View>
-      )}
-
       {chrome !== "zen" && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <MiniButton

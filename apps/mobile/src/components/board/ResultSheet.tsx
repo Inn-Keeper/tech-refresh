@@ -1,7 +1,7 @@
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import type { EvalResult, Scenario } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
-import { colors } from "@/theme";
+import { colors, tints } from "@/theme";
 import { Button } from "@/components/ui";
 
 type Props = {
@@ -25,7 +25,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
     // Modal's native slide animation — Reanimated entering animations
     // don't fire reliably inside RN Modals.
     <Modal transparent animationType="slide" visible onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: colors.modalScrim }} />
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: tints.modalScrim }} />
       <View
         style={{
           maxHeight: "75%",

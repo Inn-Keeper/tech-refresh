@@ -40,9 +40,6 @@ export const colors = {
   deco4: "#F472B6", // pink
   deco5: "#38BDF8", // blue
   deco6: "#A78BFA", // purple
-
-  // Overlays
-  modalScrim: "#00000090", // modal backdrop (only raw value allowed)
 };
 
 /** Pre-baked translucent tints (8-digit hex). @type {Record<string, string>} */
@@ -51,6 +48,7 @@ export const tints = {
   successSoft: "#22C55E26",
   dangerSoft: "#EF44441F",
   warningSoft: "#F59E0B1A",
+  modalScrim: "#00000090",
 };
 
 // Font weights stay as string literals in code ("600" etc.) — React Native's

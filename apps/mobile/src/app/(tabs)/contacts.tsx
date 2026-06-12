@@ -7,7 +7,7 @@ import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
 import { colors, tints } from "@/theme";
-import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
+import { Badge, Button, Field, HeaderAction, MiniButton, Pill, Screen, ScreenHeader, Section, inputStyle, multilineStyle } from "@/components/ui";
 import { DateField } from "@/components/DateField";
 import type { Contact } from "@tech-refresh/core/api";
 
@@ -79,6 +79,11 @@ export default function ContactsScreen() {
 
   return (
     <Screen>
+      <ScreenHeader
+        title={t("tabs.contacts")}
+        subtitle="Pipeline, follow-ups, and interview retros."
+        right={<HeaderAction label={t("contacts.addContact")} onPress={() => setEditing({ ...EMPTY_FORM, date: todayDDMMYYYY() })} />}
+      />
       <FlatList
         data={sorted}
         keyExtractor={(contact) => contact.id!}
@@ -105,20 +110,6 @@ export default function ContactsScreen() {
               </View>
             )}
 
-            <TouchableOpacity
-              onPress={() => setEditing({ ...EMPTY_FORM, date: todayDDMMYYYY() })}
-              style={{
-                padding: 12,
-                backgroundColor: tints.accentSoft,
-                borderWidth: 1,
-                borderColor: `${colors.accent}60`,
-                borderRadius: 10,
-              }}
-            >
-              <Text style={{ color: colors.accentBright, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
-                + Add contact
-              </Text>
-            </TouchableOpacity>
           </View>
         }
         renderItem={({ item, index }) => (

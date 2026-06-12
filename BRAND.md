@@ -57,7 +57,7 @@ Imagine a path or flow that ascends organically, like a bird's journey or a care
 
 ## Mascot: The Raven
 
-**Name:** Quill (or Raven, or Poe — your choice)
+**Name:** Poe
 
 **Inspiration:** Edgar Allan Poe's "The Raven" — wisdom, mystery, resilience, literary depth. A crow/raven that's clever, encouraging, and slightly mischievous.
 
@@ -75,13 +75,13 @@ Imagine a path or flow that ascends organically, like a bird's journey or a care
 - Animations: Landing, bobbing, wing flutter during celebrations
 
 **Key Moments:**
-- **First rank-up:** Quill lands on screen, does a little celebration dance
-- **Quiz perfect score:** Quill flies across the screen with confetti
-- **Job search milestone (7-day streak, etc.):** Quill delivers an encouraging message
-- **Error states:** Quill tilts sympathetically ("That didn't work, but you've got this")
+- **First rank-up:** Poe lands on screen, does a little celebration dance
+- **Quiz perfect score:** Poe flies across the screen with confetti
+- **Job search milestone (7-day streak, etc.):** Poe delivers an encouraging message
+- **Error states:** Poe tilts sympathetically ("That didn't work, but you've got this")
 
 **Tone in Text:**
-When Quill "speaks," use phrases like:
+When Poe "speaks," use phrases like:
 - "One skill at a time, friend."
 - "Your next role is in there somewhere."
 - "Back to the practice board."
@@ -92,17 +92,17 @@ When Quill "speaks," use phrases like:
 ## Color Palette (Extended)
 
 ### Existing Tokens (from `packages/core/src/tokens.js`)
-- **Accent (Teal):** `#14B8A6` — action, progress, Quill highlights
+- **Accent (Teal):** `#14B8A6` — action, progress, Poe highlights
 - **Accent Bright:** `#2DD4BF` — glow, celebration
 - **Dark grade:** `#10131A` → `#272C3A` — elevation, breathing room
 
 ### New Brand Colors (Optional Additions)
-- **Quill Gold:** `#D4A574` — warmth, literary depth, highlights in mascot
+- **Poe Gold:** `#D4A574` — warmth, literary depth, highlights in mascot
 - **Subtle Green:** `#2D6A4F` — growth, natural progression (use sparingly)
 - **Celebration Burst:** Mix teal + gold + existing decorative ramp
 
 **Color Usage:**
-- **Teal:** Primary brand action; interactive elements; Quill accents
+- **Teal:** Primary brand action; interactive elements; Poe accents
 - **Gold:** Mascot personality; special celebrations; literary vibes
 - **Dark greys:** Elevation, text hierarchy, breathing room
 - **Avoid:** Harsh reds (reserve for errors only); neon saturation
@@ -164,7 +164,7 @@ Once you pick a direction from Midjourney:
 
 ### Phase 3: Mascot (Midjourney + Figma, 2–3 hours)
 
-**Prompt for Midjourney (Raven/Quill):**
+**Prompt for Midjourney (Raven/Poe):**
 
 ```
 A clever, wise raven or crow in an organic, slightly illustrated style.

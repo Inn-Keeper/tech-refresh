@@ -5,8 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
 import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
-import { colors, tints } from "@/theme";
-import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
+import { colors } from "@/theme";
+import { Badge, Button, Field, HeaderAction, MiniButton, Pill, Screen, ScreenHeader, Section, SegmentedPills, inputStyle, multilineStyle } from "@/components/ui";
 import type { Story } from "@tech-refresh/core/api";
 
 const EMPTY_FORM: Story = { title: "", competency: "Conflict", situation: "", task: "", action: "", result: "" };
@@ -42,37 +42,29 @@ export default function StoriesScreen() {
 
   return (
     <Screen>
+      <ScreenHeader
+        title={t("tabs.stories")}
+        subtitle="STAR stories and interview prompt reps."
+        right={<HeaderAction label={t("stories.addStory")} onPress={() => setEditing(EMPTY_FORM)} />}
+      >
+        <SegmentedPills
+          options={[
+            { key: "stories", label: t("stories.myStories") },
+            { key: "drill", label: t("stories.drillPrompts") },
+          ]}
+          activeKey={mode}
+          onChange={(key) => setMode(key as "stories" | "drill")}
+        />
+      </ScreenHeader>
       <FlatList
         data={mode === "stories" ? (stories ?? []) : []}
         keyExtractor={(story) => story.id!}
         contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Pill label={t("stories.myStories")} active={mode === "stories"} onPress={() => setMode("stories")} />
-              <Pill label={t("stories.drillPrompts")} active={mode === "drill"} onPress={() => setMode("drill")} />
-            </View>
-
             {error && <Text style={{ color: colors.dangerBright, fontSize: 13 }}>{t("stories.loadError", { message: error.message })}</Text>}
 
-            {mode === "stories" ? (
-              <TouchableOpacity
-                onPress={() => setEditing(EMPTY_FORM)}
-                style={{
-                  padding: 12,
-                  backgroundColor: tints.accentSoft,
-                  borderWidth: 1,
-                  borderColor: `${colors.accent}60`,
-                  borderRadius: 10,
-                }}
-              >
-                <Text style={{ color: colors.accentBright, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
-                  + Add story
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <PromptDrill stories={stories ?? []} />
-            )}
+            {mode === "drill" && <PromptDrill stories={stories ?? []} />}
 
             {mode === "stories" && stories?.length === 0 && (
               <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginTop: 16 }}>

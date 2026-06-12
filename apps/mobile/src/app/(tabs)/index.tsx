@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { FlatList, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { FlatList, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
@@ -14,7 +14,7 @@ import { StatsBar } from "@/components/StatsBar";
 import { DrillSession, type Drill } from "@/components/DrillSession";
 import { AccuracyChart } from "@/components/AccuracyChart";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
-import { Screen } from "@/components/ui";
+import { Screen, ScreenHeader, SegmentedPills } from "@/components/ui";
 
 type Celebration = { title: string; subtitle: string; accent?: string };
 
@@ -76,6 +76,19 @@ export default function PrepScreen() {
 
   return (
     <Screen>
+      {!drill && (
+        <ScreenHeader title={t("tabs.prep")} subtitle="Flashcards, adaptive drills, and XP momentum.">
+          <SegmentedPills
+            options={categories.map((cat: { name: string; emoji: string; color: string }, i: number) => ({
+              key: i,
+              label: `${cat.emoji} ${cat.name}`,
+              color: cat.color,
+            }))}
+            activeKey={activeCategory}
+            onChange={(key) => setActiveCategory(Number(key))}
+          />
+        </ScreenHeader>
+      )}
       <FlatList
         data={drill ? [] : category.items.map((item) => ({ ...item, color: category.color }))}
         keyExtractor={(item) => `${activeCategory}-${item.tech}`}
@@ -85,34 +98,7 @@ export default function PrepScreen() {
             <StatsBar scores={scores} onDrill={startDrill} drillActive={!!drill} />
             {!drill && <AccuracyChart points={accuracy} />}
 
-            {drill ? (
-              <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={() => setDrill(null)} />
-            ) : (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {categories.map((cat: { name: string; emoji: string; color: string }, i: number) => (
-                  <TouchableOpacity
-                    key={cat.name}
-                    onPress={() => setActiveCategory(i)}
-                    style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 7,
-                      borderRadius: 20,
-                      backgroundColor: activeCategory === i ? cat.color : colors.surface,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        fontWeight: "600",
-                        color: activeCategory === i ? colors.onAccent : colors.textDim,
-                      }}
-                    >
-                      {cat.emoji} {cat.name}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
+            {drill && <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={() => setDrill(null)} />}
           </View>
         }
         renderItem={({ item, index }) => (

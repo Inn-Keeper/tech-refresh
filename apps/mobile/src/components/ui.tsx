@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, font, radius, space } from "@/theme";
+import { colors, font, radius, space, tints } from "@/theme";
 
 /**
  * Tab screen root: app background + safe-area insets (native tabs render no
@@ -45,14 +45,94 @@ export function Pill({ label, active, activeColor = colors.accent, onPress }: Pi
     <TouchableOpacity
       onPress={onPress}
       style={{
-        paddingHorizontal: space.lg,
-        paddingVertical: space.sm,
-        borderRadius: radius.pill,
+        paddingHorizontal: space.md,
+        paddingVertical: 7,
+        borderRadius: radius.sm,
         backgroundColor: active ? activeColor : colors.surface,
+        borderWidth: 1,
+        borderColor: active ? activeColor : colors.border,
       }}
     >
       <Text style={{ fontSize: font.size.body, fontWeight: "600", color: active ? colors.onAccent : colors.textDim }}>{label}</Text>
     </TouchableOpacity>
+  );
+}
+
+type HeaderActionProps = { label: string; onPress: () => void; tone?: "accent" | "muted" | "danger"; disabled?: boolean };
+
+/** Compact action for a screen header right slot. */
+export function HeaderAction({ label, onPress, tone = "accent", disabled = false }: HeaderActionProps) {
+  const color = tone === "danger" ? colors.dangerBright : tone === "muted" ? colors.textDim : colors.accentBright;
+  const borderColor = tone === "danger" ? `${colors.danger}50` : tone === "muted" ? colors.border : `${colors.accent}50`;
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled}
+      style={{
+        paddingHorizontal: space.md,
+        paddingVertical: 7,
+        borderRadius: radius.sm,
+        backgroundColor: tone === "accent" ? tints.accentSoft : colors.surface,
+        borderWidth: 1,
+        borderColor,
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      <Text style={{ color, fontSize: font.size.small, fontWeight: "700" }}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+type ScreenHeaderProps = { title: string; subtitle?: string; right?: ReactNode; children?: ReactNode };
+
+/** In-tab header: title/action row plus optional segmented controls. */
+export function ScreenHeader({ title, subtitle, right, children }: ScreenHeaderProps) {
+  return (
+    <View
+      style={{
+        paddingHorizontal: space.lg,
+        paddingTop: space.sm,
+        paddingBottom: space.md,
+        backgroundColor: colors.bg,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        gap: space.md,
+      }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ color: colors.textBright, fontSize: font.size.heading, fontWeight: "800" }}>{title}</Text>
+          {!!subtitle && (
+            <Text numberOfLines={2} style={{ marginTop: 2, color: colors.textDim, fontSize: font.size.small, lineHeight: 17 }}>
+              {subtitle}
+            </Text>
+          )}
+        </View>
+        {right}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+type SegmentedOption = { key: string | number; label: string; color?: string };
+type SegmentedPillsProps = { options: SegmentedOption[]; activeKey: string | number; onChange: (key: string | number) => void };
+
+/** Horizontal segmented selector housed by ScreenHeader or form fields. */
+export function SegmentedPills({ options, activeKey, onChange }: SegmentedPillsProps) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ gap: space.sm }}>
+      {options.map((option) => (
+        <Pill
+          key={String(option.key)}
+          label={option.label}
+          active={option.key === activeKey}
+          activeColor={option.color}
+          onPress={() => onChange(option.key)}
+        />
+      ))}
+    </ScrollView>
   );
 }
 
