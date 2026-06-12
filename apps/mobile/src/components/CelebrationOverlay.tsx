@@ -20,8 +20,8 @@ type Props = {
   onDone: () => void;
 };
 
-// Decorative confetti ramp, teal-led to match the brand accent — see DESIGN.md.
-const PARTICLE_COLORS = ["#2DD4BF", "#4ADE80", "#FBBF24", "#F472B6", "#38BDF8", "#A78BFA"];
+// Decorative confetti ramp — centralized in core tokens (deco1–6) — see DESIGN.md.
+const PARTICLE_COLORS = [colors.deco1, colors.deco2, colors.deco3, colors.deco4, colors.deco5, colors.deco6];
 const PARTICLES = Array.from({ length: 54 }, (_, index) => ({
   angle: (Math.PI * 2 * index) / 54 + (index % 5) * 0.08,
   distance: 72 + (index % 9) * 17,

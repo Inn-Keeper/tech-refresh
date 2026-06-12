@@ -32,6 +32,17 @@ export const colors = {
   dangerBright: "#FCA5A5",
   warning: "#F59E0B",
   warningBright: "#FBBF24",
+
+  // Decorative (confetti, data-viz accents)
+  deco1: "#2DD4BF", // brand accent glow
+  deco2: "#4ADE80", // green
+  deco3: "#FBBF24", // amber
+  deco4: "#F472B6", // pink
+  deco5: "#38BDF8", // blue
+  deco6: "#A78BFA", // purple
+
+  // Overlays
+  modalScrim: "#00000090", // modal backdrop (only raw value allowed)
 };
 
 /** Pre-baked translucent tints (8-digit hex). @type {Record<string, string>} */

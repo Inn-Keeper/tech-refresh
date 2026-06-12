@@ -25,7 +25,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
     // Modal's native slide animation — Reanimated entering animations
     // don't fire reliably inside RN Modals.
     <Modal transparent animationType="slide" visible onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: "#00000090" }} />
+      <Pressable onPress={onClose} style={{ flex: 1, backgroundColor: colors.modalScrim }} />
       <View
         style={{
           maxHeight: "75%",
