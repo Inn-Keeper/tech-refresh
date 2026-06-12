@@ -1,0 +1,323 @@
+# Tech-Refresh
+
+A full-stack interview prep and hiring pipeline manager — **web + React Native mobile** sharing one Postgres database via Supabase. Built as a **study case**, where each layer maps to an interview-prep topic.
+
+## What It Does
+
+### **Prep** tab
+- Quiz cards for 80+ technologies (JavaScript, React, system design, databases, etc.)
+- Spaced-repetition drill targeting your weakest techs
+- Gamified XP and ranks (Intern → Principal)
+- Accuracy timeline: track your growth over time
+
+### **Arch Board** tab
+- System-design practice with interactive node-and-edge board
+- 5 realistic scenarios (payment flow, flash-sale, video streaming, etc.)
+- Instant feedback: design checks, budget vs. cost, deployment complexity
+- Mobile: Skia canvas + gesture-handler; Web: full edit mode
+
+### **Stories** tab
+- STAR interview prep: Conflict, Failure, Leadership, Impact, Ambiguity, Influence, Mentoring, Delivery
+- Behavioral prompt drills with randomized cues
+- Save your stories, tag by competency
+
+### **Contacts** tab
+- Hiring pipeline tracker: Contacted → Applied → Interviewing → Offer → Rejected
+- Link to job postings; notes and retrospectives per contact
+- Funnel analytics: conversion rate, pace, due-soon highlighting
+- DD-MM-YYYY date format for clarity
+
+## Tech Stack
+
+| Layer | Choice | Why |
+| --- | --- | --- |
+| **Backend** | Supabase (Postgres + PostgREST + Auth + RLS) | One DB, two clients; RLS = auth study case |
+| **Repo** | pnpm workspaces monorepo | Web + mobile share quiz content, scoring logic |
+| **Web** | Vite + React | Fast dev loop, simple build |
+| **Mobile** | Expo + React Router | Native feel (NativeTabs, SF Symbol icons), Reanimated 3D, Skia canvas |
+| **Server state** | TanStack Query | Caching, optimistic updates, retry — handles offline reads |
+| **Design** | Dark-first, teal accent | Token-driven; mobile and web pixel-perfect aligned |
+| **Testing** | Jest + React Testing Library (web/mobile), Maestro (E2E) | 50+ tests covering core logic, CRUD, UI flows |
+
+## Project Structure
+
+```
+tech-refresh/
+├── apps/
+│   ├── mobile/                 # Expo app (React Native)
+│   │   ├── src/app/            # expo-router (nested)
+│   │   ├── src/components/     # Screens, forms, layouts
+│   │   ├── src/theme.ts        # Token re-exports
+│   │   └── jest.setup.js       # Mocks (Skia, Reanimated, etc.)
+│   └── web/                    # Vite + React
+│       ├── src/                # Pages, components, hooks
+│       └── vite.config.js      # SSR-less single-page
+├── packages/
+│   └── core/                   # Shared logic
+│       ├── src/
+│       │   ├── prepData.js     # 80+ tech quiz content
+│       │   ├── arch.js         # 5 scenarios, evaluator, node types
+│       │   ├── stories.js      # STAR competencies, prompts
+│       │   ├── contacts.js     # Pipeline lifecycle, date rules
+│       │   ├── quiz.js         # Shuffle, drill-building
+│       │   ├── funnel.js       # Conversion analytics
+│       │   ├── accuracy.js     # XP timeline
+│       │   ├── gamification.js # Ranks, XP points
+│       │   ├── i18n.js         # Strings (English-only, extensible)
+│       │   ├── tokens.js       # Design tokens (colors, spacing, font sizes)
+│       │   ├── api.js          # Data layer (Supabase CRUD)
+│       │   ├── techLinks.js    # Reference URLs
+│       │   └── __tests__/      # 37 unit tests
+├── supabase/
+│   └── migrations/             # SQL schema (contacts, retros, stories, answer_events)
+├── DESIGN.md                   # Design system & token reference
+├── PLAN.md                     # Phases, decisions, study-case map
+├── package.json                # Workspace root
+├── pnpm-workspace.yaml         # Monorepo config
+└── pnpm-lock.yaml              # Locked deps (pnpm@10.6.5)
+```
+
+## Getting Started
+
+### Prerequisites
+- **Node 22+** (via nvm or Homebrew)
+- **pnpm@10.6.5** (enforced via Corepack)
+- **Xcode 15+** (for iOS simulator)
+- **Android Studio** (for Android simulator, optional)
+- **Supabase account** (free tier sufficient)
+
+### Installation
+
+```bash
+# Install dependencies
+pnpm install
+
+# Set up Supabase
+# 1. Create a Supabase project at https://supabase.com
+# 2. Copy your project URL and anon key
+# 3. Create a .env file in apps/web and apps/mobile:
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGc...
+
+# 4. Run migrations (one-time)
+cd supabase
+# Run migrations manually via Supabase dashboard, or use:
+# supabase db push (requires supabase-cli)
+
+# 5. Seed the database (optional — prepopulate quiz content)
+node seed.mjs
+```
+
+### Development
+
+```bash
+# Start web dev server (Vite)
+pnpm dev
+
+# Start mobile dev server (Expo Go via LAN)
+pnpm mobile
+
+# Run all tests
+pnpm test
+
+# Typecheck
+pnpm typecheck
+
+# CI (test + typecheck + build)
+pnpm ci
+
+# Run iOS simulator (native dev client, Skia support)
+pnpm exec expo run:ios
+
+# Run Android emulator
+pnpm exec expo run:android
+```
+
+## Design System
+
+All visual tokens live in [`packages/core/src/tokens.js`](packages/core/src/tokens.js):
+
+- **Colors**: Dark elevation ladder (bgDeep → bg → surface → surfaceHi) + text grades + brand teal + status colors (success, danger, warning)
+- **Typography**: `caption` (10px) → `display` (28px); all weights are string literals in code
+- **Spacing**: `xs` (4px) → `xxl` (28px)
+- **Radii**: `sm` (8px), `md` (12px), `lg` (16px), `pill` (999px)
+- **Decorative**: Confetti ramp (6 teal-led colors for celebrations)
+
+Both apps consume tokens identically — web accesses `@tech-refresh/core/tokens`, mobile re-exports via `@/theme`.
+
+See [DESIGN.md](DESIGN.md) for full guidelines (elevation rules, contrast requirements, alpha-concat invariant).
+
+## Key Modules
+
+### `packages/core/src/quiz.js`
+```js
+export function buildDrill(categories, answers, { techCount = 5, size = 10 })
+```
+Builds a spaced-repetition drill: sorts techs by accuracy (weakest first), pads with unattempted, returns shuffled quiz questions.
+
+### `packages/core/src/arch.js`
+```js
+export function evaluate(scenario, nodes, edges)
+```
+Scores a system design against a scenario's checks, budget, and global design rules. Returns `{ checks, score, cost, maint, warnings }`.
+
+### `packages/core/src/api.js`
+```js
+export function createApi(supabase)
+```
+Data layer: wraps Supabase, handles snake_case ↔ camelCase mapping, date transformation (DD-MM-YYYY ↔ ISO), RLS auth. Returns async CRUD methods.
+
+### `packages/core/src/gamification.js`
+```js
+export function rankForXp(xp)
+export const CORRECT_XP = 10, PERFECT_QUIZ_BONUS = 30
+```
+Rank ladder (Intern at 0 XP → Principal at 1500 XP) and scoring rules.
+
+## Database Schema
+
+```sql
+-- RLS on all tables: user_id = auth.uid()
+
+contacts(
+  id uuid pk, user_id uuid, name, status, role, link, note, date, 
+  next_action, next_action_date, created_at
+)
+
+retros(
+  id uuid pk, contact_id uuid fk, round, questions, went_well, 
+  to_improve, created_at
+)
+
+stories(
+  id uuid pk, user_id uuid, title, competency, situation, task, 
+  action, result, created_at
+)
+
+answer_events(
+  id uuid pk, user_id uuid, tech, correct bool, source text 
+  check ('card' | 'drill'), created_at
+)
+
+saved_boards(
+  id uuid pk, user_id uuid, title, scenario_id, nodes jsonb, 
+  edges jsonb, created_at, updated_at
+)
+
+status_events(
+  id uuid pk, user_id uuid, contact_id uuid fk, status text, 
+  created_at
+)
+```
+
+## Testing
+
+### Core package (Jest, 37 tests)
+```bash
+pnpm test
+```
+Tests cover:
+- Quiz mechanics (shuffle, drill-building, edge cases like 0/0 accuracy)
+- Arch evaluator (scoring, warnings, edge detection)
+- Date rules (DD-MM-YYYY parsing, due highlighting)
+- Funnel analytics (conversion rates, pace)
+- API layer (mocked Supabase client)
+
+### Mobile + Web (RNTL, 7+ component tests)
+```bash
+pnpm exec jest --testPathPattern="mobile|web"
+```
+Covers: Prep screen, quiz flow, drill session, stats bar, accuracy chart.
+
+### E2E (Maestro, smoke tests)
+```bash
+pnpm exec maestro test apps/mobile/.maestro/smoke.yaml --appId <expo-app-id>
+```
+Covers: sign-in, all four tabs, CRUD operations.
+
+## Quality Assurance
+
+### Type Safety
+- TypeScript `strict` mode enabled on mobile
+- JSDoc types for core modules
+- No `any` types in the codebase
+
+### Error Handling
+- Try/catch around async mutations
+- Null checks on ref-based DOM access (ArchBoard canvas)
+- Division by zero prevention (buildDrill)
+
+### Linting
+Run checks before commit:
+```bash
+pnpm typecheck && pnpm test && pnpm build
+```
+
+## Study Case: Interview Topics Covered
+
+Each component/module is a study case for a real topic:
+
+| Topic | Location | Why it matters |
+| --- | --- | --- |
+| **pnpm + Corepack** | `pnpm-workspace.yaml` | Monorepo dependency management; reproducible builds |
+| **Postgres + RLS** | `supabase/migrations/` | Row-level security = authorization at the DB edge |
+| **PostgREST API** | `packages/core/src/api.js` | Declarative REST from SQL; schema = API contract |
+| **JWT + Auth** | Supabase magic-link | Stateless auth; RLS policies gated by `auth.uid()` |
+| **TanStack Query** | `apps/*/src/` | Server state: caching, dedup, optimistic updates, offline |
+| **React Compiler** | `apps/mobile/app.json` | Auto-memoization; shipping smaller JS bundles |
+| **Reanimated worklets** | `apps/mobile/src/components/` | JSI (JS ↔ native bridge); 60fps animations |
+| **Skia canvas** | `apps/mobile/src/components/board/` | GPU rendering; gesture-driven 2D graphics |
+| **System design** | `packages/core/src/arch.js` | Practical scenarios: cost vs. reliability vs. complexity |
+| **Spaced repetition** | `packages/core/src/quiz.js` | Learning science: low-accuracy techs appear first |
+
+## CI/CD
+
+The repo is gated by:
+1. `pnpm test` — Jest on core + mobile (must pass)
+2. `pnpm typecheck` — TypeScript strict on mobile (must pass)
+3. `pnpm build` — Web production build (must succeed)
+
+See `package.json` → `scripts.ci`.
+
+## Deployment
+
+### Web
+```bash
+pnpm build
+```
+Outputs to `apps/web/dist/`. Deploy to Vercel, Netlify, or any static host.
+
+### Mobile (iOS/Android)
+```bash
+pnpm exec eas build
+```
+Requires EAS account. Outputs `.ipa` (iOS) or `.aab` (Android) for TestFlight / Play Store.
+
+**OTA updates** (Expo Updates) are intentionally parked — the app ships pinned Expo SDK versions for predictability.
+
+## Contributing
+
+When adding features:
+1. Add logic to `packages/core` (shared by both apps)
+2. Add tests in `__tests__/`
+3. Consume in `apps/mobile` and `apps/web` independently
+4. Update design tokens if colors/spacing change
+5. Run `pnpm ci` before commit
+
+## Files to Read First
+
+1. [DESIGN.md](DESIGN.md) — Visual identity and token reference
+2. [PLAN.md](PLAN.md) — Architecture decisions and phases
+3. [packages/core/src/tokens.js](packages/core/src/tokens.js) — Design system
+4. [packages/core/src/api.js](packages/core/src/api.js) — Data layer entry point
+5. [apps/mobile/src/app/_layout.tsx](apps/mobile/src/app/_layout.tsx) — Mobile routing
+
+## License
+
+MIT (personal project, open sourced for learning).
+
+---
+
+**Last updated:** June 12, 2026  
+**Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked)  
+**Committed:** ✅ All phases 0–4 complete; 50+ tests; 100% coverage on quiz/scoring logic
