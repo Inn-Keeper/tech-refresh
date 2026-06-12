@@ -179,13 +179,13 @@ export default function BoardScreen() {
               {scenario.name}
             </Text>
           )}
-          <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.red : colors.textDim }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.danger : colors.textDim }}>
             💰 {liveCost}/{scenario.budget}
           </Text>
           <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>🔧 {liveMaint}</Text>
           <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto", alignItems: "center" }}>
             <MiniButton label={t("board.saved")} color={savedOpen ? colors.accent : colors.textDim} onPress={() => setSavedOpen((value) => !value)} />
-            <MiniButton label={saveBoardMutation.isPending ? t("common.saving") : t("common.save")} color={colors.green} onPress={() => saveBoardMutation.mutate()} />
+            <MiniButton label={saveBoardMutation.isPending ? t("common.saving") : t("common.save")} color={colors.success} onPress={() => saveBoardMutation.mutate()} />
             <MiniButton label={t("common.clear")} color={colors.textDim} onPress={clearBoard} />
             <Button label={t("board.evaluate")} onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
           </View>
@@ -193,7 +193,7 @@ export default function BoardScreen() {
       )}
 
       {boardsError && chrome !== "zen" && (
-        <Text style={{ fontSize: 12, color: "#fca5a5" }}>
+        <Text style={{ fontSize: 12, color: colors.dangerBright }}>
           {t("board.boardsError", { message: boardsError.message })}
         </Text>
       )}
@@ -222,7 +222,7 @@ export default function BoardScreen() {
                 left: 8,
                 paddingHorizontal: 12,
                 paddingVertical: 6,
-                backgroundColor: "#13161fb8",
+                backgroundColor: `${colors.bgDeep}b8`,
                 borderRadius: 16,
               }}
             >
@@ -240,7 +240,7 @@ export default function BoardScreen() {
                 width: 30,
                 height: 30,
                 borderRadius: 15,
-                backgroundColor: "#13161fb8",
+                backgroundColor: `${colors.bgDeep}b8`,
                 alignItems: "center",
                 justifyContent: "center",
               }}
@@ -258,7 +258,7 @@ export default function BoardScreen() {
             bottom: 8,
             left: 8,
             right: 8,
-            backgroundColor: "#13161fd9",
+            backgroundColor: `${colors.bgDeep}d9`,
             borderWidth: 1,
             borderColor: colors.border,
             borderRadius: 12,
@@ -282,7 +282,7 @@ export default function BoardScreen() {
                 }}
               >
                 <Text style={{ fontSize: 14 }}>{spec.emoji}</Text>
-                <Text style={{ fontSize: 11, fontWeight: "600", color: "#cbd5e1" }}>{spec.label}</Text>
+                <Text style={{ fontSize: 11, fontWeight: "600", color: colors.text }}>{spec.label}</Text>
                 <Text style={{ fontSize: 9, color: colors.textFaint }}>{"$".repeat(spec.cost) || "free"}</Text>
               </TouchableOpacity>
             ))}
@@ -311,7 +311,7 @@ function SavedBoardsTray({ boards, activeId, onLoad, onDelete }: SavedBoardsTray
         <Text style={{ fontSize: 11, color: colors.textFaint }}>{t("board.savedTotal", { count: boards.length })}</Text>
       </View>
       {boards.length === 0 ? (
-        <View style={{ padding: 10, backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
+        <View style={{ padding: 10, backgroundColor: colors.well, borderWidth: 1, borderColor: colors.border, borderRadius: 8 }}>
           <Text style={{ fontSize: 12, color: colors.textFaint }}>{t("board.savedEmpty")}</Text>
         </View>
       ) : (
@@ -326,7 +326,7 @@ function SavedBoardsTray({ boards, activeId, onLoad, onDelete }: SavedBoardsTray
                   width: 210,
                   padding: 10,
                   gap: 8,
-                  backgroundColor: colors.surfaceAlt,
+                  backgroundColor: colors.surface,
                   borderWidth: 1,
                   borderColor: active ? colors.accent : colors.border,
                   borderRadius: 8,
@@ -340,7 +340,7 @@ function SavedBoardsTray({ boards, activeId, onLoad, onDelete }: SavedBoardsTray
                 </Text>
                 <View style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
                   <MiniButton label={t("common.load")} color={colors.accent} onPress={() => onLoad(board)} />
-                  <MiniButton label={t("common.delete")} color={colors.red} onPress={() => onDelete(board)} />
+                  <MiniButton label={t("common.delete")} color={colors.danger} onPress={() => onDelete(board)} />
                 </View>
               </View>
             );

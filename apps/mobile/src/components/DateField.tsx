@@ -57,7 +57,7 @@ export function DateField({ label, value, onChange, clearable = false }: Props) 
           <Pressable onPress={() => setPickerOpen(false)} style={{ flex: 1, backgroundColor: "#00000090" }} />
           <View
             style={{
-              backgroundColor: colors.surfaceAlt,
+              backgroundColor: colors.surface,
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
               borderWidth: 1,

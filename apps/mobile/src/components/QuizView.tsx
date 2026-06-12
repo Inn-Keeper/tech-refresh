@@ -1,7 +1,7 @@
 import { Linking, Text, TouchableOpacity, View } from "react-native";
 import { techLinks } from "@tech-refresh/core/techLinks";
 import { CORRECT_XP } from "@tech-refresh/core/gamification";
-import { colors } from "@/theme";
+import { colors, tints } from "@/theme";
 
 type Question = { question: string; options: string[]; correct: number };
 
@@ -40,18 +40,18 @@ export function QuizView({ tech, color, question, questionNumber, total, answere
         {question.options.map((opt, i) => {
           const isThisCorrect = i === question.correct;
           const isThisChosen = answered === i;
-          let bg = "#252b3b";
+          let bg = colors.surfaceHi;
           let border = colors.border;
           let textColor = colors.textDim;
           if (answered !== null) {
             if (isThisCorrect) {
-              bg = "#14532d40";
-              border = "#22c55e80";
-              textColor = "#86efac";
+              bg = tints.successSoft;
+              border = `${colors.success}80`;
+              textColor = colors.successBright;
             } else if (isThisChosen) {
-              bg = "#4c051940";
-              border = "#ef444480";
-              textColor = "#fca5a5";
+              bg = tints.dangerSoft;
+              border = `${colors.danger}80`;
+              textColor = colors.dangerBright;
             }
           }
           return (
@@ -73,12 +73,12 @@ export function QuizView({ tech, color, question, questionNumber, total, answere
       {answered !== null && (
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <Text style={{ fontSize: 12, fontWeight: "600", color: isCorrect ? colors.green : colors.red }}>
+            <Text style={{ fontSize: 12, fontWeight: "600", color: isCorrect ? colors.success : colors.danger }}>
               {isCorrect ? `Correct! +${CORRECT_XP} XP` : "Incorrect"}
             </Text>
             {link && (
               <TouchableOpacity onPress={() => Linking.openURL(link)}>
-                <Text style={{ fontSize: 12, color: "#7dd3fc", fontWeight: "500" }}>Docs ↗</Text>
+                <Text style={{ fontSize: 12, color: colors.accentBright, fontWeight: "500" }}>Docs ↗</Text>
               </TouchableOpacity>
             )}
           </View>

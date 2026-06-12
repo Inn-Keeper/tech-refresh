@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
 import * as api from "./api.js";
+import { colors, tints } from "@tech-refresh/core/tokens";
 
 const EMPTY_FORM = {
   title: "",
@@ -16,10 +17,10 @@ const inputStyle = {
   width: "100%",
   boxSizing: "border-box",
   padding: "8px 10px",
-  background: "#13161f",
-  border: "1px solid #2d3748",
+  background: colors.bgDeep,
+  border: `1px solid ${colors.border}`,
   borderRadius: 8,
-  color: "#e2e8f0",
+  color: colors.text,
   fontSize: 13,
   outline: "none",
   fontFamily: "inherit",
@@ -63,14 +64,14 @@ export default function StoryBank() {
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 48px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: "#f1f5f9" }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
           Story Bank
         </h1>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 500 }}>
           {stories ? `${stories.length} stories` : "loading…"}
         </span>
       </div>
-      <p style={{ margin: "0 0 20px", color: "#64748b", fontSize: 13 }}>
+      <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13 }}>
         Your STAR stories for behavioral interviews. Aim for 8–10 covering different competencies — one
         real story can serve several prompts.
       </p>
@@ -78,8 +79,8 @@ export default function StoryBank() {
       {error && (
         <div
           style={{
-            marginBottom: 16, padding: "10px 14px", background: "#7f1d1d30",
-            border: "1px solid #ef444460", borderRadius: 10, color: "#fca5a5", fontSize: 13,
+            marginBottom: 16, padding: "10px 14px", background: tints.dangerSoft,
+            border: `1px solid ${colors.danger}60`, borderRadius: 10, color: colors.dangerBright, fontSize: 13,
           }}
         >
           {error}
@@ -98,8 +99,8 @@ export default function StoryBank() {
             style={{
               padding: "7px 14px", borderRadius: 20, border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600,
-              background: mode === m.id ? "#6366f1" : "#1e2330",
-              color: mode === m.id ? "#fff" : "#94a3b8",
+              background: mode === m.id ? colors.accent : colors.surface,
+              color: mode === m.id ? colors.onAccent : colors.textDim,
             }}
           >
             {m.label}
@@ -115,8 +116,8 @@ export default function StoryBank() {
             <button
               onClick={() => setEditingId("new")}
               style={{
-                marginBottom: 16, padding: "9px 16px", background: "#6366f125",
-                border: "1px solid #6366f160", borderRadius: 10, color: "#a5b4fc",
+                marginBottom: 16, padding: "9px 16px", background: tints.accentSoft,
+                border: `1px solid ${colors.accent}60`, borderRadius: 10, color: colors.accentBright,
                 fontSize: 13, fontWeight: 600, cursor: "pointer",
               }}
             >
@@ -132,7 +133,7 @@ export default function StoryBank() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {stories?.length === 0 && editingId !== "new" && (
-              <p style={{ color: "#475569", fontSize: 13, textAlign: "center", marginTop: 24 }}>
+              <p style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginTop: 24 }}>
                 No stories yet. Start with your best "impact" story — the one you'd tell if you could only tell one.
               </p>
             )}
@@ -151,7 +152,7 @@ export default function StoryBank() {
 }
 
 function CompetencyBadge({ competency }) {
-  const color = COMPETENCY_COLORS[competency] || "#64748b";
+  const color = COMPETENCY_COLORS[competency] || colors.textFaint;
   return (
     <span
       style={{
@@ -166,27 +167,27 @@ function CompetencyBadge({ competency }) {
 
 function StoryCard({ story: s, onEdit, onDelete, readOnly }) {
   const [expanded, setExpanded] = useState(false);
-  const color = COMPETENCY_COLORS[s.competency] || "#64748b";
+  const color = COMPETENCY_COLORS[s.competency] || colors.textFaint;
 
   return (
     <div
       style={{
-        background: "#1e2330", border: `1px solid ${color}30`, borderRadius: 14, padding: "16px 20px",
+        background: colors.surface, border: `1px solid ${color}30`, borderRadius: 14, padding: "16px 20px",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <CompetencyBadge competency={s.competency} />
         <span
           onClick={() => setExpanded((v) => !v)}
-          style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9", cursor: "pointer", flex: 1 }}
+          style={{ fontSize: 14, fontWeight: 600, color: colors.textBright, cursor: "pointer", flex: 1 }}
         >
           {s.title}
         </span>
-        <button onClick={() => setExpanded((v) => !v)} style={miniBtn("#94a3b8")}>
+        <button onClick={() => setExpanded((v) => !v)} style={miniBtn(colors.textDim)}>
           {expanded ? "Collapse" : "Expand"}
         </button>
-        {!readOnly && <button onClick={onEdit} style={miniBtn("#94a3b8")}>Edit</button>}
-        {!readOnly && <button onClick={onDelete} style={miniBtn("#ef4444")}>Delete</button>}
+        {!readOnly && <button onClick={onEdit} style={miniBtn(colors.textDim)}>Edit</button>}
+        {!readOnly && <button onClick={onDelete} style={miniBtn(colors.danger)}>Delete</button>}
       </div>
 
       {expanded && (
@@ -205,10 +206,10 @@ function StarSection({ label, text }) {
   if (!text) return null;
   return (
     <div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#64748b", letterSpacing: "0.08em", marginBottom: 2 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: colors.textFaint, letterSpacing: "0.08em", marginBottom: 2 }}>
         {label.toUpperCase()}
       </div>
-      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "#cbd5e1", whiteSpace: "pre-wrap" }}>{text}</p>
+      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: colors.text, whiteSpace: "pre-wrap" }}>{text}</p>
     </div>
   );
 }
@@ -227,7 +228,7 @@ function StoryForm({ initial, onSave, onCancel }) {
   return (
     <div
       style={{
-        background: "#1e2330", border: "1px solid #6366f160", borderRadius: 14,
+        background: colors.surface, border: `1px solid ${colors.accent}60`, borderRadius: 14,
         padding: "18px 20px", display: "flex", flexDirection: "column", gap: 10,
       }}
     >
@@ -266,8 +267,8 @@ function StoryForm({ initial, onSave, onCancel }) {
         <button
           onClick={onCancel}
           style={{
-            padding: "8px 16px", background: "transparent", border: "1px solid #2d3748",
-            borderRadius: 8, color: "#94a3b8", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            padding: "8px 16px", background: "transparent", border: `1px solid ${colors.border}`,
+            borderRadius: 8, color: colors.textDim, fontSize: 13, fontWeight: 600, cursor: "pointer",
           }}
         >
           Cancel
@@ -276,8 +277,8 @@ function StoryForm({ initial, onSave, onCancel }) {
           onClick={() => onSave(form)}
           disabled={!form.title.trim()}
           style={{
-            padding: "8px 16px", background: "#6366f1", border: "none", borderRadius: 8,
-            color: "#fff", fontSize: 13, fontWeight: 600,
+            padding: "8px 16px", background: colors.accent, border: "none", borderRadius: 8,
+            color: colors.onAccent, fontSize: 13, fontWeight: 600,
             cursor: form.title.trim() ? "pointer" : "not-allowed",
             opacity: form.title.trim() ? 1 : 0.5,
           }}
@@ -292,7 +293,7 @@ function StoryForm({ initial, onSave, onCancel }) {
 function Field({ label, children }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.03em" }}>{label}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" }}>{label}</span>
       {children}
     </label>
   );
@@ -316,17 +317,17 @@ function PromptDrill({ stories }) {
     <div>
       <div
         style={{
-          background: "#1a1f2e", border: "1px solid #2d3748", borderRadius: 14, padding: "24px",
+          background: colors.well, border: `1px solid ${colors.border}`, borderRadius: 14, padding: "24px",
           textAlign: "center",
         }}
       >
         <div style={{ marginBottom: 14 }}>
           <CompetencyBadge competency={prompt.competency} />
         </div>
-        <p style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 600, lineHeight: 1.5, color: "#f1f5f9" }}>
+        <p style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 600, lineHeight: 1.5, color: colors.textBright }}>
           "{prompt.text}"
         </p>
-        <p style={{ margin: "0 0 20px", fontSize: 12, color: "#64748b" }}>
+        <p style={{ margin: "0 0 20px", fontSize: 12, color: colors.textFaint }}>
           Answer out loud — aim for 90 seconds, Action should be the longest part.
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
@@ -334,8 +335,8 @@ function PromptDrill({ stories }) {
             onClick={() => setRevealed(true)}
             disabled={revealed}
             style={{
-              padding: "9px 18px", background: "#6366f1", border: "none", borderRadius: 8,
-              color: "#fff", fontSize: 13, fontWeight: 600,
+              padding: "9px 18px", background: colors.accent, border: "none", borderRadius: 8,
+              color: colors.onAccent, fontSize: 13, fontWeight: 600,
               cursor: revealed ? "default" : "pointer", opacity: revealed ? 0.5 : 1,
             }}
           >
@@ -344,8 +345,8 @@ function PromptDrill({ stories }) {
           <button
             onClick={nextPrompt}
             style={{
-              padding: "9px 18px", background: "transparent", border: "1px solid #2d3748",
-              borderRadius: 8, color: "#94a3b8", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              padding: "9px 18px", background: "transparent", border: `1px solid ${colors.border}`,
+              borderRadius: 8, color: colors.textDim, fontSize: 13, fontWeight: 600, cursor: "pointer",
             }}
           >
             Next prompt →
@@ -356,7 +357,7 @@ function PromptDrill({ stories }) {
       {revealed && (
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
           {matching.length === 0 ? (
-            <p style={{ color: "#fbbf24", fontSize: 13, textAlign: "center" }}>
+            <p style={{ color: colors.warningBright, fontSize: 13, textAlign: "center" }}>
               ⚠️ No story tagged "{prompt.competency}" yet — that's a gap an interviewer will find first. Write one.
             </p>
           ) : (

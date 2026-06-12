@@ -5,7 +5,7 @@ export const categories = [
   {
     name: "Languages",
     emoji: "🧠",
-    color: "#6366f1",
+    color: "#818CF8",
     items: [
       {
         tech: "TypeScript",
@@ -259,7 +259,7 @@ export const categories = [
   {
     name: "Frontend & Mobile",
     emoji: "🖥️",
-    color: "#0ea5e9",
+    color: "#38BDF8",
     items: [
       {
         tech: "React",
@@ -724,7 +724,7 @@ export const categories = [
   {
     name: "Backend",
     emoji: "⚙️",
-    color: "#10b981",
+    color: "#4ADE80",
     items: [
       {
         tech: "Node.js",
@@ -980,7 +980,7 @@ export const categories = [
   {
     name: "Cloud & DevOps",
     emoji: "☁️",
-    color: "#f59e0b",
+    color: "#FBBF24",
     items: [
       {
         tech: "Azure DevOps",
@@ -1240,7 +1240,7 @@ export const categories = [
   {
     name: "Monitoring",
     emoji: "📊",
-    color: "#ec4899",
+    color: "#F472B6",
     items: [
       {
         tech: "Application Insights",
@@ -1449,7 +1449,7 @@ export const categories = [
   {
     name: "AI Tooling",
     emoji: "🤖",
-    color: "#8b5cf6",
+    color: "#A78BFA",
     items: [
       {
         tech: "GitHub Copilot",
@@ -1582,7 +1582,7 @@ export const categories = [
   {
     name: "Testing",
     emoji: "🧪",
-    color: "#14b8a6",
+    color: "#A3E635",
     items: [
       {
         tech: "Playwright (E2E)",
@@ -1757,7 +1757,7 @@ export const categories = [
   {
     name: "Mobile Delivery",
     emoji: "📱",
-    color: "#f97316",
+    color: "#FB923C",
     items: [
       {
         tech: "App Store / Play Store",
@@ -1807,7 +1807,7 @@ export const categories = [
   {
     name: "Databases & CRM",
     emoji: "🗄️",
-    color: "#64748b",
+    color: "#94A3B8",
     items: [
       {
         tech: "PostgreSQL",

@@ -9,6 +9,7 @@ import * as api from "./api.js";
 import { useScores } from "./useScores.js";
 import { AccuracyChart } from "./AccuracyChart.jsx";
 import { CelebrationOverlay } from "./CelebrationOverlay.jsx";
+import { colors, tints } from "@tech-refresh/core/tokens";
 
 export default function InterviewPrep() {
   const [activeCategory, setActiveCategory] = useState(0);
@@ -26,7 +27,7 @@ export default function InterviewPrep() {
       setCelebration({
         title: t("celebration.rankTitle", { rank: current.name }),
         subtitle: t("celebration.rankSubtitle", { xp: scores.xp }),
-        accent: "#6366f1",
+        accent: colors.accent,
       });
     }
     previousRank.current = current;
@@ -112,7 +113,7 @@ export default function InterviewPrep() {
         setCelebration({
           title: t("celebration.perfectTitle"),
           subtitle: t("celebration.perfectSubtitle", { bonus: PERFECT_QUIZ_BONUS }),
-          accent: "#22c55e",
+          accent: colors.success,
         });
       }
       setDrill({ ...drill, done: true });
@@ -124,7 +125,7 @@ export default function InterviewPrep() {
   return (
     <div>
       <div style={{ padding: "24px 24px 0", maxWidth: 960, margin: "0 auto" }}>
-        <p style={{ margin: "0 0 20px", color: "#64748b", fontSize: 13, display: "flex", gap: 12 }}>
+        <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13, display: "flex", gap: 12 }}>
           <span>Tap a card to read prep notes · tap again to start a quiz · finish the quiz to reset.</span>
           <span style={{ marginLeft: "auto", fontWeight: 500, whiteSpace: "nowrap" }}>
             {allItems.length} technologies
@@ -136,7 +137,7 @@ export default function InterviewPrep() {
         {!drill && <AccuracyChart points={accuracy} />}
 
         <div style={{ position: "relative", marginBottom: 24 }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#475569", fontSize: 14 }}>🔍</span>
+          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: colors.textFaint, fontSize: 14 }}>🔍</span>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -144,8 +145,8 @@ export default function InterviewPrep() {
             style={{
               width: "100%", boxSizing: "border-box",
               padding: "10px 12px 10px 36px",
-              background: "#1e2330", border: "1px solid #2d3748",
-              borderRadius: 10, color: "#e2e8f0", fontSize: 14,
+              background: colors.surface, border: `1px solid ${colors.border}`,
+              borderRadius: 10, color: colors.text, fontSize: 14,
               outline: "none",
             }}
           />
@@ -159,7 +160,7 @@ export default function InterviewPrep() {
       ) : filtered ? (
         <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 48px" }}>
           {filtered.length === 0 ? (
-            <p style={{ color: "#64748b", textAlign: "center", marginTop: 40 }}>No matches found.</p>
+            <p style={{ color: colors.textFaint, textAlign: "center", marginTop: 40 }}>No matches found.</p>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
               {filtered.map((item) => {
@@ -190,8 +191,8 @@ export default function InterviewPrep() {
                   style={{
                     padding: "7px 14px", borderRadius: 20, border: "none", cursor: "pointer",
                     fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
-                    background: activeCategory === i ? cat.color : "#1e2330",
-                    color: activeCategory === i ? "#fff" : "#94a3b8",
+                    background: activeCategory === i ? cat.color : colors.surface,
+                    color: activeCategory === i ? colors.onAccent : colors.textDim,
                     transition: "all 0.15s",
                   }}
                 >
@@ -266,7 +267,7 @@ function FrontFace({ item, stat, onFlip }) {
       onClick={onFlip}
       style={{
         cursor: "pointer",
-        background: "#1e2330",
+        background: colors.surface,
         border: `1px solid ${item.color}30`,
         borderRadius: 14,
         padding: "20px 18px",
@@ -283,12 +284,12 @@ function FrontFace({ item, stat, onFlip }) {
         }}>
           {item.tech}
         </div>
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "#cbd5e1" }}>
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: colors.text }}>
           {item.oneliner}
         </p>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#475569", marginTop: 12 }}>
-        <span style={{ color: accuracy === null ? "#475569" : accuracy >= 70 ? "#22c55e" : "#f59e0b" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: colors.textFaint, marginTop: 12 }}>
+        <span style={{ color: accuracy === null ? colors.textFaint : accuracy >= 70 ? colors.success : colors.warning }}>
           {accuracy === null ? "" : `✓ ${accuracy}% · ${attempts} answered`}
         </span>
         <span>tap for prep notes →</span>
@@ -301,7 +302,7 @@ function BackFace({ item, onFlip }) {
   return (
     <div
       style={{
-        background: `linear-gradient(135deg, ${item.color}18, #1e2330)`,
+        background: `linear-gradient(135deg, ${item.color}18, ${colors.surface})`,
         border: `1px solid ${item.color}50`,
         borderRadius: 14,
         padding: "18px",
@@ -315,7 +316,7 @@ function BackFace({ item, onFlip }) {
         </div>
         <ul style={{ margin: 0, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 6 }}>
           {item.prep.map((point) => (
-            <li key={point} style={{ fontSize: 12.5, lineHeight: 1.5, color: "#94a3b8" }}>
+            <li key={point} style={{ fontSize: 12.5, lineHeight: 1.5, color: colors.textDim }}>
               {point}
             </li>
           ))}
@@ -349,7 +350,7 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
   return (
     <div
       style={{
-        background: "#1a1f2e",
+        background: colors.well,
         border: `1px solid ${item.color}40`,
         borderRadius: 14,
         padding: "18px",
@@ -360,12 +361,12 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
         <div style={{ fontSize: 10, fontWeight: 700, color: item.color, letterSpacing: "0.08em" }}>
           {item.tech} · QUIZ
         </div>
-        <div style={{ fontSize: 10, color: "#475569" }}>
+        <div style={{ fontSize: 10, color: colors.textFaint }}>
           {questionNumber} / {total}
         </div>
       </div>
 
-      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "#e2e8f0", fontWeight: 500 }}>
+      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: colors.text, fontWeight: 500 }}>
         {question.question}
       </p>
 
@@ -374,19 +375,19 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
           const isThisCorrect = i === question.correct;
           const isThisChosen = answered === i;
 
-          let bg = "#252b3b";
-          let border = "1px solid #2d3748";
-          let color = "#94a3b8";
+          let bg = colors.surfaceHi;
+          let border = `1px solid ${colors.border}`;
+          let color = colors.textDim;
 
           if (answered !== null) {
             if (isThisCorrect) {
-              bg = "#14532d40";
-              border = "1px solid #22c55e80";
-              color = "#86efac";
+              bg = tints.successSoft;
+              border = `1px solid ${colors.success}80`;
+              color = colors.successBright;
             } else if (isThisChosen && !isThisCorrect) {
-              bg = "#4c051940";
-              border = "1px solid #ef444480";
-              color = "#fca5a5";
+              bg = tints.dangerSoft;
+              border = `1px solid ${colors.danger}80`;
+              color = colors.dangerBright;
             }
           }
 
@@ -419,7 +420,7 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
       {answered !== null && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 12, color: isCorrect ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: isCorrect ? colors.success : colors.danger, fontWeight: 600 }}>
               {isCorrect ? `Correct! +${CORRECT_XP} XP` : "Incorrect"}
             </span>
             {link && (
@@ -427,7 +428,7 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
                 href={link}
                 target="_blank"
                 rel="noreferrer"
-                style={{ fontSize: 12, color: "#7dd3fc", textDecoration: "none", fontWeight: 500 }}
+                style={{ fontSize: 12, color: colors.accentBright, textDecoration: "none", fontWeight: 500 }}
               >
                 Docs ↗
               </a>
@@ -483,26 +484,26 @@ function StatsBar({ scores, onDrill, drillActive }) {
       style={{
         marginBottom: 20,
         padding: "14px 16px",
-        background: "#1a1f2e",
-        border: "1px solid #2d3748",
+        background: colors.well,
+        border: `1px solid ${colors.border}`,
         borderRadius: 12,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: "#f1f5f9" }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: colors.textBright }}>
           🏆 {rank.name}
         </span>
-        <span style={{ fontSize: 12, color: "#94a3b8", fontWeight: 600 }}>{scores.xp} XP</span>
-        <div style={{ flex: 1, minWidth: 120, height: 6, background: "#252b3b", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ width: `${progress}%`, height: "100%", background: "#6366f1", borderRadius: 3, transition: "width 0.3s" }} />
+        <span style={{ fontSize: 12, color: colors.textDim, fontWeight: 600 }}>{scores.xp} XP</span>
+        <div style={{ flex: 1, minWidth: 120, height: 6, background: colors.surfaceHi, borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ width: `${progress}%`, height: "100%", background: colors.accent, borderRadius: 3, transition: "width 0.3s" }} />
         </div>
         {next && (
-          <span style={{ fontSize: 11, color: "#64748b" }}>
+          <span style={{ fontSize: 11, color: colors.textFaint }}>
             {next.min - scores.xp} XP to {next.name}
           </span>
         )}
         {accuracy !== null && (
-          <span style={{ fontSize: 12, color: accuracy >= 70 ? "#22c55e" : "#f59e0b", fontWeight: 600 }}>
+          <span style={{ fontSize: 12, color: accuracy >= 70 ? colors.success : colors.warning, fontWeight: 600 }}>
             {accuracy}% accuracy · {attempts} answered
           </span>
         )}
@@ -511,10 +512,10 @@ function StatsBar({ scores, onDrill, drillActive }) {
           disabled={drillActive}
           style={{
             padding: "5px 12px",
-            background: "#6366f125",
-            border: "1px solid #6366f160",
+            background: tints.accentSoft,
+            border: `1px solid ${colors.accent}60`,
             borderRadius: 8,
-            color: "#a5b4fc",
+            color: colors.accentBright,
             fontSize: 11,
             fontWeight: 600,
             cursor: drillActive ? "default" : "pointer",
@@ -529,9 +530,9 @@ function StatsBar({ scores, onDrill, drillActive }) {
             style={{
               padding: "5px 12px",
               background: "transparent",
-              border: "1px solid #2d3748",
+              border: `1px solid ${colors.border}`,
               borderRadius: 8,
-              color: "#94a3b8",
+              color: colors.textDim,
               fontSize: 11,
               fontWeight: 600,
               cursor: "pointer",
@@ -542,14 +543,14 @@ function StatsBar({ scores, onDrill, drillActive }) {
         )}
       </div>
 
-      <div style={{ fontSize: 10.5, color: "#475569", marginTop: 8 }}>
+      <div style={{ fontSize: 10.5, color: colors.textFaint, marginTop: 8 }}>
         +{CORRECT_XP} XP per correct answer · +{PERFECT_QUIZ_BONUS} XP for a perfect quiz
       </div>
 
       {showRanking && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 14 }}>
-          <RankingList title="💪 Strongest" items={ranked.slice(0, 5)} color="#22c55e" />
-          <RankingList title="📉 Needs work" items={[...ranked].reverse().slice(0, 5)} color="#f59e0b" />
+          <RankingList title="💪 Strongest" items={ranked.slice(0, 5)} color={colors.success} />
+          <RankingList title="📉 Needs work" items={[...ranked].reverse().slice(0, 5)} color={colors.warning} />
         </div>
       )}
     </div>
@@ -559,14 +560,14 @@ function StatsBar({ scores, onDrill, drillActive }) {
 function RankingList({ title, items, color }) {
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.04em" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
         {title}
       </div>
       <ol style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
         {items.map((r) => (
-          <li key={r.tech} style={{ fontSize: 12, color: "#cbd5e1" }}>
+          <li key={r.tech} style={{ fontSize: 12, color: colors.text }}>
             {r.tech} <span style={{ color, fontWeight: 600 }}>{r.acc}%</span>{" "}
-            <span style={{ color: "#475569" }}>({r.n})</span>
+            <span style={{ color: colors.textFaint }}>({r.n})</span>
           </li>
         ))}
       </ol>
@@ -582,23 +583,23 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
     return (
       <div
         style={{
-          background: "#1a1f2e", border: "1px solid #2d3748", borderRadius: 14,
+          background: colors.well, border: `1px solid ${colors.border}`, borderRadius: 14,
           padding: "32px 24px", textAlign: "center",
         }}
       >
         <div style={{ fontSize: 32, marginBottom: 8 }}>{perfect ? "🏆" : correctCount >= questions.length / 2 ? "💪" : "📚"}</div>
-        <div style={{ fontSize: 20, fontWeight: 700, color: "#f1f5f9", marginBottom: 6 }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: colors.textBright, marginBottom: 6 }}>
           {correctCount} / {questions.length}
         </div>
-        <p style={{ margin: "0 0 20px", fontSize: 13, color: "#94a3b8" }}>
+        <p style={{ margin: "0 0 20px", fontSize: 13, color: colors.textDim }}>
           +{correctCount * CORRECT_XP} XP{perfect ? ` · +${PERFECT_QUIZ_BONUS} perfect bonus` : ""} — accuracy recorded
           per tech, so the next drill adapts.
         </p>
         <button
           onClick={onExit}
           style={{
-            padding: "9px 18px", background: "#6366f1", border: "none", borderRadius: 8,
-            color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer",
+            padding: "9px 18px", background: colors.accent, border: "none", borderRadius: 8,
+            color: colors.onAccent, fontSize: 13, fontWeight: 600, cursor: "pointer",
           }}
         >
           Back to cards
@@ -614,7 +615,7 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
   return (
     <div
       style={{
-        background: "#1a1f2e", border: `1px solid ${cur.color}40`, borderRadius: 14,
+        background: colors.well, border: `1px solid ${cur.color}40`, borderRadius: 14,
         padding: "20px", display: "flex", flexDirection: "column", gap: 12,
       }}
     >
@@ -623,12 +624,12 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
           🎯 DRILL · {cur.tech}
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 10, color: "#475569" }}>{index + 1} / {questions.length}</span>
+          <span style={{ fontSize: 10, color: colors.textFaint }}>{index + 1} / {questions.length}</span>
           <button
             onClick={onExit}
             style={{
-              padding: "3px 10px", background: "transparent", border: "1px solid #2d3748",
-              borderRadius: 8, color: "#64748b", fontSize: 10, fontWeight: 600, cursor: "pointer",
+              padding: "3px 10px", background: "transparent", border: `1px solid ${colors.border}`,
+              borderRadius: 8, color: colors.textFaint, fontSize: 10, fontWeight: 600, cursor: "pointer",
             }}
           >
             Exit
@@ -636,7 +637,7 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
         </span>
       </div>
 
-      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: "#e2e8f0", fontWeight: 500 }}>
+      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: colors.text, fontWeight: 500 }}>
         {cur.q.question}
       </p>
 
@@ -645,19 +646,19 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
           const isThisCorrect = i === cur.q.correct;
           const isThisChosen = answered === i;
 
-          let bg = "#252b3b";
-          let border = "1px solid #2d3748";
-          let color = "#94a3b8";
+          let bg = colors.surfaceHi;
+          let border = `1px solid ${colors.border}`;
+          let color = colors.textDim;
 
           if (answered !== null) {
             if (isThisCorrect) {
-              bg = "#14532d40";
-              border = "1px solid #22c55e80";
-              color = "#86efac";
+              bg = tints.successSoft;
+              border = `1px solid ${colors.success}80`;
+              color = colors.successBright;
             } else if (isThisChosen && !isThisCorrect) {
-              bg = "#4c051940";
-              border = "1px solid #ef444480";
-              color = "#fca5a5";
+              bg = tints.dangerSoft;
+              border = `1px solid ${colors.danger}80`;
+              color = colors.dangerBright;
             }
           }
 
@@ -681,7 +682,7 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
       {answered !== null && (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 12, color: isCorrect ? "#22c55e" : "#ef4444", fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: isCorrect ? colors.success : colors.danger, fontWeight: 600 }}>
               {isCorrect ? `Correct! +${CORRECT_XP} XP` : "Incorrect"}
             </span>
             {cur.link && (
@@ -689,7 +690,7 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
                 href={cur.link}
                 target="_blank"
                 rel="noreferrer"
-                style={{ fontSize: 12, color: "#7dd3fc", textDecoration: "none", fontWeight: 500 }}
+                style={{ fontSize: 12, color: colors.accentBright, textDecoration: "none", fontWeight: 500 }}
               >
                 Docs ↗
               </a>

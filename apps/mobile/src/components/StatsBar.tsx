@@ -3,7 +3,7 @@ import { Text, TouchableOpacity, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { t } from "@tech-refresh/core/i18n";
-import { colors } from "@/theme";
+import { colors, tints } from "@/theme";
 import type { Scores } from "@/lib/useScores";
 
 type Props = { scores: Scores; onDrill: () => void; drillActive: boolean };
@@ -29,7 +29,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
   return (
     <View
       style={{
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: 12,
@@ -41,7 +41,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
         <Text style={{ fontSize: 14, fontWeight: "700", color: colors.textBright }}>🏆 {rank.name}</Text>
         <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{scores.xp} XP</Text>
         {accuracy !== null && (
-          <Text style={{ fontSize: 12, fontWeight: "600", color: accuracy >= 70 ? colors.green : colors.amber }}>
+          <Text style={{ fontSize: 12, fontWeight: "600", color: accuracy >= 70 ? colors.success : colors.warning }}>
             {t("prep.accuracySummary", { pct: accuracy, count: attempts })}
           </Text>
         )}
@@ -52,18 +52,18 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
             marginLeft: "auto",
             paddingHorizontal: 12,
             paddingVertical: 5,
-            backgroundColor: "#6366f125",
+            backgroundColor: tints.accentSoft,
             borderWidth: 1,
-            borderColor: "#6366f160",
+            borderColor: `${colors.accent}60`,
             borderRadius: 8,
             opacity: drillActive ? 0.5 : 1,
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: "600", color: "#a5b4fc" }}>{t("prep.drillWeakest")}</Text>
+          <Text style={{ fontSize: 11, fontWeight: "600", color: colors.accentBright }}>{t("prep.drillWeakest")}</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={{ height: 6, backgroundColor: "#252b3b", borderRadius: 3, overflow: "hidden" }}>
+      <View style={{ height: 6, backgroundColor: colors.well, borderRadius: 3, overflow: "hidden" }}>
         <Animated.View style={[{ height: "100%", backgroundColor: colors.accent, borderRadius: 3 }, fillStyle]} />
       </View>
 

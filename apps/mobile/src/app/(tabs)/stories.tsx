@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
 import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
-import { colors } from "@/theme";
+import { colors, tints } from "@/theme";
 import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
 import type { Story } from "@tech-refresh/core/api";
 
@@ -53,20 +53,20 @@ export default function StoriesScreen() {
               <Pill label={t("stories.drillPrompts")} active={mode === "drill"} onPress={() => setMode("drill")} />
             </View>
 
-            {error && <Text style={{ color: "#fca5a5", fontSize: 13 }}>{t("stories.loadError", { message: error.message })}</Text>}
+            {error && <Text style={{ color: colors.dangerBright, fontSize: 13 }}>{t("stories.loadError", { message: error.message })}</Text>}
 
             {mode === "stories" ? (
               <TouchableOpacity
                 onPress={() => setEditing(EMPTY_FORM)}
                 style={{
                   padding: 12,
-                  backgroundColor: "#6366f125",
+                  backgroundColor: tints.accentSoft,
                   borderWidth: 1,
-                  borderColor: "#6366f160",
+                  borderColor: `${colors.accent}60`,
                   borderRadius: 10,
                 }}
               >
-                <Text style={{ color: "#a5b4fc", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                <Text style={{ color: colors.accentBright, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
                   + Add story
                 </Text>
               </TouchableOpacity>
@@ -117,7 +117,7 @@ function StoryCard({ story, onEdit, onDelete }: StoryCardProps) {
           {onEdit && onDelete && (
             <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
               <MiniButton label={t("common.edit")} color={colors.textDim} onPress={onEdit} />
-              <MiniButton label={t("common.delete")} color={colors.red} onPress={onDelete} />
+              <MiniButton label={t("common.delete")} color={colors.danger} onPress={onDelete} />
             </View>
           )}
         </View>
@@ -195,7 +195,7 @@ function PromptDrill({ stories }: { stories: Story[] }) {
         key={promptIndex}
         entering={FadeInDown.springify().damping(16)}
         style={{
-          backgroundColor: colors.surfaceAlt,
+          backgroundColor: colors.surface,
           borderWidth: 1,
           borderColor: colors.border,
           borderRadius: 14,
@@ -219,7 +219,7 @@ function PromptDrill({ stories }: { stories: Story[] }) {
 
       {revealed &&
         (matching.length === 0 ? (
-          <Text style={{ color: "#fbbf24", fontSize: 13, textAlign: "center" }}>
+          <Text style={{ color: colors.warningBright, fontSize: 13, textAlign: "center" }}>
             {t("stories.noStoryFor", { competency: prompt.competency })}
           </Text>
         ) : (

@@ -1,8 +1,10 @@
 import { useEffect } from "react";
+import { colors } from "@tech-refresh/core/tokens";
 
 const DISMISS_MS = 2100;
 
-const PARTICLE_COLORS = ["#22c55e", "#6366f1", "#f59e0b", "#ec4899", "#38bdf8", "#a78bfa"];
+// Decorative confetti ramp, teal-led to match the brand accent — see DESIGN.md.
+const PARTICLE_COLORS = ["#2DD4BF", "#4ADE80", "#FBBF24", "#F472B6", "#38BDF8", "#A78BFA"];
 const PARTICLES = Array.from({ length: 36 }, (_, index) => ({
   angle: (Math.PI * 2 * index) / 36 + (index % 5) * 0.1,
   distance: 90 + (index % 9) * 22,
@@ -12,7 +14,7 @@ const PARTICLES = Array.from({ length: 36 }, (_, index) => ({
 }));
 
 // CSS-animated twin of the mobile Skia celebration.
-export function CelebrationOverlay({ title, subtitle, accent = "#6366f1", onDone }) {
+export function CelebrationOverlay({ title, subtitle, accent = colors.accent, onDone }) {
   useEffect(() => {
     const done = setTimeout(onDone, DISMISS_MS);
     return () => clearTimeout(done);
@@ -27,7 +29,7 @@ export function CelebrationOverlay({ title, subtitle, accent = "#6366f1", onDone
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#0f1117a8",
+        background: `${colors.bg}a8`,
         pointerEvents: "none",
       }}
     >
@@ -65,13 +67,13 @@ export function CelebrationOverlay({ title, subtitle, accent = "#6366f1", onDone
           padding: "20px 26px",
           borderRadius: 14,
           border: `1px solid ${accent}90`,
-          background: "#1e2330f2",
+          background: `${colors.surface}f2`,
           textAlign: "center",
           animation: "celebration-pop 0.35s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
       >
-        <div style={{ color: "#f1f5f9", fontSize: 22, fontWeight: 800 }}>{title}</div>
-        <div style={{ color: "#94a3b8", fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>{subtitle}</div>
+        <div style={{ color: colors.textBright, fontSize: 22, fontWeight: 800 }}>{title}</div>
+        <div style={{ color: colors.textDim, fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>{subtitle}</div>
       </div>
     </div>
   );

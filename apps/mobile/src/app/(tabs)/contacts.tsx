@@ -6,7 +6,7 @@ import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/cor
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
-import { colors } from "@/theme";
+import { colors, tints } from "@/theme";
 import { Badge, Button, Field, MiniButton, Pill, Screen, Section, inputStyle, multilineStyle } from "@/components/ui";
 import { DateField } from "@/components/DateField";
 import type { Contact } from "@tech-refresh/core/api";
@@ -85,7 +85,7 @@ export default function ContactsScreen() {
         contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
-            {error && <Text style={{ color: "#fca5a5", fontSize: 13 }}>{t("contacts.loadError", { message: error.message })}</Text>}
+            {error && <Text style={{ color: colors.dangerBright, fontSize: 13 }}>{t("contacts.loadError", { message: error.message })}</Text>}
 
             <FunnelDashboard summary={funnel} />
 
@@ -93,13 +93,13 @@ export default function ContactsScreen() {
               <View
                 style={{
                   padding: 12,
-                  backgroundColor: "#7f1d1d30",
+                  backgroundColor: tints.dangerSoft,
                   borderWidth: 1,
-                  borderColor: "#ef444460",
+                  borderColor: `${colors.danger}60`,
                   borderRadius: 10,
                 }}
               >
-                <Text style={{ color: "#fca5a5", fontSize: 13, fontWeight: "600" }}>
+                <Text style={{ color: colors.dangerBright, fontSize: 13, fontWeight: "600" }}>
                   {t("contacts.dueBanner", { count: dueCount, plural: dueCount > 1 ? "s" : "" })}
                 </Text>
               </View>
@@ -109,13 +109,13 @@ export default function ContactsScreen() {
               onPress={() => setEditing({ ...EMPTY_FORM, date: todayDDMMYYYY() })}
               style={{
                 padding: 12,
-                backgroundColor: "#6366f125",
+                backgroundColor: tints.accentSoft,
                 borderWidth: 1,
-                borderColor: "#6366f160",
+                borderColor: `${colors.accent}60`,
                 borderRadius: 10,
               }}
             >
-              <Text style={{ color: "#a5b4fc", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+              <Text style={{ color: colors.accentBright, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
                 + Add contact
               </Text>
             </TouchableOpacity>
@@ -171,9 +171,9 @@ function FunnelDashboard({ summary }: { summary: FunnelSummary }) {
       </View>
 
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Metric label={t("funnel.appsPerWeek")} value={String(summary.applicationsPerWeek)} color={colors.green} />
-        <Metric label={t("funnel.interviews")} value={String(summary.reached.Interviewing)} color={colors.amber} />
-        <Metric label={t("funnel.offers")} value={String(summary.reached.Offer)} color="#a78bfa" />
+        <Metric label={t("funnel.appsPerWeek")} value={String(summary.applicationsPerWeek)} color={colors.success} />
+        <Metric label={t("funnel.interviews")} value={String(summary.reached.Interviewing)} color={colors.warning} />
+        <Metric label={t("funnel.offers")} value={String(summary.reached.Offer)} color={STATUS_STYLES.Offer.color} />
       </View>
 
       <View style={{ gap: 8 }}>
@@ -181,19 +181,19 @@ function FunnelDashboard({ summary }: { summary: FunnelSummary }) {
           label={t("funnel.contactedToApplied")}
           value={summary.rates.contactedToApplied}
           detail={`${summary.reached.Applied}/${summary.reached.Contacted}`}
-          color={colors.green}
+          color={colors.success}
         />
         <ConversionRow
           label={t("funnel.appliedToInterviewing")}
           value={summary.rates.appliedToInterviewing}
           detail={`${summary.reached.Interviewing}/${summary.reached.Applied}`}
-          color={colors.amber}
+          color={colors.warning}
         />
         <ConversionRow
           label={t("funnel.interviewingToOffer")}
           value={summary.rates.interviewingToOffer}
           detail={`${summary.reached.Offer}/${summary.reached.Interviewing}`}
-          color="#a78bfa"
+          color={STATUS_STYLES.Offer.color}
         />
       </View>
 
@@ -221,7 +221,7 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
         flex: 1,
         minHeight: 56,
         padding: 10,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: colors.well,
         borderWidth: 1,
         borderColor: `${color}40`,
         borderRadius: 8,
@@ -246,7 +246,7 @@ function ConversionRow({ label, value, detail, color }: { label: string; value: 
           {percent(value)}%
         </Text>
       </View>
-      <View style={{ height: 6, backgroundColor: colors.surfaceAlt, borderRadius: 999, overflow: "hidden" }}>
+      <View style={{ height: 6, backgroundColor: colors.well, borderRadius: 999, overflow: "hidden" }}>
         <View style={{ width: `${percent(value)}%`, height: "100%", backgroundColor: color, borderRadius: 999 }} />
       </View>
     </View>
@@ -287,7 +287,7 @@ function ContactCard({
       style={{
         backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: due ? "#ef444480" : `${status.color}30`,
+        borderColor: due ? `${colors.danger}80` : `${status.color}30`,
         borderRadius: 14,
         padding: 16,
         gap: 8,
@@ -300,7 +300,7 @@ function ContactCard({
           {nextStatus && (
             <MiniButton label={`→ ${nextStatus}`} color={STATUS_STYLES[nextStatus].color} onPress={onAdvance} />
           )}
-          <MiniButton label={t("contacts.addRetro")} color="#a5b4fc" onPress={onToggleRetroForm} />
+          <MiniButton label={t("contacts.addRetro")} color={colors.accentBright} onPress={onToggleRetroForm} />
         </View>
       </View>
 
@@ -309,10 +309,10 @@ function ContactCard({
       {!!contact.role &&
         (contact.link ? (
           <TouchableOpacity onPress={() => Linking.openURL(contact.link)}>
-            <Text style={{ fontSize: 13, color: "#7dd3fc" }}>{contact.role} ↗</Text>
+            <Text style={{ fontSize: 13, color: colors.accentBright }}>{contact.role} ↗</Text>
           </TouchableOpacity>
         ) : (
-          <Text style={{ fontSize: 13, color: "#cbd5e1" }}>{contact.role}</Text>
+          <Text style={{ fontSize: 13, color: colors.text }}>{contact.role}</Text>
         ))}
 
       {!!contact.note && <Text style={{ fontSize: 12.5, color: colors.textDim }}>{contact.note}</Text>}
@@ -324,18 +324,18 @@ function ContactCard({
             alignItems: "center",
             gap: 8,
             padding: 10,
-            backgroundColor: due ? "#7f1d1d30" : "#f59e0b15",
+            backgroundColor: due ? tints.dangerSoft : tints.warningSoft,
             borderWidth: 1,
-            borderColor: due ? "#ef444460" : "#f59e0b40",
+            borderColor: due ? `${colors.danger}60` : `${colors.warning}40`,
             borderRadius: 8,
           }}
         >
-          <Text style={{ flex: 1, fontSize: 12.5, color: due ? "#fca5a5" : "#fbbf24" }}>
+          <Text style={{ flex: 1, fontSize: 12.5, color: due ? colors.dangerBright : colors.warningBright }}>
             {due ? "🔴 DUE · " : "⏰ "}
             {contact.nextAction}
             {!!contact.nextActionDate && ` · ${contact.nextActionDate}`}
           </Text>
-          <MiniButton label={t("common.done")} color={due ? "#fca5a5" : "#fbbf24"} onPress={onClearAction} />
+          <MiniButton label={t("common.done")} color={due ? colors.dangerBright : colors.warningBright} onPress={onClearAction} />
         </View>
       )}
 
@@ -348,7 +348,7 @@ function ContactCard({
           />
         )}
         <MiniButton label={t("common.edit")} color={colors.textDim} onPress={onEdit} />
-        <MiniButton label={t("common.delete")} color={colors.red} onPress={onDelete} />
+        <MiniButton label={t("common.delete")} color={colors.danger} onPress={onDelete} />
       </View>
 
       {showRetros &&
@@ -357,7 +357,7 @@ function ContactCard({
             key={retro.id}
             style={{
               padding: 12,
-              backgroundColor: colors.surfaceAlt,
+              backgroundColor: colors.well,
               borderWidth: 1,
               borderColor: colors.border,
               borderRadius: 8,
@@ -365,7 +365,7 @@ function ContactCard({
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ fontSize: 12, fontWeight: "700", color: "#cbd5e1", flex: 1 }}>
+              <Text style={{ fontSize: 12, fontWeight: "700", color: colors.text, flex: 1 }}>
                 {retro.round || "Interview"}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textFaint }}>{retro.date}</Text>
@@ -393,9 +393,9 @@ function RetroForm({ onSave, onCancel }: RetroFormProps) {
     <View
       style={{
         padding: 12,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: colors.well,
         borderWidth: 1,
-        borderColor: "#6366f160",
+        borderColor: `${colors.accent}60`,
         borderRadius: 10,
         gap: 8,
       }}

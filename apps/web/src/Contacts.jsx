@@ -4,6 +4,7 @@ import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/cor
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { FunnelDashboard } from "./FunnelDashboard.jsx";
 import * as api from "./api.js";
+import { colors, tints } from "@tech-refresh/core/tokens";
 
 const EMPTY_FORM = {
   name: "",
@@ -22,10 +23,10 @@ const inputStyle = {
   width: "100%",
   boxSizing: "border-box",
   padding: "8px 10px",
-  background: "#13161f",
-  border: "1px solid #2d3748",
+  background: colors.bgDeep,
+  border: `1px solid ${colors.border}`,
   borderRadius: 8,
-  color: "#e2e8f0",
+  color: colors.text,
   fontSize: 13,
   outline: "none",
   fontFamily: "inherit",
@@ -106,14 +107,14 @@ export default function Contacts() {
   return (
     <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 48px" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: "#f1f5f9" }}>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
           Hiring Contacts
         </h1>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 500 }}>
           {contacts ? `${contacts.length} in pipeline` : "loading…"}
         </span>
       </div>
-      <p style={{ margin: "0 0 20px", color: "#64748b", fontSize: 13 }}>
+      <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13 }}>
         Recruiters contacted and applications submitted. Synced to Supabase.
       </p>
 
@@ -122,10 +123,10 @@ export default function Contacts() {
           style={{
             marginBottom: 16,
             padding: "10px 14px",
-            background: "#7f1d1d30",
-            border: "1px solid #ef444460",
+            background: tints.dangerSoft,
+            border: `1px solid ${colors.danger}60`,
             borderRadius: 10,
-            color: "#fca5a5",
+            color: colors.dangerBright,
             fontSize: 13,
           }}
         >
@@ -140,10 +141,10 @@ export default function Contacts() {
           style={{
             marginBottom: 16,
             padding: "10px 14px",
-            background: "#7f1d1d30",
-            border: "1px solid #ef444460",
+            background: tints.dangerSoft,
+            border: `1px solid ${colors.danger}60`,
             borderRadius: 10,
-            color: "#fca5a5",
+            color: colors.dangerBright,
             fontSize: 13,
             fontWeight: 600,
           }}
@@ -158,10 +159,10 @@ export default function Contacts() {
           style={{
             marginBottom: 16,
             padding: "9px 16px",
-            background: "#6366f125",
-            border: "1px solid #6366f160",
+            background: tints.accentSoft,
+            border: `1px solid ${colors.accent}60`,
             borderRadius: 10,
-            color: "#a5b4fc",
+            color: colors.accentBright,
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
@@ -225,8 +226,8 @@ function ContactCard({
   return (
     <div
       style={{
-        background: "#1e2330",
-        border: `1px solid ${due ? "#ef444480" : `${status.color}30`}`,
+        background: colors.surface,
+        border: `1px solid ${due ? `${colors.danger}80` : `${status.color}30`}`,
         borderRadius: 14,
         padding: "18px 20px",
       }}
@@ -245,7 +246,7 @@ function ContactCard({
         >
           {c.status.toUpperCase()}
         </span>
-        {c.date && <span style={{ fontSize: 11, color: "#64748b" }}>{c.date}</span>}
+        {c.date && <span style={{ fontSize: 11, color: colors.textFaint }}>{c.date}</span>}
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           {nextStatus && (
@@ -253,24 +254,24 @@ function ContactCard({
               → {nextStatus}
             </ActionButton>
           )}
-          <ActionButton onClick={onOpenRetro} color="#a5b4fc">
+          <ActionButton onClick={onOpenRetro} color={colors.accentBright}>
             + Retro
           </ActionButton>
-          <ActionButton onClick={onEdit} color="#94a3b8">
+          <ActionButton onClick={onEdit} color={colors.textDim}>
             Edit
           </ActionButton>
-          <ActionButton onClick={onDelete} color="#ef4444">
+          <ActionButton onClick={onDelete} color={colors.danger}>
             Delete
           </ActionButton>
         </div>
       </div>
 
-      <div style={{ fontSize: 15, fontWeight: 600, color: "#f1f5f9", marginBottom: 4 }}>{c.name}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: colors.textBright, marginBottom: 4 }}>{c.name}</div>
 
       {c.role && (
-        <div style={{ fontSize: 13, color: "#cbd5e1", marginBottom: 4 }}>
+        <div style={{ fontSize: 13, color: colors.text, marginBottom: 4 }}>
           {c.link ? (
-            <a href={c.link} target="_blank" rel="noreferrer" style={{ color: "#7dd3fc", textDecoration: "none" }}>
+            <a href={c.link} target="_blank" rel="noreferrer" style={{ color: colors.accentBright, textDecoration: "none" }}>
               {c.role} ↗
             </a>
           ) : (
@@ -279,7 +280,7 @@ function ContactCard({
         </div>
       )}
 
-      {c.note && <div style={{ fontSize: 12.5, color: "#94a3b8" }}>{c.note}</div>}
+      {c.note && <div style={{ fontSize: 12.5, color: colors.textDim }}>{c.note}</div>}
 
       {c.nextAction && (
         <div
@@ -289,11 +290,11 @@ function ContactCard({
             alignItems: "center",
             gap: 8,
             padding: "7px 10px",
-            background: due ? "#7f1d1d30" : "#f59e0b15",
-            border: `1px solid ${due ? "#ef444460" : "#f59e0b40"}`,
+            background: due ? tints.dangerSoft : tints.warningSoft,
+            border: `1px solid ${due ? `${colors.danger}60` : `${colors.warning}40`}`,
             borderRadius: 8,
             fontSize: 12.5,
-            color: due ? "#fca5a5" : "#fbbf24",
+            color: due ? colors.dangerBright : colors.warningBright,
           }}
         >
           <span style={{ fontWeight: 600 }}>{due ? "🔴 DUE" : "⏰"}</span>
@@ -307,7 +308,7 @@ function ContactCard({
             style={{
               padding: "3px 10px",
               background: "transparent",
-              border: `1px solid ${due ? "#ef444460" : "#f59e0b50"}`,
+              border: `1px solid ${due ? `${colors.danger}60` : `${colors.warning}50`}`,
               borderRadius: 6,
               color: "inherit",
               fontSize: 11,
@@ -327,9 +328,9 @@ function ContactCard({
             marginTop: 10,
             padding: "4px 10px",
             background: "transparent",
-            border: "1px solid #2d3748",
+            border: `1px solid ${colors.border}`,
             borderRadius: 8,
-            color: "#94a3b8",
+            color: colors.textDim,
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
@@ -346,14 +347,14 @@ function ContactCard({
             style={{
               marginTop: 8,
               padding: "10px 12px",
-              background: "#1a1f2e",
-              border: "1px solid #2d3748",
+              background: colors.well,
+              border: `1px solid ${colors.border}`,
               borderRadius: 8,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#cbd5e1" }}>{r.round || "Interview"}</span>
-              <span style={{ fontSize: 11, color: "#64748b" }}>{r.date}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: colors.text }}>{r.round || "Interview"}</span>
+              <span style={{ fontSize: 11, color: colors.textFaint }}>{r.date}</span>
               <button
                 onClick={() => onDeleteRetro(r.id)}
                 title="Delete retro"
@@ -361,7 +362,7 @@ function ContactCard({
                   marginLeft: "auto",
                   background: "transparent",
                   border: "none",
-                  color: "#64748b",
+                  color: colors.textFaint,
                   cursor: "pointer",
                   fontSize: 12,
                 }}
@@ -384,10 +385,10 @@ function RetroLine({ label, text }) {
   if (!text) return null;
   return (
     <div style={{ marginBottom: 4 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, color: "#64748b", letterSpacing: "0.06em" }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: colors.textFaint, letterSpacing: "0.06em" }}>
         {label.toUpperCase()}:{" "}
       </span>
-      <span style={{ fontSize: 12.5, color: "#94a3b8", whiteSpace: "pre-wrap" }}>{text}</span>
+      <span style={{ fontSize: 12.5, color: colors.textDim, whiteSpace: "pre-wrap" }}>{text}</span>
     </div>
   );
 }
@@ -401,8 +402,8 @@ function RetroForm({ onSave, onCancel }) {
       style={{
         marginTop: 10,
         padding: "12px 14px",
-        background: "#1a1f2e",
-        border: "1px solid #6366f160",
+        background: colors.well,
+        border: `1px solid ${colors.accent}60`,
         borderRadius: 10,
         display: "flex",
         flexDirection: "column",
@@ -429,9 +430,9 @@ function RetroForm({ onSave, onCancel }) {
           style={{
             padding: "6px 14px",
             background: "transparent",
-            border: "1px solid #2d3748",
+            border: `1px solid ${colors.border}`,
             borderRadius: 8,
-            color: "#94a3b8",
+            color: colors.textDim,
             fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
@@ -443,10 +444,10 @@ function RetroForm({ onSave, onCancel }) {
           onClick={() => onSave(form)}
           style={{
             padding: "6px 14px",
-            background: "#6366f1",
+            background: colors.accent,
             border: "none",
             borderRadius: 8,
-            color: "#fff",
+            color: colors.onAccent,
             fontSize: 12,
             fontWeight: 600,
             cursor: "pointer",
@@ -487,8 +488,8 @@ function ContactForm({ initial, onSave, onCancel }) {
   return (
     <div
       style={{
-        background: "#1e2330",
-        border: "1px solid #6366f160",
+        background: colors.surface,
+        border: `1px solid ${colors.accent}60`,
         borderRadius: 14,
         padding: "18px 20px",
         display: "flex",
@@ -547,9 +548,9 @@ function ContactForm({ initial, onSave, onCancel }) {
           style={{
             padding: "8px 16px",
             background: "transparent",
-            border: "1px solid #2d3748",
+            border: `1px solid ${colors.border}`,
             borderRadius: 8,
-            color: "#94a3b8",
+            color: colors.textDim,
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
@@ -562,10 +563,10 @@ function ContactForm({ initial, onSave, onCancel }) {
           disabled={!form.name.trim()}
           style={{
             padding: "8px 16px",
-            background: "#6366f1",
+            background: colors.accent,
             border: "none",
             borderRadius: 8,
-            color: "#fff",
+            color: colors.onAccent,
             fontSize: 13,
             fontWeight: 600,
             cursor: form.name.trim() ? "pointer" : "not-allowed",
@@ -582,7 +583,7 @@ function ContactForm({ initial, onSave, onCancel }) {
 function Field({ label, children }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: "#64748b", letterSpacing: "0.03em" }}>{label}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" }}>{label}</span>
       {children}
     </label>
   );

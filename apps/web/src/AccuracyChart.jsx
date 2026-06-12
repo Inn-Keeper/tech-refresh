@@ -1,4 +1,5 @@
 import { t } from "@tech-refresh/core/i18n";
+import { colors } from "@tech-refresh/core/tokens";
 
 const HEIGHT = 90;
 const WIDTH = 600; // viewBox units; scales to container width
@@ -21,8 +22,8 @@ export function AccuracyChart({ points }) {
   return (
     <div
       style={{
-        background: "#1a1f2e",
-        border: "1px solid #2d3748",
+        background: colors.well,
+        border: `1px solid ${colors.border}`,
         borderRadius: 12,
         padding: "12px 14px",
         marginBottom: 20,
@@ -30,16 +31,16 @@ export function AccuracyChart({ points }) {
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "#f1f5f9" }}>{t("accuracy.title")}</div>
-          <div style={{ fontSize: 10.5, color: "#64748b" }}>{t("accuracy.subtitle")}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: colors.textBright }}>{t("accuracy.title")}</div>
+          <div style={{ fontSize: 10.5, color: colors.textFaint }}>{t("accuracy.subtitle")}</div>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 800, color: latest && latest.accuracy >= 0.7 ? "#22c55e" : "#f59e0b" }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: latest && latest.accuracy >= 0.7 ? colors.success : colors.warning }}>
           {latest ? `${Math.round(latest.accuracy * 100)}%` : "--"}
         </span>
       </div>
 
       {points.length < 2 ? (
-        <div style={{ height: HEIGHT, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: 11 }}>
+        <div style={{ height: HEIGHT, display: "flex", alignItems: "center", justifyContent: "center", color: colors.textFaint, fontSize: 11 }}>
           {t("accuracy.empty")}
         </div>
       ) : (
@@ -47,17 +48,17 @@ export function AccuracyChart({ points }) {
           <path
             d={`M ${PAD_X} ${PAD_Y} L ${PAD_X} ${HEIGHT - PAD_Y} L ${WIDTH - PAD_X} ${HEIGHT - PAD_Y}`}
             fill="none"
-            stroke="#2d3748"
+            stroke={colors.border}
             strokeWidth="1"
           />
-          <path d={path} fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinejoin="round" />
+          <path d={path} fill="none" stroke={colors.accent} strokeWidth="2.5" strokeLinejoin="round" />
           {dots.map((dot, index) => (
             <circle
               key={dot.key}
               cx={dot.x}
               cy={dot.y}
               r={index === dots.length - 1 ? 4 : 2.5}
-              fill={index === dots.length - 1 ? "#22c55e" : "#6366f1"}
+              fill={index === dots.length - 1 ? colors.success : colors.accent}
             />
           ))}
         </svg>

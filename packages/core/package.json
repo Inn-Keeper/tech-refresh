@@ -14,7 +14,8 @@
     "./gamification": "./src/gamification.js",
     "./funnel": "./src/funnel.js",
     "./accuracy": "./src/accuracy.js",
-    "./i18n": "./src/i18n.js"
+    "./i18n": "./src/i18n.js",
+    "./tokens": "./src/tokens.js"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

@@ -65,7 +65,7 @@ export default function PrepScreen() {
         setCelebration({
           title: t("celebration.perfectTitle"),
           subtitle: t("celebration.perfectSubtitle", { bonus: PERFECT_QUIZ_BONUS }),
-          accent: colors.green,
+          accent: colors.success,
         });
       }
       setDrill({ ...drill, done: true });
@@ -104,7 +104,7 @@ export default function PrepScreen() {
                       style={{
                         fontSize: 13,
                         fontWeight: "600",
-                        color: activeCategory === i ? "#fff" : colors.textDim,
+                        color: activeCategory === i ? colors.onAccent : colors.textDim,
                       }}
                     >
                       {cat.emoji} {cat.name}

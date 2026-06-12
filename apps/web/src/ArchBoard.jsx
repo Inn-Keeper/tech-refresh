@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NODE_TYPES, TYPE_COLORS, meta, SCENARIOS, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
 import * as api from "./api.js";
+import { colors } from "@tech-refresh/core/tokens";
 
 const NODE_W = 132;
 const NODE_H = 54;
@@ -146,10 +147,10 @@ export default function ArchBoard() {
 
   return (
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 48px" }}>
-      <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: "#f1f5f9" }}>
+      <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
         Arch Board
       </h1>
-      <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: 13 }}>
+      <p style={{ margin: "0 0 16px", color: colors.textFaint, fontSize: 13 }}>
         Pick a scenario, drag components onto the canvas, wire them with arrows (click a node's ● handle, then the
         target), then evaluate your design — like defending it in an architecture meeting.
       </p>
@@ -163,8 +164,8 @@ export default function ArchBoard() {
             style={{
               padding: "7px 14px", borderRadius: 20, border: "none", cursor: "pointer",
               fontSize: 13, fontWeight: 600,
-              background: scenarioIdx === i ? "#6366f1" : "#1e2330",
-              color: scenarioIdx === i ? "#fff" : "#94a3b8",
+              background: scenarioIdx === i ? colors.accent : colors.surface,
+              color: scenarioIdx === i ? colors.onAccent : colors.textDim,
             }}
           >
             {s.name}
@@ -174,8 +175,8 @@ export default function ArchBoard() {
 
       <div
         style={{
-          padding: "12px 16px", background: "#1a1f2e", border: "1px solid #2d3748",
-          borderRadius: 10, marginBottom: 14, fontSize: 13, lineHeight: 1.6, color: "#94a3b8",
+          padding: "12px 16px", background: colors.well, border: `1px solid ${colors.border}`,
+          borderRadius: 10, marginBottom: 14, fontSize: 13, lineHeight: 1.6, color: colors.textDim,
         }}
       >
         {scenario.brief}
@@ -183,16 +184,16 @@ export default function ArchBoard() {
 
       {/* Live cost ticker + actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: liveCost > scenario.budget ? "#ef4444" : "#94a3b8" }}>
+        <span style={{ fontSize: 12, fontWeight: 600, color: liveCost > scenario.budget ? colors.danger : colors.textDim }}>
           💰 Cost {liveCost} / budget {scenario.budget}
         </span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8" }}>🔧 Maintenance load {liveMaint}</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: colors.textDim }}>🔧 Maintenance load {liveMaint}</span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <button
             onClick={() => setSavedOpen((value) => !value)}
             style={{
-              padding: "7px 14px", background: "transparent", border: `1px solid ${savedOpen ? "#6366f1" : "#2d3748"}`,
-              borderRadius: 8, color: savedOpen ? "#a5b4fc" : "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              padding: "7px 14px", background: "transparent", border: `1px solid ${savedOpen ? colors.accent : colors.border}`,
+              borderRadius: 8, color: savedOpen ? colors.accentBright : colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}
           >
             {t("board.saved")} ({savedBoards.length})
@@ -201,8 +202,8 @@ export default function ArchBoard() {
             onClick={() => saveBoardMutation.mutate()}
             disabled={saveBoardMutation.isPending}
             style={{
-              padding: "7px 14px", background: "transparent", border: "1px solid #22c55e60",
-              borderRadius: 8, color: "#86efac", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              padding: "7px 14px", background: "transparent", border: `1px solid ${colors.success}60`,
+              borderRadius: 8, color: colors.successBright, fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}
           >
             {saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
@@ -210,8 +211,8 @@ export default function ArchBoard() {
           <button
             onClick={() => { setNodes([]); setEdges([]); setConnectFrom(null); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
             style={{
-              padding: "7px 14px", background: "transparent", border: "1px solid #2d3748",
-              borderRadius: 8, color: "#94a3b8", fontSize: 12, fontWeight: 600, cursor: "pointer",
+              padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
+              borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}
           >
             Clear board
@@ -220,8 +221,8 @@ export default function ArchBoard() {
             onClick={() => setResult(evaluate(scenario, nodes, edges))}
             disabled={nodes.length === 0}
             style={{
-              padding: "7px 16px", background: "#6366f1", border: "none", borderRadius: 8,
-              color: "#fff", fontSize: 12, fontWeight: 600,
+              padding: "7px 16px", background: colors.accent, border: "none", borderRadius: 8,
+              color: colors.onAccent, fontSize: 12, fontWeight: 600,
               cursor: nodes.length ? "pointer" : "not-allowed", opacity: nodes.length ? 1 : 0.5,
             }}
           >
@@ -232,7 +233,7 @@ export default function ArchBoard() {
 
 
       {(saveBoardMutation.error || boardsError) && (
-        <p style={{ margin: "0 0 10px", fontSize: 12, color: "#fca5a5" }}>
+        <p style={{ margin: "0 0 10px", fontSize: 12, color: colors.dangerBright }}>
           {saveBoardMutation.error
             ? `${t("board.saveFailedTitle")}: ${saveBoardMutation.error.message}`
             : t("board.boardsError", { message: boardsError.message })}
@@ -242,7 +243,7 @@ export default function ArchBoard() {
       {savedOpen && (
         <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 12 }}>
           {savedBoards.length === 0 ? (
-            <p style={{ margin: 0, fontSize: 12, color: "#64748b" }}>{t("board.savedEmpty")}</p>
+            <p style={{ margin: 0, fontSize: 12, color: colors.textFaint }}>{t("board.savedEmpty")}</p>
           ) : (
             savedBoards.map((board) => {
               const boardScenario = SCENARIOS.find((item) => item.id === board.scenarioId);
@@ -251,27 +252,27 @@ export default function ArchBoard() {
                 <div
                   key={board.id}
                   style={{
-                    minWidth: 220, padding: "10px 12px", background: "#1a1f2e",
-                    border: `1px solid ${active ? "#6366f1" : "#2d3748"}`, borderRadius: 10,
+                    minWidth: 220, padding: "10px 12px", background: colors.well,
+                    border: `1px solid ${active ? colors.accent : colors.border}`, borderRadius: 10,
                     display: "flex", flexDirection: "column", gap: 6,
                   }}
                 >
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: colors.textBright, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {board.title}
                   </span>
-                  <span style={{ fontSize: 10.5, color: "#64748b" }}>
+                  <span style={{ fontSize: 10.5, color: colors.textFaint }}>
                     {t("board.boardMeta", { scenario: boardScenario?.name ?? board.scenarioId, nodes: board.nodes.length, edges: board.edges.length })}
                   </span>
                   <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
                     <button
                       onClick={() => loadBoard(board)}
-                      style={{ padding: "3px 10px", background: "transparent", border: "1px solid #6366f160", borderRadius: 6, color: "#a5b4fc", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                      style={{ padding: "3px 10px", background: "transparent", border: `1px solid ${colors.accent}60`, borderRadius: 6, color: colors.accentBright, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
                     >
                       {t("common.load")}
                     </button>
                     <button
                       onClick={() => window.confirm(t("board.deleteMessage", { title: board.title })) && deleteBoardMutation.mutate(board.id)}
-                      style={{ padding: "3px 10px", background: "transparent", border: "1px solid #ef444450", borderRadius: 6, color: "#fca5a5", fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+                      style={{ padding: "3px 10px", background: "transparent", border: `1px solid ${colors.danger}50`, borderRadius: 6, color: colors.dangerBright, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
                     >
                       {t("common.delete")}
                     </button>
@@ -292,15 +293,15 @@ export default function ArchBoard() {
               onClick={() => addNode(t.type)}
               style={{
                 display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                background: "#1e2330", border: `1px solid ${TYPE_COLORS[t.type]}40`,
-                borderRadius: 8, color: "#cbd5e1", fontSize: 12, fontWeight: 600,
+                background: colors.surface, border: `1px solid ${TYPE_COLORS[t.type]}40`,
+                borderRadius: 8, color: colors.text, fontSize: 12, fontWeight: 600,
                 cursor: "pointer", textAlign: "left",
               }}
               title={`cost ${t.cost} · maint ${t.maint}`}
             >
               <span>{t.emoji}</span>
               <span style={{ flex: 1 }}>{t.label}</span>
-              <span style={{ color: "#475569", fontSize: 10 }}>{"$".repeat(t.cost) || "free"}</span>
+              <span style={{ color: colors.textFaint, fontSize: 10 }}>{"$".repeat(t.cost) || "free"}</span>
             </button>
           ))}
         </div>
@@ -311,17 +312,17 @@ export default function ArchBoard() {
           onClick={(e) => { if (e.target === canvasRef.current) setConnectFrom(null); }}
           style={{
             position: "relative", flex: 1, minWidth: 480, height: 560,
-            background: "#13161f",
-            backgroundImage: "radial-gradient(#2d3748 1px, transparent 1px)",
+            background: colors.bgDeep,
+            backgroundImage: `radial-gradient(${colors.border} 1px, transparent 1px)`,
             backgroundSize: "22px 22px",
-            border: "1px solid #2d3748", borderRadius: 14, overflow: "hidden",
+            border: `1px solid ${colors.border}`, borderRadius: 14, overflow: "hidden",
           }}
         >
           {nodes.length === 0 && (
             <div
               style={{
                 position: "absolute", inset: 0, display: "flex", alignItems: "center",
-                justifyContent: "center", color: "#475569", fontSize: 13, pointerEvents: "none",
+                justifyContent: "center", color: colors.textFaint, fontSize: 13, pointerEvents: "none",
               }}
             >
               ← Add components from the palette, then wire them up
@@ -332,7 +333,7 @@ export default function ArchBoard() {
           <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+                <path d="M 0 0 L 10 5 L 0 10 z" fill={colors.textDim} />
               </marker>
             </defs>
             {edges.map((e) => {
@@ -347,7 +348,7 @@ export default function ArchBoard() {
               const d = `M ${sx} ${sy} C ${mx} ${sy}, ${mx} ${ty}, ${tx} ${ty}`;
               return (
                 <g key={e.id}>
-                  <path d={d} fill="none" stroke="#94a3b8" strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path d={d} fill="none" stroke={colors.textDim} strokeWidth="2" markerEnd="url(#arrow)" />
                   <path
                     d={d}
                     fill="none"
@@ -378,22 +379,22 @@ export default function ArchBoard() {
                 style={{
                   position: "absolute", left: n.x, top: n.y, width: NODE_W, height: NODE_H,
                   boxSizing: "border-box",
-                  background: "#1e2330",
-                  border: `2px solid ${isSource ? "#f1f5f9" : `${color}60`}`,
+                  background: colors.surface,
+                  border: `2px solid ${isSource ? colors.textBright : `${color}60`}`,
                   borderRadius: 10, cursor: "grab", touchAction: "none", userSelect: "none",
                   display: "flex", alignItems: "center", gap: 8, padding: "0 10px",
                   boxShadow: isSource ? `0 0 0 3px ${color}30` : "none",
                 }}
               >
                 <span style={{ fontSize: 18 }}>{t.emoji}</span>
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#cbd5e1", lineHeight: 1.2 }}>{t.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: colors.text, lineHeight: 1.2 }}>{t.label}</span>
                 <button
                   onPointerDown={(ev) => ev.stopPropagation()}
                   onClick={(ev) => { ev.stopPropagation(); removeNode(n.id); }}
                   title="Remove"
                   style={{
                     position: "absolute", top: -8, right: -8, width: 18, height: 18,
-                    borderRadius: "50%", border: "none", background: "#2d3748", color: "#94a3b8",
+                    borderRadius: "50%", border: "none", background: colors.border, color: colors.textDim,
                     fontSize: 11, lineHeight: 1, cursor: "pointer", padding: 0,
                   }}
                 >
@@ -405,7 +406,7 @@ export default function ArchBoard() {
                   title={isSource ? "Cancel connection" : "Connect from here — then click a target node"}
                   style={{
                     position: "absolute", right: -9, top: NODE_H / 2 - 9, width: 18, height: 18,
-                    borderRadius: "50%", border: "2px solid #13161f", background: color,
+                    borderRadius: "50%", border: `2px solid ${colors.bgDeep}`, background: color,
                     cursor: "pointer", padding: 0,
                   }}
                 />
@@ -419,44 +420,44 @@ export default function ArchBoard() {
       {result && (
         <div
           style={{
-            marginTop: 16, padding: "18px 20px", background: "#1a1f2e",
-            border: "1px solid #2d3748", borderRadius: 14,
+            marginTop: 16, padding: "18px 20px", background: colors.well,
+            border: `1px solid ${colors.border}`, borderRadius: 14,
           }}
         >
           <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 14, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 28, fontWeight: 700, color: result.score >= 80 ? "#22c55e" : result.score >= 50 ? "#f59e0b" : "#ef4444" }}>
+            <span style={{ fontSize: 28, fontWeight: 700, color: result.score >= 80 ? colors.success : result.score >= 50 ? colors.warning : colors.danger }}>
               {result.score}%
             </span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9" }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: colors.textBright }}>
               {result.score >= 80 ? "Ship it 🚀" : result.score >= 50 ? "Needs review before the meeting" : "Back to the whiteboard"}
             </span>
-            <span style={{ marginLeft: "auto", fontSize: 12, color: "#94a3b8" }}>
+            <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textDim }}>
               💰 {result.cost}/{scenario.budget} · 🔧 maint {result.maint} ({result.maint <= 8 ? "lean" : result.maint <= 14 ? "moderate" : "heavy"})
             </span>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 18 }}>
             <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.04em" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
                 DESIGN CHECKS
               </div>
               <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
                 {result.checks.map((c) => (
-                  <li key={c.label} style={{ fontSize: 12.5, lineHeight: 1.5, color: c.passed ? "#86efac" : "#fca5a5" }}>
+                  <li key={c.label} style={{ fontSize: 12.5, lineHeight: 1.5, color: c.passed ? colors.successBright : colors.dangerBright }}>
                     {c.passed ? "✅" : "❌"} {c.label}{" "}
-                    <span style={{ color: "#475569" }}>({c.points} pts)</span>
+                    <span style={{ color: colors.textFaint }}>({c.points} pts)</span>
                   </li>
                 ))}
               </ul>
             </div>
             {result.warnings.length > 0 && (
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", marginBottom: 8, letterSpacing: "0.04em" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
                   MEETING NOTES
                 </div>
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
                   {result.warnings.map((w) => (
-                    <li key={w} style={{ fontSize: 12.5, lineHeight: 1.5, color: "#fbbf24" }}>
+                    <li key={w} style={{ fontSize: 12.5, lineHeight: 1.5, color: colors.warningBright }}>
                       ⚠️ {w}
                     </li>
                   ))}

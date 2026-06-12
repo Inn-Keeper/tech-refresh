@@ -84,10 +84,12 @@ export const NODE_TYPES = [
 ];
 
 /** @type {Record<string, string>} */
+// Data-viz ramp: Tailwind-400 weights, no teal (reserved for the brand accent),
+// no pure danger-red (reserved for errors). Rules in /DESIGN.md.
 export const TYPE_COLORS = {
-  client: "#0ea5e9", cdn: "#38bdf8", lb: "#f59e0b", gateway: "#f97316",
-  auth: "#8b5cf6", service: "#10b981", worker: "#14b8a6", queue: "#eab308",
-  cache: "#ef4444", sql: "#64748b", nosql: "#84cc16", psp: "#ec4899", monitor: "#a855f7",
+  client: "#38BDF8", cdn: "#7DD3FC", lb: "#FBBF24", gateway: "#FB923C",
+  auth: "#A78BFA", service: "#4ADE80", worker: "#818CF8", queue: "#FACC15",
+  cache: "#F472B6", sql: "#94A3B8", nosql: "#A3E635", psp: "#E879F9", monitor: "#C084FC",
 };
 
 /**

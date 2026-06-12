@@ -1,6 +1,7 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { t } from "@tech-refresh/core/i18n";
 import { useTabBarHidden } from "@/lib/uiStore";
+import { colors } from "@/theme";
 
 const { Icon, Label } = NativeTabs.Trigger;
 
@@ -11,7 +12,7 @@ export default function TabLayout() {
   const hidden = useTabBarHidden();
 
   return (
-    <NativeTabs hidden={hidden}>
+    <NativeTabs hidden={hidden} tintColor={colors.accent}>
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "book", selected: "book.fill" }} />
         <Label>{t("tabs.prep")}</Label>
@@ -25,7 +26,7 @@ export default function TabLayout() {
         <Label>{t("tabs.board")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="contacts">
-        <Icon sf={{ default: "person.2", selected: "person.2.fill" }} />
+        <Icon sf={{ default: "map", selected: "map.fill" }} />
         <Label>{t("tabs.contacts")}</Label>
       </NativeTabs.Trigger>
     </NativeTabs>

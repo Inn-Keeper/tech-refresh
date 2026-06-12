@@ -20,7 +20,8 @@ type Props = {
   onDone: () => void;
 };
 
-const PARTICLE_COLORS = ["#22c55e", "#6366f1", "#f59e0b", "#ec4899", "#38bdf8", "#a78bfa"];
+// Decorative confetti ramp, teal-led to match the brand accent — see DESIGN.md.
+const PARTICLE_COLORS = ["#2DD4BF", "#4ADE80", "#FBBF24", "#F472B6", "#38BDF8", "#A78BFA"];
 const PARTICLES = Array.from({ length: 54 }, (_, index) => ({
   angle: (Math.PI * 2 * index) / 54 + (index % 5) * 0.08,
   distance: 72 + (index % 9) * 17,
@@ -103,7 +104,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0f1117a8",
+    backgroundColor: `${colors.bg}a8`,
     zIndex: 20,
   },
   badge: {
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     borderRadius: 14,
     borderWidth: 1,
-    backgroundColor: "#1e2330f2",
+    backgroundColor: `${colors.surface}f2`,
     alignItems: "center",
     gap: 6,
   },

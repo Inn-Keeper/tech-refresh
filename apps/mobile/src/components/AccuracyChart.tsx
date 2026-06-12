@@ -33,7 +33,7 @@ export function AccuracyChart({ points }: Props) {
     <View
       onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
       style={{
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: 12,
@@ -46,7 +46,7 @@ export function AccuracyChart({ points }: Props) {
           <Text style={{ fontSize: 12, fontWeight: "700", color: colors.textBright }}>{t("accuracy.title")}</Text>
           <Text style={{ fontSize: 10.5, color: colors.textFaint }}>{t("accuracy.subtitle")}</Text>
         </View>
-        <Text style={{ fontSize: 13, fontWeight: "800", color: latest && latest.accuracy >= 0.7 ? colors.green : colors.amber }}>
+        <Text style={{ fontSize: 13, fontWeight: "800", color: latest && latest.accuracy >= 0.7 ? colors.success : colors.warning }}>
           {latest ? `${Math.round(latest.accuracy * 100)}%` : "--"}
         </Text>
       </View>
@@ -57,10 +57,10 @@ export function AccuracyChart({ points }: Props) {
         </View>
       ) : (
         <Canvas style={{ width: "100%", height: HEIGHT }}>
-          <Path path={`M ${PAD_X} ${PAD_Y} L ${PAD_X} ${HEIGHT - PAD_Y} L ${Math.max(PAD_X, width - PAD_X)} ${HEIGHT - PAD_Y}`} color="#2d3748" style="stroke" strokeWidth={1} />
+          <Path path={`M ${PAD_X} ${PAD_Y} L ${PAD_X} ${HEIGHT - PAD_Y} L ${Math.max(PAD_X, width - PAD_X)} ${HEIGHT - PAD_Y}`} color={colors.border} style="stroke" strokeWidth={1} />
           <Path path={chart.path} color={colors.accent} style="stroke" strokeWidth={3} />
           {chart.dots.map((dot, index) => (
-            <Circle key={dot.key} cx={dot.x} cy={dot.y} r={index === chart.dots.length - 1 ? 4 : 2.5} color={index === chart.dots.length - 1 ? colors.green : colors.accent} />
+            <Circle key={dot.key} cx={dot.x} cy={dot.y} r={index === chart.dots.length - 1 ? 4 : 2.5} color={index === chart.dots.length - 1 ? colors.success : colors.accent} />
           ))}
         </Canvas>
       )}

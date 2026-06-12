@@ -12,15 +12,17 @@ export const COMPETENCIES = [
 ];
 
 /** @type {Record<string, string>} */
+// Data-viz ramp: Tailwind-400 weights, no teal (reserved for the brand accent),
+// no pure danger-red (reserved for errors). Rules in /DESIGN.md.
 export const COMPETENCY_COLORS = {
-  Conflict: "#ef4444",
-  Failure: "#f97316",
-  Leadership: "#8b5cf6",
-  Impact: "#22c55e",
-  Ambiguity: "#eab308",
-  Influence: "#0ea5e9",
-  Mentoring: "#14b8a6",
-  Delivery: "#ec4899",
+  Conflict: "#FB7185",
+  Failure: "#FB923C",
+  Leadership: "#A78BFA",
+  Impact: "#4ADE80",
+  Ambiguity: "#FACC15",
+  Influence: "#38BDF8",
+  Mentoring: "#818CF8",
+  Delivery: "#F472B6",
 };
 
 export const PROMPTS = [

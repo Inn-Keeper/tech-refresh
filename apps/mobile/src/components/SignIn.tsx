@@ -87,7 +87,7 @@ export function SignIn() {
           opacity: busy || !canSubmit ? 0.6 : 1,
         }}
       >
-        <Text style={{ color: "#fff", fontWeight: "600", textAlign: "center", fontSize: 15 }}>
+        <Text style={{ color: colors.onAccent, fontWeight: "600", textAlign: "center", fontSize: 15 }}>
           {busy ? "…" : mode === "signin" ? t("auth.signIn") : t("auth.createAccount")}
         </Text>
       </TouchableOpacity>
@@ -106,10 +106,10 @@ export function SignIn() {
       </TouchableOpacity>
 
       {error && (
-        <Text style={{ color: "#fca5a5", fontSize: 13, textAlign: "center", marginTop: 16 }}>{error}</Text>
+        <Text style={{ color: colors.dangerBright, fontSize: 13, textAlign: "center", marginTop: 16 }}>{error}</Text>
       )}
       {notice && (
-        <Text style={{ color: "#fbbf24", fontSize: 13, textAlign: "center", marginTop: 16, lineHeight: 19 }}>
+        <Text style={{ color: colors.warningBright, fontSize: 13, textAlign: "center", marginTop: 16, lineHeight: 19 }}>
           {notice}
         </Text>
       )}

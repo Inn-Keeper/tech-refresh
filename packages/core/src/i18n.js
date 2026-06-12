@@ -31,7 +31,7 @@ export const en = {
   "tabs.prep": "Prep",
   "tabs.stories": "Stories",
   "tabs.board": "Arch Board",
-  "tabs.contacts": "Contacts",
+  "tabs.contacts": "Quest",
 
   "prep.drillWeakest": "🎯 Drill weakest",
   "prep.ranking": "Ranking",
@@ -81,7 +81,7 @@ export const en = {
   "contacts.retros": "📓 Retros ({count})",
   "contacts.saveRetro": "Save retro",
 
-  "funnel.title": "Funnel dashboard",
+  "funnel.title": "Quest funnel",
   "funnel.subtitle": "Current pipeline shape and weekly application pace",
   "funnel.active": "{count} active",
   "funnel.appsPerWeek": "Apps/week",

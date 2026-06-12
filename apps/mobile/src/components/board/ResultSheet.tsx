@@ -11,9 +11,9 @@ type Props = {
 };
 
 function verdict(score: number): { label: string; color: string } {
-  if (score >= 80) return { label: t("board.verdictShip"), color: colors.green };
-  if (score >= 50) return { label: t("board.verdictReview"), color: colors.amber };
-  return { label: t("board.verdictWhiteboard"), color: colors.red };
+  if (score >= 80) return { label: t("board.verdictShip"), color: colors.success };
+  if (score >= 50) return { label: t("board.verdictReview"), color: colors.warning };
+  return { label: t("board.verdictWhiteboard"), color: colors.danger };
 }
 
 export function ResultSheet({ result, scenario, onClose }: Props) {
@@ -29,7 +29,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
       <View
         style={{
           maxHeight: "75%",
-          backgroundColor: colors.surfaceAlt,
+          backgroundColor: colors.surface,
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           borderWidth: 1,
@@ -53,7 +53,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
             {result.checks.map((check) => (
               <Text
                 key={check.label}
-                style={{ fontSize: 12.5, lineHeight: 18, color: check.passed ? "#86efac" : "#fca5a5" }}
+                style={{ fontSize: 12.5, lineHeight: 18, color: check.passed ? colors.successBright : colors.dangerBright }}
               >
                 {check.passed ? "✅" : "❌"} {check.label} ({check.points} pts)
               </Text>
@@ -66,7 +66,7 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
                 {t("board.meetingNotes")}
               </Text>
               {result.warnings.map((warning) => (
-                <Text key={warning} style={{ fontSize: 12.5, lineHeight: 18, color: "#fbbf24" }}>
+                <Text key={warning} style={{ fontSize: 12.5, lineHeight: 18, color: colors.warningBright }}>
                   ⚠️ {warning}
                 </Text>
               ))}

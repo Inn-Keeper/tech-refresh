@@ -5,12 +5,13 @@ import InterviewPrep from "./InterviewPrep.jsx";
 import Contacts from "./Contacts.jsx";
 import ArchBoard from "./ArchBoard.jsx";
 import StoryBank from "./StoryBank.jsx";
+import { colors } from "@tech-refresh/core/tokens";
 
 const pages = [
   { id: "prep", label: `📚 ${t("tabs.prep")}` },
   { id: "stories", label: `⭐ ${t("tabs.stories")}` },
   { id: "board", label: `🧩 ${t("tabs.board")}` },
-  { id: "contacts", label: `🤝 ${t("tabs.contacts")}` },
+  { id: "contacts", label: `🗺️ ${t("tabs.contacts")}` },
 ];
 
 export default function App() {
@@ -24,11 +25,11 @@ export default function App() {
   }, []);
 
   return (
-    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", minHeight: "100vh", background: "#0f1117", color: "#e2e8f0" }}>
+    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", minHeight: "100vh", background: colors.bg, color: colors.text }}>
       <header
         style={{
-          borderBottom: "1px solid #1e2330",
-          background: "#13161f",
+          borderBottom: `1px solid ${colors.surface}`,
+          background: colors.bgDeep,
           position: "sticky",
           top: 0,
           zIndex: 10,
@@ -46,7 +47,7 @@ export default function App() {
           }}
         >
           <span style={{ fontSize: 22 }}>⚡</span>
-          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.3px", color: "#f1f5f9" }}>
+          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.3px", color: colors.textBright }}>
             Interview Prep
           </span>
           {session && (
@@ -63,8 +64,8 @@ export default function App() {
                       cursor: "pointer",
                       fontSize: 13,
                       fontWeight: 600,
-                      background: page === p.id ? "#6366f1" : "transparent",
-                      color: page === p.id ? "#fff" : "#94a3b8",
+                      background: page === p.id ? colors.accent : "transparent",
+                      color: page === p.id ? colors.onAccent : colors.textDim,
                       transition: "all 0.15s",
                     }}
                   >
@@ -78,9 +79,9 @@ export default function App() {
                 style={{
                   padding: "5px 12px",
                   background: "transparent",
-                  border: "1px solid #2d3748",
+                  border: `1px solid ${colors.border}`,
                   borderRadius: 8,
-                  color: "#64748b",
+                  color: colors.textFaint,
                   fontSize: 11,
                   fontWeight: 600,
                   cursor: "pointer",
@@ -94,7 +95,7 @@ export default function App() {
       </header>
 
       {session === undefined && (
-        <p style={{ textAlign: "center", marginTop: 80, color: "#64748b", fontSize: 13 }}>Loading…</p>
+        <p style={{ textAlign: "center", marginTop: 80, color: colors.textFaint, fontSize: 13 }}>Loading…</p>
       )}
       {session === null && <SignIn />}
       {session && (
@@ -119,10 +120,10 @@ function SignIn() {
 
   const inputStyle = {
     padding: "11px 14px",
-    background: "#1e2330",
-    border: "1px solid #2d3748",
+    background: colors.surface,
+    border: `1px solid ${colors.border}`,
     borderRadius: 10,
-    color: "#e2e8f0",
+    color: colors.text,
     fontSize: 14,
     outline: "none",
   };
@@ -153,10 +154,10 @@ function SignIn() {
   return (
     <div style={{ maxWidth: 380, margin: "100px auto 0", padding: "0 24px", textAlign: "center" }}>
       <div style={{ fontSize: 36, marginBottom: 12 }}>🔐</div>
-      <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: "#f1f5f9" }}>
+      <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: colors.textBright }}>
         {mode === "signin" ? "Sign in" : "Create account"}
       </h1>
-      <p style={{ margin: "0 0 24px", fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>
+      <p style={{ margin: "0 0 24px", fontSize: 13, color: colors.textFaint, lineHeight: 1.6 }}>
         Your pipeline and scores live behind your account.
       </p>
 
@@ -185,10 +186,10 @@ function SignIn() {
           disabled={busy}
           style={{
             padding: "11px 14px",
-            background: "#6366f1",
+            background: colors.accent,
             border: "none",
             borderRadius: 10,
-            color: "#fff",
+            color: colors.onAccent,
             fontSize: 14,
             fontWeight: 600,
             cursor: busy ? "wait" : "pointer",
@@ -197,8 +198,8 @@ function SignIn() {
         >
           {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
         </button>
-        {error && <p style={{ margin: 0, fontSize: 12, color: "#fca5a5" }}>{error}</p>}
-        {notice && <p style={{ margin: 0, fontSize: 12, color: "#fbbf24", lineHeight: 1.5 }}>{notice}</p>}
+        {error && <p style={{ margin: 0, fontSize: 12, color: colors.dangerBright }}>{error}</p>}
+        {notice && <p style={{ margin: 0, fontSize: 12, color: colors.warningBright, lineHeight: 1.5 }}>{notice}</p>}
       </form>
 
       <button
@@ -211,7 +212,7 @@ function SignIn() {
           marginTop: 18,
           background: "transparent",
           border: "none",
-          color: "#94a3b8",
+          color: colors.textDim,
           fontSize: 13,
           cursor: "pointer",
         }}

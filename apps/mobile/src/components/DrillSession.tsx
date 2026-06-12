@@ -26,7 +26,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: Props) {
       <Animated.View
         entering={FadeInDown.springify()}
         style={{
-          backgroundColor: colors.surfaceAlt,
+          backgroundColor: colors.surface,
           borderWidth: 1,
           borderColor: colors.border,
           borderRadius: 14,
@@ -48,7 +48,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: Props) {
           onPress={onExit}
           style={{ backgroundColor: colors.accent, borderRadius: 8, paddingHorizontal: 18, paddingVertical: 9, marginTop: 8 }}
         >
-          <Text style={{ color: "#fff", fontWeight: "600", fontSize: 13 }}>Back to cards</Text>
+          <Text style={{ color: colors.onAccent, fontWeight: "600", fontSize: 13 }}>Back to cards</Text>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -60,7 +60,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: Props) {
       key={drill.index}
       entering={FadeInDown.springify().damping(16)}
       style={{
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: `${cur.color}40`,
         borderRadius: 14,

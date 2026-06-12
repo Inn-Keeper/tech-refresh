@@ -6,7 +6,7 @@ const activeDrill: Drill = {
   questions: [
     {
       tech: "React",
-      color: "#6366f1",
+      color: "#14B8A6",
       q: { question: "What does state represent?", options: ["A snapshot", "A database"], correct: 0 },
     },
   ],

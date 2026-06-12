@@ -15,7 +15,7 @@ import type { BoardEdge, BoardNode } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
 import { NODE_H, NODE_W, NodeView } from "./NodeView";
 
-const EDGE_COLOR = "#94a3b8";
+const EDGE_COLOR = colors.textDim;
 const EDGE_TAP_TOLERANCE = 18;
 // Dropping a dragged wire within this distance of a node's center snaps to it.
 const SNAP_RADIUS = 90;
@@ -238,7 +238,7 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
         onLayout={(event) => setBoardSize(event.nativeEvent.layout)}
         style={{
           flex: 1,
-          backgroundColor: "#13161f",
+          backgroundColor: colors.bgDeep,
           borderWidth: 1,
           borderColor: colors.border,
           borderRadius: 14,

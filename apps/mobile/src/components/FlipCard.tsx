@@ -87,7 +87,7 @@ export function FlipCard({ item, stat, record, addXp }: Props) {
     return (
       <View
         style={{
-          backgroundColor: colors.surfaceAlt,
+          backgroundColor: colors.surface,
           borderWidth: 1,
           borderColor: `${item.color}40`,
           borderRadius: 14,
@@ -140,10 +140,10 @@ export function FlipCard({ item, stat, record, addXp }: Props) {
                 {item.tech}
               </Text>
             </View>
-            <Text style={{ fontSize: 14, lineHeight: 21, color: "#cbd5e1" }}>{item.oneliner}</Text>
+            <Text style={{ fontSize: 14, lineHeight: 21, color: colors.text }}>{item.oneliner}</Text>
           </View>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 12 }}>
-            <Text style={{ fontSize: 11, color: accuracy !== null && accuracy >= 70 ? colors.green : colors.amber }}>
+            <Text style={{ fontSize: 11, color: accuracy !== null && accuracy >= 70 ? colors.success : colors.warning }}>
               {accuracy === null ? "" : `✓ ${accuracy}% · ${attempts} answered`}
             </Text>
             <Text style={{ fontSize: 11, color: colors.textFaint }}>tap for prep notes →</Text>

@@ -142,7 +142,7 @@ export function NodeView({
         ]}
       >
         <Text style={{ fontSize: 16 }}>{spec.emoji}</Text>
-        <Text style={{ flex: 1, fontSize: 10, fontWeight: "600", color: "#cbd5e1", lineHeight: 13 }}>
+        <Text style={{ flex: 1, fontSize: 10, fontWeight: "600", color: colors.text, lineHeight: 13 }}>
           {spec.label}
         </Text>
 

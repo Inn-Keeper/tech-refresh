@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors } from "@/theme";
+import { colors, font, radius, space } from "@/theme";
 
 /**
  * Tab screen root: app background + safe-area insets (native tabs render no
@@ -26,13 +26,13 @@ export function Screen({ children }: { children: ReactNode }) {
 }
 
 export const inputStyle = {
-  backgroundColor: colors.surfaceAlt,
+  backgroundColor: colors.well,
   borderWidth: 1,
   borderColor: colors.border,
-  borderRadius: 8,
-  padding: 10,
+  borderRadius: radius.sm,
+  padding: space.md,
   color: colors.text,
-  fontSize: 13,
+  fontSize: font.size.body,
 } as const;
 
 export const multilineStyle = { minHeight: 70, textAlignVertical: "top" } as const;
@@ -45,13 +45,13 @@ export function Pill({ label, active, activeColor = colors.accent, onPress }: Pi
     <TouchableOpacity
       onPress={onPress}
       style={{
-        paddingHorizontal: 14,
-        paddingVertical: 7,
-        borderRadius: 20,
+        paddingHorizontal: space.lg,
+        paddingVertical: space.sm,
+        borderRadius: radius.pill,
         backgroundColor: active ? activeColor : colors.surface,
       }}
     >
-      <Text style={{ fontSize: 13, fontWeight: "600", color: active ? "#fff" : colors.textDim }}>{label}</Text>
+      <Text style={{ fontSize: font.size.body, fontWeight: "600", color: active ? colors.onAccent : colors.textDim }}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -61,8 +61,8 @@ type BadgeProps = { label: string; color: string };
 /** Small colored label — statuses, competencies. */
 export function Badge({ label, color }: BadgeProps) {
   return (
-    <View style={{ paddingHorizontal: 10, paddingVertical: 3, backgroundColor: `${color}20`, borderRadius: 20 }}>
-      <Text style={{ color, fontSize: 10, fontWeight: "700", letterSpacing: 0.4 }}>{label.toUpperCase()}</Text>
+    <View style={{ paddingHorizontal: space.sm, paddingVertical: space.xs, backgroundColor: `${color}20`, borderRadius: radius.pill }}>
+      <Text style={{ color, fontSize: font.size.caption, fontWeight: "700", letterSpacing: 0.4 }}>{label.toUpperCase()}</Text>
     </View>
   );
 }
@@ -74,9 +74,9 @@ export function MiniButton({ label, color, onPress }: MiniButtonProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
-      style={{ paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: `${color}50`, borderRadius: 8 }}
+      style={{ paddingHorizontal: space.sm, paddingVertical: space.xs, borderWidth: 1, borderColor: `${color}50`, borderRadius: radius.sm }}
     >
-      <Text style={{ color, fontSize: 11, fontWeight: "600" }}>{label}</Text>
+      <Text style={{ color, fontSize: font.size.label, fontWeight: "600" }}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -91,16 +91,16 @@ export function Button({ label, onPress, variant = "primary", disabled = false }
       onPress={onPress}
       disabled={disabled}
       style={{
-        paddingHorizontal: 16,
-        paddingVertical: 9,
-        borderRadius: 8,
+        paddingHorizontal: space.lg,
+        paddingVertical: space.sm,
+        borderRadius: radius.sm,
         backgroundColor: primary ? colors.accent : "transparent",
         borderWidth: primary ? 0 : 1,
         borderColor: colors.border,
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <Text style={{ color: primary ? "#fff" : colors.textDim, fontSize: 13, fontWeight: "600" }}>{label}</Text>
+      <Text style={{ color: primary ? colors.onAccent : colors.textDim, fontSize: font.size.body, fontWeight: "600" }}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -110,8 +110,8 @@ type FieldProps = { label: string; children: ReactNode };
 /** Labeled form field. */
 export function Field({ label, children }: FieldProps) {
   return (
-    <View style={{ gap: 4 }}>
-      <Text style={{ fontSize: 11, fontWeight: "600", color: colors.textFaint, letterSpacing: 0.3 }}>{label}</Text>
+    <View style={{ gap: space.xs }}>
+      <Text style={{ fontSize: font.size.label, fontWeight: "600", color: colors.textFaint, letterSpacing: 0.3 }}>{label}</Text>
       {children}
     </View>
   );
@@ -124,10 +124,10 @@ export function Section({ label, text }: SectionProps) {
   if (!text) return null;
   return (
     <View>
-      <Text style={{ fontSize: 10, fontWeight: "700", color: colors.textFaint, letterSpacing: 0.8, marginBottom: 2 }}>
+      <Text style={{ fontSize: font.size.caption, fontWeight: "700", color: colors.textFaint, letterSpacing: 0.8, marginBottom: 2 }}>
         {label.toUpperCase()}
       </Text>
-      <Text style={{ fontSize: 13, lineHeight: 19, color: "#cbd5e1" }}>{text}</Text>
+      <Text style={{ fontSize: font.size.body, lineHeight: 19, color: colors.text }}>{text}</Text>
     </View>
   );
 }

@@ -2,13 +2,17 @@
 
 export const STATUSES = ["Contacted", "Applied", "Interviewing", "Offer", "Rejected"];
 
+// Data-viz ramp: Tailwind-400 weights, no teal (reserved for the brand accent),
+// no pure danger-red (reserved for errors). Rules in /DESIGN.md.
+const statusStyle = (color) => ({ color, bg: `${color}20` });
+
 /** @type {Record<string, { color: string, bg: string }>} */
 export const STATUS_STYLES = {
-  Contacted: { color: "#0ea5e9", bg: "#0ea5e920" },
-  Applied: { color: "#10b981", bg: "#10b98120" },
-  Interviewing: { color: "#f59e0b", bg: "#f59e0b20" },
-  Offer: { color: "#8b5cf6", bg: "#8b5cf620" },
-  Rejected: { color: "#64748b", bg: "#64748b20" },
+  Contacted: statusStyle("#38BDF8"),
+  Applied: statusStyle("#4ADE80"),
+  Interviewing: statusStyle("#FBBF24"),
+  Offer: statusStyle("#A78BFA"),
+  Rejected: statusStyle("#6B7690"),
 };
 
 /** @param {Date} date */

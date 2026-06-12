@@ -49,6 +49,6 @@ appId: host.exp.Exponent
 - assertVisible: "Evaluate"
 - assertVisible: ".*Payment end-to-end.*"
 
-# Contacts tab.
-- tapOn: "Contacts"
+# Quest tab (hiring pipeline).
+- tapOn: "Quest"
 - assertVisible: ".*Add contact.*"
