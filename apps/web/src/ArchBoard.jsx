@@ -113,14 +113,16 @@ export default function ArchBoard() {
 
   const onNodePointerDown = (e, n) => {
     e.currentTarget.setPointerCapture(e.pointerId);
-    const rect = canvasRef.current.getBoundingClientRect();
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
     dragRef.current = { id: n.id, dx: e.clientX - rect.left - n.x, dy: e.clientY - rect.top - n.y, moved: false };
   };
 
   const onNodePointerMove = (e) => {
     const d = dragRef.current;
     if (!d) return;
-    const rect = canvasRef.current.getBoundingClientRect();
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
     const x = Math.max(0, Math.min(rect.width - NODE_W, e.clientX - rect.left - d.dx));
     const y = Math.max(0, Math.min(rect.height - NODE_H, e.clientY - rect.top - d.dy));
     d.moved = true;

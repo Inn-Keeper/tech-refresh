@@ -19,7 +19,10 @@ export function buildDrill(categories, answers, { techCount = 5, size = 10 } = {
     c.items.map((item) => ({ ...item, color: c.color }))
   );
   const attempted = Object.entries(answers)
-    .map(([tech, s]) => ({ tech, acc: s.correct / (s.correct + s.wrong) }))
+    .map(([tech, s]) => {
+      const total = s.correct + s.wrong;
+      return { tech, acc: total > 0 ? s.correct / total : 0 };
+    })
     .sort((a, b) => a.acc - b.acc)
     .map((s) => s.tech);
   const unattempted = shuffle(allItems.map((i) => i.tech).filter((t) => !answers[t]));

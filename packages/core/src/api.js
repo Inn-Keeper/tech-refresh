@@ -63,6 +63,12 @@ import { CORRECT_XP } from "./gamification.js";
  * @property {string} [updatedAt]
  */
 
+/**
+ * @typedef {object} SupabaseClient
+ * @property {(table: string) => object} from
+ * Minimal Supabase client interface for type safety
+ */
+
 export const dateToUi = (iso) => (iso ? iso.split("-").reverse().join("-") : "");
 export const dateToDb = (ddmmyyyy) => {
   const match = /^(\d{2})-(\d{2})-(\d{4})$/.exec(ddmmyyyy || "");
@@ -75,7 +81,7 @@ const fail = (error) => {
 
 /**
  * Binds the data layer to a Supabase client (browser or React Native).
- * @param {any} supabase
+ * @param {SupabaseClient} supabase
  * @returns {{
  *   listContacts(): Promise<Contact[]>,
  *   upsertContact(contact: Contact): Promise<void>,
@@ -292,7 +298,14 @@ export function createApi(supabase) {
   async function recordAnswer(tech, correct, source = "card") {
     const { error } = await supabase.from("answer_events").insert({ tech, correct, source });
     if (error) fail(error);
-    if (correct) await addXp(CORRECT_XP);
+    if (correct) {
+      try {
+        await addXp(CORRECT_XP);
+      } catch (err) {
+        console.error("Failed to award XP after recording answer:", err);
+        throw err;
+      }
+    }
   }
 
   async function addXp(points) {
