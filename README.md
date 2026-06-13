@@ -7,14 +7,14 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 ## What It Does
 
 ### **Prep** tab
-- Quiz cards for 80+ technologies (JavaScript, React, system design, databases, etc.)
-- Spaced-repetition drill targeting your weakest techs
+- Quiz cards for 50+ technologies across languages, frontend/mobile, backend, cloud, monitoring, AI, testing, mobile delivery, and databases/CRM
+- Difficulty-aware drills targeting your weakest techs
 - Gamified XP and ranks (Intern → Principal)
 - Accuracy timeline: track your growth over time
 
 ### **Arch Board** tab
 - System-design practice with interactive node-and-edge board
-- 5 realistic scenarios (payment flow, flash-sale, video streaming, etc.)
+- 100 realistic scenarios plus user-authored custom scenarios
 - Instant feedback: design checks, budget vs. cost, deployment complexity
 - Mobile: Skia canvas + gesture-handler; Web: full edit mode
 
@@ -23,11 +23,36 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 - Behavioral prompt drills with randomized cues
 - Save your stories, tag by competency
 
-### **Contacts** tab
+### **Quest** tab
 - Hiring pipeline tracker: Contacted → Applied → Interviewing → Offer → Rejected
 - Link to job postings; notes and retrospectives per contact
 - Funnel analytics: conversion rate, pace, due-soon highlighting
 - DD-MM-YYYY date format for clarity
+
+### **Profile** tab
+- Private profile settings aligned with Supabase Auth
+- Optional identity, goals, location, timezone, and portfolio/social links
+- Score reset for local practice data
+
+## Screenshots
+
+Captured from the web app at 1600×1000 using the local screenshot script.
+
+| Prep | Stories |
+| --- | --- |
+| ![Prep screen](docs/screenshots/web/01-prep.png) | ![Stories screen](docs/screenshots/web/02-stories.png) |
+
+| Arch Board | Quest |
+| --- | --- |
+| ![Arch Board screen](docs/screenshots/web/03-arch-board.png) | ![Quest screen](docs/screenshots/web/04-quest.png) |
+
+| Profile |
+| --- |
+| ![Profile screen](docs/screenshots/web/05-profile.png) |
+
+| Footer |
+| --- |
+| ![Footer screen](docs/screenshots/web/06-footer.png) |
 
 ## Tech Stack
 
@@ -58,20 +83,28 @@ grip/
 │   └── core/                   # Shared logic
 │       ├── src/
 │       │   ├── prepData.js     # 80+ tech quiz content
-│       │   ├── arch.js         # 5 scenarios, evaluator, node types
+│       │   ├── questions.js    # JSON-backed difficulty question bank
+│       │   ├── scenarios.js    # 100 default Arch Board scenarios
+│       │   ├── arch.js         # Evaluator, custom checks, node types
 │       │   ├── stories.js      # STAR competencies, prompts
 │       │   ├── contacts.js     # Pipeline lifecycle, date rules
 │       │   ├── quiz.js         # Shuffle, drill-building
+│       │   ├── difficulty.js   # Drill tiers and XP rewards
 │       │   ├── funnel.js       # Conversion analytics
 │       │   ├── accuracy.js     # XP timeline
 │       │   ├── gamification.js # Ranks, XP points
+│       │   ├── user.js         # Profile form mapping
 │       │   ├── i18n.js         # Strings (English-only, extensible)
 │       │   ├── tokens.js       # Design tokens (colors, spacing, font sizes)
 │       │   ├── api.js          # Data layer (Supabase CRUD)
 │       │   ├── techLinks.js    # Reference URLs
-│       │   └── __tests__/      # 37 unit tests
+│       │   └── __tests__/      # Core domain and API tests
+│       └── data/questions/     # Reviewable question-bank JSON
 ├── supabase/
 │   └── migrations/             # SQL schema (contacts, retros, stories, answer_events)
+├── docs/screenshots/web/       # Captured web product screens
+├── scripts/
+│   └── capture-web-screenshots.mjs
 ├── DESIGN.md                   # Design system & token reference
 ├── PLAN.md                     # Phases, decisions, study-case map
 ├── package.json                # Workspace root
@@ -106,8 +139,10 @@ cd supabase
 # Run migrations manually via Supabase dashboard, or use:
 # supabase db push (requires supabase-cli)
 
-# 5. Seed the database (optional — prepopulate quiz content)
-node seed.mjs
+# 5. Seed the database (optional — prepopulate the question table)
+SUPABASE_URL=https://your-project.supabase.co \
+SUPABASE_SERVICE_ROLE_KEY=... \
+node scripts/seed-questions.mjs
 ```
 
 ### Development
@@ -135,6 +170,17 @@ pnpm exec expo run:ios
 pnpm exec expo run:android
 ```
 
+### Capture Web Screenshots
+
+With the web dev server running, capture the README screenshots:
+
+```bash
+pnpm dev
+node scripts/capture-web-screenshots.mjs http://127.0.0.1:5173/
+```
+
+The script writes PNGs to `docs/screenshots/web/`. It injects a local-only browser session for documentation captures; it does not create a Supabase account or write app data.
+
 ## Design System
 
 All visual tokens live in [`packages/core/src/tokens.js`](packages/core/src/tokens.js):
@@ -153,9 +199,9 @@ See [DESIGN.md](DESIGN.md) for full guidelines (elevation rules, contrast requir
 
 ### `packages/core/src/quiz.js`
 ```js
-export function buildDrill(categories, answers, { techCount = 5, size = 10 })
+export function buildDrillFromQuestions(questions, { size = 10 })
 ```
-Builds a spaced-repetition drill: sorts techs by accuracy (weakest first), pads with unattempted, returns shuffled quiz questions.
+Builds a difficulty-aware drill from the JSON/Supabase question bank.
 
 ### `packages/core/src/arch.js`
 ```js
@@ -163,11 +209,17 @@ export function evaluate(scenario, nodes, edges)
 ```
 Scores a system design against a scenario's checks, budget, and global design rules. Returns `{ checks, score, cost, maint, warnings }`.
 
+### `packages/core/src/questions.js`
+```js
+export function normalizeQuestion(row)
+```
+Loads and validates the reviewable question-bank JSON used by web, mobile, tests, and optional Supabase seeding.
+
 ### `packages/core/src/api.js`
 ```js
 export function createApi(supabase)
 ```
-Data layer: wraps Supabase, handles snake_case ↔ camelCase mapping, date transformation (DD-MM-YYYY ↔ ISO), RLS auth. Returns async CRUD methods.
+Data layer: wraps Supabase, handles snake_case ↔ camelCase mapping, date transformation (DD-MM-YYYY ↔ ISO), profile merging with Auth identity, RLS auth, and CRUD methods.
 
 ### `packages/core/src/gamification.js`
 ```js
@@ -186,6 +238,12 @@ contacts(
   next_action, next_action_date, created_at
 )
 
+profiles(
+  user_id uuid pk, email, display_name, avatar_url, headline, target_role,
+  location, portfolio_url, github_url, linkedin_url, timezone,
+  onboarding_completed, xp, created_at, updated_at
+)
+
 retros(
   id uuid pk, contact_id uuid fk, round, questions, went_well, 
   to_improve, created_at
@@ -197,13 +255,23 @@ stories(
 )
 
 answer_events(
-  id uuid pk, user_id uuid, tech, correct bool, source text 
-  check ('card' | 'drill'), created_at
+  id uuid pk, user_id uuid, tech, correct bool, source text,
+  difficulty text, created_at
+)
+
+questions(
+  id uuid pk, tech, category, difficulty, prompt, options jsonb,
+  correct int, explanation, created_at
 )
 
 saved_boards(
   id uuid pk, user_id uuid, title, scenario_id, nodes jsonb, 
   edges jsonb, created_at, updated_at
+)
+
+custom_scenarios(
+  id uuid pk, user_id uuid, name, brief, budget, checks jsonb,
+  created_at, updated_at
 )
 
 status_events(
@@ -214,20 +282,20 @@ status_events(
 
 ## Testing
 
-### Core package (Jest, 37 tests)
+### Core package (Jest, 69 tests)
 ```bash
-pnpm test
+pnpm --filter @tech-refresh/core test
 ```
 Tests cover:
-- Quiz mechanics (shuffle, drill-building, edge cases like 0/0 accuracy)
-- Arch evaluator (scoring, warnings, edge detection)
+- Quiz mechanics, difficulty tiers, and question-bank invariants
+- Arch evaluator, 100-scenario data checks, warnings, and edge detection
 - Date rules (DD-MM-YYYY parsing, due highlighting)
 - Funnel analytics (conversion rates, pace)
-- API layer (mocked Supabase client)
+- Profile form mapping and API layer (mocked Supabase client)
 
-### Mobile + Web (RNTL, 7+ component tests)
+### Mobile (RNTL, 7 tests)
 ```bash
-pnpm exec jest --testPathPattern="mobile|web"
+pnpm --filter mobile test
 ```
 Covers: Prep screen, quiz flow, drill session, stats bar, accuracy chart.
 
@@ -235,7 +303,7 @@ Covers: Prep screen, quiz flow, drill session, stats bar, accuracy chart.
 ```bash
 pnpm exec maestro test apps/mobile/.maestro/smoke.yaml --appId <expo-app-id>
 ```
-Covers: sign-in, all four tabs, CRUD operations.
+Covers: sign-in, bottom tabs, and CRUD smoke paths.
 
 ## Quality Assurance
 

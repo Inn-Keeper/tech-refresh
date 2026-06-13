@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { FlatList, View } from "react-native";
+import { FlatList, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
-import { buildDrillFromQuestions, selectDrillTechs } from "@tech-refresh/core/quiz";
+import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { api } from "@/lib/api";
 import { useScores } from "@/lib/useScores";
 import { colors } from "@/theme";
@@ -34,9 +34,10 @@ const allTechs: string[] = Object.keys(colorByTech);
 export default function PrepScreen() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [drill, setDrill] = useState<Drill | null>(null);
-  const [picking, setPicking] = useState(false);
-  const [loadingTier, setLoadingTier] = useState<string | null>(null);
-  const [pickError, setPickError] = useState<string | null>(null);
+  // Global difficulty — drives both the quiz cards and the drill.
+  const [level, setLevel] = useState("mid");
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [drillError, setDrillError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const previousRank = useRef<ReturnType<typeof rankForXp> | null>(null);
   const queryClient = useQueryClient();
@@ -67,14 +68,14 @@ export default function PrepScreen() {
     });
 
   const startDrill = async (difficulty: string) => {
-    setLoadingTier(difficulty);
-    setPickError(null);
+    setDrillLoading(true);
+    setDrillError(null);
     try {
       const weakest = selectDrillTechs(categories, scores.answers, { techCount: 5 });
       let questions = await fetchTierQuestions(difficulty, weakest);
       if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
       if (questions.length === 0) {
-        setPickError(`No ${difficultyByKey(difficulty)?.label ?? difficulty} questions yet — more land soon.`);
+        setDrillError(`No ${difficultyByKey(difficulty)?.label ?? difficulty} questions yet — more land soon.`);
         return;
       }
       setDrill({
@@ -85,12 +86,28 @@ export default function PrepScreen() {
         done: false,
         difficulty,
       });
-      setPicking(false);
     } catch {
-      setPickError("Couldn't load questions. Check your connection and retry.");
+      setDrillError("Couldn't load questions. Check your connection and retry.");
     } finally {
-      setLoadingTier(null);
+      setDrillLoading(false);
     }
+  };
+
+  // Loads a single tech's questions at the active level for a flip card's quiz,
+  // returning shuffled questions or null so the card falls back to static prep.
+  const loadCardQuiz = async (tech: string) => {
+    try {
+      const rows = await queryClient.fetchQuery({
+        queryKey: ["questions", level, [tech]],
+        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: 5 }),
+      });
+      if (rows.length) {
+        return shuffle(rows).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
+      }
+    } catch {
+      // fall back to the static prep questions
+    }
+    return null;
   };
 
   const answerDrill = (i: number) => {
@@ -140,26 +157,19 @@ export default function PrepScreen() {
         contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}
         ListHeaderComponent={
           <View style={{ gap: 14 }}>
-            <StatsBar scores={scores} onDrill={() => setPicking(true)} drillActive={!!drill || picking} />
-            {picking && !drill && (
-              <DifficultyPicker
-                onPick={startDrill}
-                onCancel={() => {
-                  setPicking(false);
-                  setPickError(null);
-                }}
-                loadingKey={loadingTier}
-                error={pickError}
-              />
+            <StatsBar scores={scores} onDrill={() => startDrill(level)} drillActive={!!drill || drillLoading} />
+            {!drill && <DifficultyPicker level={level} onLevel={setLevel} />}
+            {drillError && !drill && (
+              <Text style={{ fontSize: 11, color: colors.warning, paddingHorizontal: 2 }}>{drillError}</Text>
             )}
-            {!drill && !picking && <AccuracyChart points={accuracy} />}
+            {!drill && <AccuracyChart points={accuracy} />}
 
             {drill && <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={() => setDrill(null)} />}
           </View>
         }
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(Math.min(index * 60, 360)).springify().damping(18)}>
-            <FlipCard item={item} stat={scores.answers[item.tech]} record={record} addXp={addXp} />
+            <FlipCard item={item} level={level} stat={scores.answers[item.tech]} record={record} addXp={addXp} loadQuiz={loadCardQuiz} />
           </Animated.View>
         )}
       />

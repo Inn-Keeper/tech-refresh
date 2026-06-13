@@ -28,7 +28,16 @@ export default function App() {
   }, []);
 
   return (
-    <div style={{ fontFamily: "'Inter', system-ui, sans-serif", minHeight: "100vh", background: colors.bg, color: colors.text }}>
+    <div
+      style={{
+        fontFamily: "'Inter', system-ui, sans-serif",
+        minHeight: "100vh",
+        background: colors.bg,
+        color: colors.text,
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       <header
         style={{
           minHeight: layout.webHeaderHeight,
@@ -144,29 +153,146 @@ export default function App() {
         </div>
       </header>
 
-      {session === undefined && (
-        <main
-          style={{
-            minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`,
-            display: "grid",
-            placeItems: "center",
-            color: colors.textFaint,
-            fontSize: 13,
-          }}
-        >
-          Loading…
-        </main>
-      )}
-      {session === null && <SignIn />}
-      {session && (
-        <>
-          {page === "prep" && <InterviewPrep />}
-          {page === "stories" && <StoryBank />}
-          {page === "board" && <ArchBoard />}
-          {page === "contacts" && <Contacts />}
-          {page === "profile" && <Profile />}
-        </>
-      )}
+      <div style={{ flex: 1 }}>
+        {session === undefined && (
+          <main
+            style={{
+              minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`,
+              display: "grid",
+              placeItems: "center",
+              color: colors.textFaint,
+              fontSize: 13,
+            }}
+          >
+            Loading…
+          </main>
+        )}
+        {session === null && <SignIn />}
+        {session && (
+          <>
+            {page === "prep" && <InterviewPrep />}
+            {page === "stories" && <StoryBank />}
+            {page === "board" && <ArchBoard />}
+            {page === "contacts" && <Contacts />}
+            {page === "profile" && <Profile />}
+          </>
+        )}
+      </div>
+
+      <Footer onNavigate={session ? setPage : null} />
+    </div>
+  );
+}
+
+function Footer({ onNavigate }) {
+  const productLinks = pages.map((page) => ({
+    label: page.label,
+    action: onNavigate ? () => onNavigate(page.id) : null,
+  }));
+  const resourceLinks = [
+    { label: "Design", href: "https://github.com/Inn-Keeper/tech-refresh/blob/main/DESIGN.md" },
+    { label: "Plan", href: "https://github.com/Inn-Keeper/tech-refresh/blob/main/PLAN.md" },
+    { label: "Repo", href: "https://github.com/Inn-Keeper/tech-refresh" },
+  ];
+  const stackLinks = [
+    { label: "Supabase", href: "https://supabase.com" },
+    { label: "Vite", href: "https://vite.dev" },
+    { label: "Expo", href: "https://expo.dev" },
+  ];
+
+  return (
+    <footer
+      style={{
+        borderTop: `1px solid ${colors.border}`,
+        background: colors.bgDeep,
+        padding: "28px 24px 30px",
+      }}
+    >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: 24,
+          alignItems: "start",
+        }}
+      >
+        <div style={{ maxWidth: 360 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 10 }}>
+            <img src="/logo-symbol.svg" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: colors.textBright, lineHeight: 1 }}>{brand.productName}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: colors.textFaint, marginTop: 3 }}>{brand.tagline}</div>
+            </div>
+          </div>
+          <p style={{ margin: 0, color: colors.textDim, fontSize: 12.5, lineHeight: 1.6 }}>
+            {brand.promise} Web and mobile share one Supabase-backed practice workspace for prep, stories, quests, boards, and profile data.
+          </p>
+        </div>
+
+        <FooterColumn title="Product" links={productLinks} />
+        <FooterColumn title="Resources" links={resourceLinks} />
+        <FooterColumn title="Built With" links={stackLinks} />
+      </div>
+
+      <div
+        style={{
+          marginTop: 26,
+          paddingTop: 16,
+          borderTop: `1px solid ${colors.surface}`,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+          color: colors.textFaint,
+          fontSize: 11.5,
+          fontWeight: 600,
+        }}
+      >
+        <span>© {new Date().getFullYear()} {brand.productName}. Study case, interview prep, and hiring pipeline toolkit.</span>
+        <span>Private-by-default profile data. Auth source of truth: Supabase.</span>
+      </div>
+    </footer>
+  );
+}
+
+function FooterColumn({ title, links }) {
+  return (
+    <div>
+      <h2 style={{ margin: "0 0 10px", color: colors.textBright, fontSize: 12, fontWeight: 800 }}>{title}</h2>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {links.map((link) =>
+          link.href ? (
+            <a
+              key={link.label}
+              href={link.href}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: colors.textDim, textDecoration: "none", fontSize: 12, fontWeight: 700 }}
+            >
+              {link.label}
+            </a>
+          ) : (
+            <button
+              key={link.label}
+              type="button"
+              onClick={link.action}
+              disabled={!link.action}
+              style={{
+                padding: 0,
+                background: "transparent",
+                border: "none",
+                color: link.action ? colors.textDim : colors.textFaint,
+                textAlign: "left",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: link.action ? "pointer" : "default",
+              }}
+            >
+              {link.label}
+            </button>
+          )
+        )}
+      </div>
     </div>
   );
 }

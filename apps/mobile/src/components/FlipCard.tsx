@@ -23,17 +23,22 @@ type Stat = { correct: number; wrong: number } | undefined;
 
 type Props = {
   item: Item;
+  level: string;
   stat: Stat;
-  record: (tech: string, isCorrect: boolean, source?: string) => void;
+  record: (tech: string, isCorrect: boolean, source?: string, difficulty?: string | null) => void;
   addXp: (points: number) => void;
+  // Loads tiered questions for this tech; returns shuffled questions or null to
+  // fall back to the static prep questions.
+  loadQuiz: (tech: string) => Promise<Item["quiz"] | null>;
 };
 
 const SPRING = { damping: 16, stiffness: 140 };
 
 // 3D card flip on the UI thread: front face 0→180°, back face -180→0.
-export function FlipCard({ item, stat, record, addXp }: Props) {
+export function FlipCard({ item, level, stat, record, addXp, loadQuiz }: Props) {
   const rotation = useSharedValue(0);
   const [phase, setPhase] = useState<"front" | "back" | "quiz">("front");
+  const [quizLoading, setQuizLoading] = useState(false);
   const [quiz, setQuiz] = useState<{ questions: Item["quiz"]; index: number; answered: number | null; runCorrect: number } | null>(null);
 
   const frontStyle = useAnimatedStyle(() => ({
@@ -57,16 +62,21 @@ export function FlipCard({ item, stat, record, addXp }: Props) {
     setQuiz(null);
   };
 
-  const startQuiz = () => {
-    setQuiz({ questions: shuffle(item.quiz).map(shuffleOptions), index: 0, answered: null, runCorrect: 0 });
+  const startQuiz = async () => {
+    if (quizLoading) return;
+    setQuizLoading(true);
+    const fetched = await loadQuiz(item.tech);
+    const questions = fetched ?? shuffle(item.quiz).map(shuffleOptions);
+    setQuiz({ questions, index: 0, answered: null, runCorrect: 0 });
     setPhase("quiz");
+    setQuizLoading(false);
   };
 
   const answer = (i: number) => {
     if (!quiz || quiz.answered !== null) return;
     const isCorrect = i === quiz.questions[quiz.index].correct;
     setQuiz({ ...quiz, answered: i, runCorrect: quiz.runCorrect + (isCorrect ? 1 : 0) });
-    record(item.tech, isCorrect);
+    record(item.tech, isCorrect, "card", level);
   };
 
   const next = () => {
@@ -181,6 +191,7 @@ export function FlipCard({ item, stat, record, addXp }: Props) {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={startQuiz}
+                disabled={quizLoading}
                 style={{
                   paddingHorizontal: 14,
                   paddingVertical: 8,
@@ -188,9 +199,10 @@ export function FlipCard({ item, stat, record, addXp }: Props) {
                   borderWidth: 1,
                   borderColor: `${item.color}60`,
                   borderRadius: 8,
+                  opacity: quizLoading ? 0.6 : 1,
                 }}
               >
-                <Text style={{ fontSize: 12, fontWeight: "600", color: item.color }}>Take quiz →</Text>
+                <Text style={{ fontSize: 12, fontWeight: "600", color: item.color }}>{quizLoading ? "Loading…" : "Take quiz →"}</Text>
               </TouchableOpacity>
             </View>
           </View>

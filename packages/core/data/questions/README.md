@@ -44,9 +44,21 @@ re-running after edits is safe and idempotent.
 
 ## Coverage status
 
-| Category   | File                  | Techs seeded            |
-| ---------- | --------------------- | ----------------------- |
-| Languages  | `languages.json`      | TypeScript, JavaScript  |
+All 50 technologies across 9 categories are seeded at 5 questions per tier
+(20 per tech) — **1,000 questions total**.
 
-Remaining techs (50 total across 9 categories, see
-`packages/core/src/prepData.js`) are pending in later batches.
+| Category           | File                   | Techs |
+| ------------------ | ---------------------- | ----- |
+| Languages          | `languages.json`       | 6     |
+| Frontend & Mobile  | `frontend-mobile.json` | 11    |
+| Backend            | `backend.json`         | 6     |
+| Cloud & DevOps     | `cloud-devops.json`    | 6     |
+| Monitoring         | `monitoring.json`      | 5     |
+| AI Tooling         | `ai-tooling.json`      | 3     |
+| Testing            | `testing.json`         | 4     |
+| Mobile Delivery    | `mobile-delivery.json` | 1     |
+| Databases & CRM    | `databases-crm.json`   | 8     |
+
+To deepen a tier from 5 toward 20 questions, add more entries to the relevant
+file and re-run the test + seed script — both are idempotent per
+`(tech, difficulty)` bucket.

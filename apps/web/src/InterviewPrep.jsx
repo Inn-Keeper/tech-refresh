@@ -28,9 +28,10 @@ export default function InterviewPrep() {
   const [cardState, setCardState] = useState({});
   const [search, setSearch] = useState("");
   const [drill, setDrill] = useState(null);
-  const [picking, setPicking] = useState(false);
-  const [loadingTier, setLoadingTier] = useState(null);
-  const [pickError, setPickError] = useState(null);
+  // Global difficulty, chosen in the right rail — drives both the quiz cards and drills.
+  const [level, setLevel] = useState("mid");
+  const [drillLoading, setDrillLoading] = useState(false);
+  const [drillError, setDrillError] = useState(null);
   const [celebration, setCelebration] = useState(null);
   const previousRank = useRef(null);
   const queryClient = useQueryClient();
@@ -69,18 +70,37 @@ export default function InterviewPrep() {
   const getState = (key) =>
     cardState[key] || { phase: "front", quizIndex: 0, answered: null, runCorrect: 0, shuffled: null };
 
-  const handleFlip = (key, item) => {
-    setCardState((prev) => {
-      const s = prev[key] || { phase: "front", quizIndex: 0, answered: null, runCorrect: 0, shuffled: null };
-      if (s.phase === "front") {
-        return { ...prev, [key]: { ...s, phase: "back" } };
+  // Loads this tech's questions at the active level for a flip card's quiz,
+  // falling back to the static prep questions if the bank has none.
+  const fetchCardQuestions = async (tech) => {
+    try {
+      const rows = await queryClient.fetchQuery({
+        queryKey: ["questions", level, [tech]],
+        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: 5 }),
+      });
+      if (rows.length) {
+        return shuffle(rows).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
       }
-      if (s.phase === "back") {
-        const shuffled = shuffle(item.quiz).map(shuffleOptions);
-        return { ...prev, [key]: { ...s, phase: "quiz", quizIndex: 0, answered: null, runCorrect: 0, shuffled } };
-      }
-      return prev;
-    });
+    } catch {
+      // fall through to the static prep questions below
+    }
+    return null;
+  };
+
+  const handleFlip = async (key, item) => {
+    const s = cardState[key] || { phase: "front" };
+    if (s.phase === "front") {
+      setCardState((prev) => ({ ...prev, [key]: { ...(prev[key] ?? {}), phase: "back" } }));
+      return;
+    }
+    if (s.phase === "back") {
+      const fetched = await fetchCardQuestions(item.tech);
+      const shuffled = fetched ?? shuffle(item.quiz).map(shuffleOptions);
+      setCardState((prev) => ({
+        ...prev,
+        [key]: { ...(prev[key] ?? {}), phase: "quiz", quizIndex: 0, answered: null, runCorrect: 0, shuffled },
+      }));
+    }
   };
 
   const handleAnswer = (key, tech, optionIndex) => {
@@ -91,7 +111,7 @@ export default function InterviewPrep() {
       ...prev,
       [key]: { ...s, answered: optionIndex, runCorrect: s.runCorrect + (isCorrect ? 1 : 0) },
     }));
-    record(tech, isCorrect);
+    record(tech, isCorrect, "card", level);
   };
 
   const handleNextQuestion = (key) => {
@@ -126,25 +146,24 @@ export default function InterviewPrep() {
     });
 
   const startDrill = async (difficulty) => {
-    setLoadingTier(difficulty);
-    setPickError(null);
+    setDrillLoading(true);
+    setDrillError(null);
     try {
       const weakest = selectDrillTechs(categories, scores.answers, { techCount: 5 });
       let questions = await fetchTierQuestions(difficulty, weakest);
       if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
       if (questions.length === 0) {
-        setPickError(`No ${difficultyByKey(difficulty)?.label ?? difficulty} questions yet — more land soon.`);
+        setDrillError(`No ${difficultyByKey(difficulty)?.label ?? difficulty} questions yet — more land soon.`);
         return;
       }
       const entries = buildDrillFromQuestions(questions, { colorByTech, fallbackColor: colors.accent, size: DRILL_SIZE }).map(
         (entry) => ({ ...entry, link: techLinks[entry.tech] })
       );
       setDrill({ questions: entries, index: 0, answered: null, correctCount: 0, done: false, difficulty });
-      setPicking(false);
     } catch {
-      setPickError("Couldn't load questions. Check your connection and retry.");
+      setDrillError("Couldn't load questions. Check your connection and retry.");
     } finally {
-      setLoadingTier(null);
+      setDrillLoading(false);
     }
   };
 
@@ -191,7 +210,19 @@ export default function InterviewPrep() {
           }}
         />
       }
-      right={<PrepRightRail accuracy={accuracy} drillActive={!!drill || picking} onDrill={() => setPicking(true)} scores={scores} summary={summary} />}
+      right={
+        <PrepRightRail
+          accuracy={accuracy}
+          drillActive={!!drill}
+          drillLoading={drillLoading}
+          drillError={drillError}
+          level={level}
+          onLevel={setLevel}
+          onDrill={() => startDrill(level)}
+          scores={scores}
+          summary={summary}
+        />
+      }
     >
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 18, marginBottom: 16 }}>
         <div>
@@ -211,18 +242,6 @@ export default function InterviewPrep() {
         <div style={{ width: "min(100%, 860px)", paddingBottom: 48 }}>
           <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={() => setDrill(null)} />
         </div>
-      ) : picking ? (
-        <div style={{ width: "min(100%, 560px)", paddingBottom: 48 }}>
-          <DifficultyPanel
-            onPick={startDrill}
-            onCancel={() => {
-              setPicking(false);
-              setPickError(null);
-            }}
-            loadingKey={loadingTier}
-            error={pickError}
-          />
-        </div>
       ) : visibleItems.length === 0 ? (
         <WorkspacePanel tone="sunken" style={{ textAlign: "center", color: colors.textFaint, padding: 28 }}>
           No matches found.
@@ -238,6 +257,7 @@ export default function InterviewPrep() {
                 key={key}
                 index={index}
                 item={item}
+                level={level}
                 stat={scores.answers[item.tech]}
                 state={getState(key)}
                 onFlip={() => handleFlip(key, item)}
@@ -360,15 +380,18 @@ function PrepLeftRail({ activeCategory, allItems, categories, scores, search, se
   );
 }
 
-function PrepRightRail({ accuracy, drillActive, onDrill, scores, summary }) {
+function PrepRightRail({ accuracy, drillActive, drillLoading, drillError, level, onLevel, onDrill, scores, summary }) {
   const rank = rankForXp(scores.xp);
   const next = RANKS[RANKS.indexOf(rank) + 1];
   const progress = next ? Math.round(((scores.xp - rank.min) / (next.min - rank.min)) * 100) : 100;
   const strongest = summary.ranked.slice(0, 4);
   const weakest = [...summary.ranked].reverse().slice(0, 4);
+  const tier = difficultyByKey(level);
 
   return (
     <>
+      <LevelSelector level={level} onLevel={onLevel} />
+
       <WorkspacePanel>
         <WorkspaceTitle
           icon={<BrandIcon name="rank" color={colors.accentBright} size={17} />}
@@ -389,7 +412,7 @@ function PrepRightRail({ accuracy, drillActive, onDrill, scores, summary }) {
         </div>
         <button
           onClick={onDrill}
-          disabled={drillActive}
+          disabled={drillActive || drillLoading}
           style={{
             width: "100%",
             display: "flex",
@@ -398,19 +421,20 @@ function PrepRightRail({ accuracy, drillActive, onDrill, scores, summary }) {
             gap: 7,
             marginTop: 14,
             padding: "9px 12px",
-            background: tints.accentSoft,
-            border: `1px solid ${colors.accent}60`,
+            background: `${tier?.color ?? colors.accent}1F`,
+            border: `1px solid ${tier?.color ?? colors.accent}60`,
             borderRadius: 8,
-            color: colors.accentBright,
+            color: tier?.color ?? colors.accentBright,
             fontSize: 12,
             fontWeight: 800,
-            cursor: drillActive ? "default" : "pointer",
-            opacity: drillActive ? 0.55 : 1,
+            cursor: drillActive || drillLoading ? "default" : "pointer",
+            opacity: drillActive || drillLoading ? 0.55 : 1,
           }}
         >
-          <BrandIcon name="drill" color={colors.accentBright} size={14} />
-          Drill weakest
+          <BrandIcon name="drill" color={tier?.color ?? colors.accentBright} size={14} />
+          {drillLoading ? "Loading…" : `Drill weakest · ${tier?.emoji ?? ""} ${tier?.label ?? ""}`}
         </button>
+        {drillError && <p style={{ margin: "8px 0 0", fontSize: 11, color: colors.warning }}>{drillError}</p>}
       </WorkspacePanel>
 
       <AccuracyChart points={accuracy} compact />
@@ -451,7 +475,7 @@ function RailList({ color, icon, items, title }) {
   );
 }
 
-function Card({ index = 0, item, stat, state, onFlip, onBack, onAnswer, onNext }) {
+function Card({ index = 0, item, level, stat, state, onFlip, onBack, onAnswer, onNext }) {
   const { phase, quizIndex, answered, shuffled } = state;
   const flipped = phase === "back";
 
@@ -468,6 +492,7 @@ function Card({ index = 0, item, stat, state, onFlip, onBack, onAnswer, onNext }
         <div className={styles.quiz}>
           <QuizFace
             item={item}
+            level={level}
             link={techLinks[item.tech]}
             question={shuffled[quizIndex]}
             questionNumber={quizIndex + 1}
@@ -595,9 +620,10 @@ function BackFace({ item, onBack, onQuiz }) {
   );
 }
 
-function QuizFace({ item, link, question, questionNumber, total, answered, onAnswer, onNext }) {
+function QuizFace({ item, level, link, question, questionNumber, total, answered, onAnswer, onNext }) {
   const isCorrect = answered !== null && answered === question.correct;
   const isLast = questionNumber === total;
+  const perAnswerXp = difficultyByKey(level)?.xp ?? CORRECT_XP;
 
   return (
     <div
@@ -673,7 +699,7 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, color: isCorrect ? colors.success : colors.danger, fontWeight: 600 }}>
-              {isCorrect ? `Correct! +${CORRECT_XP} XP` : "Incorrect"}
+              {isCorrect ? `Correct! +${perAnswerXp} XP` : "Incorrect"}
             </span>
             {link && (
               <a
@@ -842,53 +868,47 @@ function RankingList({ icon, title, items, color }) {
 }
 
 // Sassy tier selector shown before a drill — mirrors the mobile DifficultyPicker.
-function DifficultyPanel({ onPick, onCancel, loadingKey, error }) {
+// Sidebar difficulty picker. Sets the global level that drives both the quiz
+// cards and the drill, so the whole screen runs at one tier.
+function LevelSelector({ level, onLevel }) {
   return (
-    <div style={{ background: colors.well, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: colors.textBright }}>Pick your pain</span>
-        <button
-          onClick={onCancel}
-          style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "transparent", border: `1px solid ${colors.border}`, borderRadius: 8, color: colors.textFaint, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-        >
-          Cancel
-          <BrandIcon name="close" color={colors.textFaint} size={11} />
-        </button>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+    <WorkspacePanel>
+      <WorkspaceTitle
+        icon={<BrandIcon name="drill" color={colors.accentBright} size={17} />}
+        title="Difficulty level"
+        subtitle="Applies to quiz cards and drills."
+      />
+      <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 14 }}>
         {DIFFICULTIES.map((d) => {
-          const loading = loadingKey === d.key;
-          const disabled = loadingKey !== null;
+          const active = d.key === level;
           return (
             <button
               key={d.key}
-              onClick={() => onPick(d.key)}
-              disabled={disabled}
+              onClick={() => onLevel(d.key)}
+              aria-pressed={active}
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 10,
                 textAlign: "left",
-                padding: "12px 14px",
-                background: `${d.color}1A`,
-                border: `1px solid ${d.color}60`,
-                borderRadius: 10,
-                cursor: disabled ? "default" : "pointer",
-                opacity: disabled && !loading ? 0.5 : 1,
+                padding: "9px 11px",
+                background: active ? `${d.color}24` : "transparent",
+                border: `1px solid ${active ? d.color : colors.border}`,
+                borderRadius: 9,
+                cursor: "pointer",
               }}
             >
-              <span style={{ fontSize: 22 }}>{d.emoji}</span>
-              <span style={{ flex: 1 }}>
-                <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: d.color }}>{d.label}</span>
-                <span style={{ display: "block", fontSize: 11.5, color: colors.textDim }}>{d.blurb}</span>
+              <span style={{ fontSize: 18 }}>{d.emoji}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 12.5, fontWeight: 800, color: active ? d.color : colors.text }}>{d.label}</span>
+                <span style={{ display: "block", fontSize: 10.5, color: colors.textFaint }}>{d.blurb}</span>
               </span>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: d.color }}>{loading ? "Loading…" : `+${d.xp} XP`}</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: active ? d.color : colors.textFaint }}>+{d.xp}</span>
             </button>
           );
         })}
       </div>
-      {error && <p style={{ margin: 0, fontSize: 12, color: colors.warning }}>{error}</p>}
-    </div>
+    </WorkspacePanel>
   );
 }
 

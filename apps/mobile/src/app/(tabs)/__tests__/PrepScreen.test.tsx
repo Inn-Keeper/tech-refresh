@@ -22,20 +22,20 @@ jest.mock("@/lib/useScores", () => ({
 }));
 
 describe("PrepScreen", () => {
-  it("renders the prep dashboard, picks a tier, and starts a drill", async () => {
+  it("renders the prep dashboard with a level selector and starts a drill at the active level", async () => {
     const view = await renderWithClient(<PrepScreen />);
 
     expect(view.getByText(/Intern/)).toBeTruthy();
     expect(view.getByText("Accuracy over time")).toBeTruthy();
 
+    // The persistent difficulty selector is always visible.
+    expect(view.getByText("DIFFICULTY")).toBeTruthy();
+    expect(view.getByText("Overlord")).toBeTruthy();
+
     await waitFor(() => expect(api.getAccuracyTimeline).toHaveBeenCalled());
 
-    // Drill button opens the sassy tier picker rather than starting immediately.
+    // Drilling uses the selected level directly and fetches that level's questions.
     fireEvent.press(view.getByText(/Drill weakest/));
-    await waitFor(() => expect(view.getByText("Pick your pain")).toBeTruthy());
-
-    // Choosing a tier fetches that level's questions and enters the drill.
-    fireEvent.press(view.getByText("Newbie"));
     await waitFor(() => expect(view.getByText("DRILL")).toBeTruthy());
     expect(api.getQuestions).toHaveBeenCalled();
     expect(useScores).toHaveBeenCalled();

@@ -1,79 +1,58 @@
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { DIFFICULTIES } from "@tech-refresh/core/difficulty";
+import { Text, TouchableOpacity, View } from "react-native";
+import { DIFFICULTIES, difficultyByKey } from "@tech-refresh/core/difficulty";
 import { colors } from "@/theme";
-import { BrandIcon } from "@/components/BrandIcon";
 
 type Props = {
-  onPick: (difficulty: string) => void;
-  onCancel: () => void;
-  loadingKey: string | null;
-  error: string | null;
+  level: string;
+  onLevel: (key: string) => void;
 };
 
-// Sassy tier selector shown before a drill. Each tier is colored by its token
-// and shows the XP it pays per correct answer, so harder feels worth it.
-export function DifficultyPicker({ onPick, onCancel, loadingKey, error }: Props) {
+// Persistent, sassy difficulty selector. The chosen tier drives both the quiz
+// cards and the drill, so the whole screen runs at one level.
+export function DifficultyPicker({ level, onLevel }: Props) {
+  const tier = difficultyByKey(level);
   return (
-    <Animated.View
-      entering={FadeInDown.springify().damping(18)}
+    <View
       style={{
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: 12,
-        padding: 14,
-        gap: 10,
+        padding: 12,
+        gap: 8,
       }}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontSize: 14, fontWeight: "700", color: colors.textBright }}>Pick your pain</Text>
-        <TouchableOpacity onPress={onCancel}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Text style={{ fontSize: 11, color: colors.textFaint }}>Cancel</Text>
-            <BrandIcon name="close" color={colors.textFaint} size={11} />
-          </View>
-        </TouchableOpacity>
+        <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textDim, letterSpacing: 0.6 }}>DIFFICULTY</Text>
+        {tier && <Text style={{ fontSize: 10.5, color: colors.textFaint }}>{tier.blurb}</Text>}
       </View>
-
-      <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: "row", gap: 6 }}>
         {DIFFICULTIES.map((d) => {
-          const loading = loadingKey === d.key;
-          const disabled = loadingKey !== null;
+          const active = d.key === level;
           return (
             <TouchableOpacity
               key={d.key}
-              onPress={() => onPick(d.key)}
-              disabled={disabled}
+              onPress={() => onLevel(d.key)}
+              accessibilityState={{ selected: active }}
               style={{
-                flexDirection: "row",
+                flex: 1,
                 alignItems: "center",
-                gap: 10,
-                paddingVertical: 10,
-                paddingHorizontal: 12,
+                paddingVertical: 8,
                 borderRadius: 10,
-                backgroundColor: `${d.color}1A`,
+                backgroundColor: active ? `${d.color}24` : colors.well,
                 borderWidth: 1,
-                borderColor: `${d.color}60`,
-                opacity: disabled && !loading ? 0.5 : 1,
+                borderColor: active ? d.color : colors.border,
               }}
             >
-              <Text style={{ fontSize: 20 }}>{d.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 14, fontWeight: "700", color: d.color }}>{d.label}</Text>
-                <Text style={{ fontSize: 11, color: colors.textDim }}>{d.blurb}</Text>
-              </View>
-              {loading ? (
-                <ActivityIndicator size="small" color={d.color} />
-              ) : (
-                <Text style={{ fontSize: 11, fontWeight: "700", color: d.color }}>+{d.xp} XP</Text>
-              )}
+              <Text style={{ fontSize: 17 }}>{d.emoji}</Text>
+              <Text style={{ fontSize: 9.5, fontWeight: "700", color: active ? d.color : colors.textDim, marginTop: 2 }} numberOfLines={1}>
+                {d.label}
+              </Text>
+              <Text style={{ fontSize: 8.5, fontWeight: "700", color: active ? d.color : colors.textFaint, marginTop: 1 }}>+{d.xp}</Text>
             </TouchableOpacity>
           );
         })}
       </View>
-
-      {error && <Text style={{ fontSize: 11, color: colors.warning }}>{error}</Text>}
-    </Animated.View>
+    </View>
   );
 }
