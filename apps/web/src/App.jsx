@@ -31,48 +31,92 @@ export default function App() {
     <div style={{ fontFamily: "'Inter', system-ui, sans-serif", minHeight: "100vh", background: colors.bg, color: colors.text }}>
       <header
         style={{
-          borderBottom: `1px solid ${colors.surface}`,
-          background: colors.bgDeep,
+          minHeight: layout.webHeaderHeight,
+          borderBottom: `1px solid ${colors.border}`,
+          background: `linear-gradient(180deg, ${colors.bgDeep}, ${colors.bg}F2)`,
           position: "sticky",
           top: 0,
           zIndex: 10,
+          backdropFilter: "blur(14px)",
+          boxShadow: "0 14px 38px rgba(0, 0, 0, 0.18)",
         }}
       >
         <div
           style={{
-            padding: "12px 24px",
+            minHeight: layout.webHeaderHeight,
+            padding: "10px 24px",
+            boxSizing: "border-box",
             display: "flex",
             alignItems: "center",
-            gap: 12,
+            gap: 18,
             flexWrap: "wrap",
           }}
         >
-          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.3px", color: colors.textBright }}>
-            {brand.productName}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 150 }}>
+            <span
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 12,
+                display: "grid",
+                placeItems: "center",
+                background: `linear-gradient(145deg, ${colors.surfaceHi}, ${colors.bgDeep})`,
+                border: `1px solid ${colors.border}`,
+                boxShadow: `0 0 0 1px ${colors.accent}18, 0 10px 24px rgba(0, 0, 0, 0.22)`,
+              }}
+            >
+              <img src="/logo-symbol.svg" alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />
+            </span>
+            <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "0px", color: colors.textBright, lineHeight: 1 }}>
+                {brand.productName}
+              </span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: colors.textFaint, lineHeight: 1.2 }}>
+                {brand.tagline}
+              </span>
+            </span>
+          </div>
           {session && (
             <>
-              <nav style={{ marginLeft: "auto", display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <nav
+                aria-label="Primary"
+                style={{
+                  marginLeft: "auto",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  flexWrap: "wrap",
+                  padding: 5,
+                  borderRadius: 16,
+                  background: `${colors.well}C7`,
+                  border: `1px solid ${colors.border}`,
+                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+                }}
+              >
                 {pages.map((p) => (
                   <button
                     key={p.id}
                     onClick={() => setPage(p.id)}
+                    aria-current={page === p.id ? "page" : undefined}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 6,
-                      padding: "7px 14px",
-                      borderRadius: 20,
+                      gap: 8,
+                      minHeight: 36,
+                      padding: "8px 14px",
+                      borderRadius: 11,
                       border: "none",
                       cursor: "pointer",
                       fontSize: 13,
-                      fontWeight: 600,
+                      fontWeight: 800,
+                      letterSpacing: "0px",
                       background: page === p.id ? colors.accent : "transparent",
                       color: page === p.id ? colors.onAccent : colors.textDim,
-                      transition: "all 0.15s",
+                      boxShadow: page === p.id ? `0 8px 22px ${colors.accent}22` : "none",
+                      transition: "background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease",
                     }}
                   >
-                    <BrandIcon name={p.icon} color={page === p.id ? colors.onAccent : colors.textDim} size={14} />
+                    <BrandIcon name={p.icon} color={page === p.id ? colors.onAccent : colors.textDim} size={16} />
                     {p.label}
                   </button>
                 ))}
@@ -81,14 +125,16 @@ export default function App() {
                 onClick={() => supabase.auth.signOut()}
                 title={session.user.email}
                 style={{
-                  padding: "5px 12px",
-                  background: "transparent",
+                  minHeight: 36,
+                  padding: "8px 13px",
+                  background: colors.bgDeep,
                   border: `1px solid ${colors.border}`,
-                  borderRadius: 8,
+                  borderRadius: 11,
                   color: colors.textFaint,
                   fontSize: 11,
-                  fontWeight: 600,
+                  fontWeight: 800,
                   cursor: "pointer",
+                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
                 }}
               >
                 {t("auth.signOut")}

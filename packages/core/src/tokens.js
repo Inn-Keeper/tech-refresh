@@ -79,8 +79,8 @@ export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
 export const radius = { sm: 8, md: 12, lg: 16, pill: 999 };
 
 export const layout = {
-  webHeaderHeight: 57,
-  workspaceTop: 79,
+  webHeaderHeight: 72,
+  workspaceTop: 96,
   workspaceBottomInset: 22,
   workspaceRailMin: 230,
   workspaceLeftRailMax: 290,
