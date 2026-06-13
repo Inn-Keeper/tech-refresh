@@ -11,6 +11,7 @@ import Animated, {
 import { TYPE_COLORS, meta } from "@tech-refresh/core/arch";
 import type { BoardNode } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
+import { BrandIcon, nodeIconName } from "@/components/BrandIcon";
 
 export const NODE_W = 124;
 export const NODE_H = 52;
@@ -141,7 +142,7 @@ export function NodeView({
           animatedStyle,
         ]}
       >
-        <Text style={{ fontSize: 16 }}>{spec.emoji}</Text>
+        <BrandIcon name={nodeIconName(node.type)} color={color} size={18} />
         <Text style={{ flex: 1, fontSize: 10, fontWeight: "600", color: colors.text, lineHeight: 13 }}>
           {spec.label}
         </Text>
@@ -163,7 +164,7 @@ export function NodeView({
             justifyContent: "center",
           }}
         >
-          <Text style={{ color: colors.textDim, fontSize: 11, lineHeight: 13 }}>×</Text>
+          <BrandIcon name="close" color={colors.textDim} size={10} />
         </TouchableOpacity>
 
         <GestureDetector gesture={connect}>

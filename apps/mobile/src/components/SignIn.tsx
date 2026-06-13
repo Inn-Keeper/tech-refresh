@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity } from "react-native";
+import { Image, KeyboardAvoidingView, Platform, Text, TextInput, TouchableOpacity } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@/theme";
@@ -48,12 +48,17 @@ export function SignIn() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       style={{ flex: 1, backgroundColor: colors.bg, justifyContent: "center", padding: 32 }}
     >
-      <Text style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>⚡</Text>
+      {/* <Image
+        source={require("../../assets/brand/splash-icon.png")}
+        accessibilityIgnoresInvertColors
+        style={{ alignSelf: "center", width: 76, height: 62, marginBottom: 12 }}
+        resizeMode="contain"
+      /> */}
       <Text style={{ color: colors.textBright, fontSize: 22, fontWeight: "700", textAlign: "center", marginBottom: 6 }}>
-        {mode === "signin" ? t("auth.signIn") : t("auth.createAccount")}
+        {t("auth.appName")}
       </Text>
       <Text style={{ color: colors.textFaint, fontSize: 13, textAlign: "center", marginBottom: 28 }}>
-        {t("auth.tagline")}
+        {t("auth.promise")}
       </Text>
 
       <TextInput

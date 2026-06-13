@@ -5,6 +5,8 @@ import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { FunnelDashboard } from "./FunnelDashboard.jsx";
 import * as api from "./api.js";
 import { colors, tints } from "@tech-refresh/core/tokens";
+import { BrandIcon } from "./BrandIcon.jsx";
+import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
 
 const EMPTY_FORM = {
   name: "",
@@ -103,18 +105,30 @@ export default function Contacts() {
 
   const sorted = contacts ? [...contacts].sort((a, b) => isDue(b) - isDue(a)) : null;
   const dueCount = contacts ? contacts.filter(isDue).length : 0;
+  const dueContacts = contacts ? contacts.filter(isDue) : [];
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 48px" }}>
+    <WorkspaceLayout
+      mainLabel="Hiring contacts"
+      left={
+        <ContactsLeftRail
+          canAdd={!!contacts && editingId !== "new"}
+          contacts={contacts ?? []}
+          dueCount={dueCount}
+          onAdd={() => setEditingId("new")}
+        />
+      }
+      right={<ContactsRightRail dueContacts={dueContacts} funnel={funnel} />}
+    >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
+        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 850, color: colors.textBright }}>
           Hiring Contacts
         </h1>
         <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 500 }}>
           {contacts ? `${contacts.length} in pipeline` : "loading…"}
         </span>
       </div>
-      <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13 }}>
+      <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13, maxWidth: 760, lineHeight: 1.6 }}>
         Recruiters contacted and applications submitted. Synced to Supabase.
       </p>
 
@@ -132,44 +146,6 @@ export default function Contacts() {
         >
           {error}
         </div>
-      )}
-
-      <FunnelDashboard summary={funnel} />
-
-      {dueCount > 0 && (
-        <div
-          style={{
-            marginBottom: 16,
-            padding: "10px 14px",
-            background: tints.dangerSoft,
-            border: `1px solid ${colors.danger}60`,
-            borderRadius: 10,
-            color: colors.dangerBright,
-            fontSize: 13,
-            fontWeight: 600,
-          }}
-        >
-          ⏰ {dueCount} follow-up{dueCount > 1 ? "s" : ""} due — these lose offers when they slip.
-        </div>
-      )}
-
-      {contacts && editingId !== "new" && (
-        <button
-          onClick={() => setEditingId("new")}
-          style={{
-            marginBottom: 16,
-            padding: "9px 16px",
-            background: tints.accentSoft,
-            border: `1px solid ${colors.accent}60`,
-            borderRadius: 10,
-            color: colors.accentBright,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          + Add contact
-        </button>
       )}
 
       {editingId === "new" && (
@@ -202,7 +178,101 @@ export default function Contacts() {
           )
         )}
       </div>
-    </div>
+    </WorkspaceLayout>
+  );
+}
+
+function ContactsLeftRail({ canAdd, contacts, dueCount, onAdd }) {
+  const counts = Object.fromEntries(STATUSES.map((status) => [status, contacts.filter((contact) => contact.status === status).length]));
+
+  return (
+    <>
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="contact" color={colors.accentBright} size={17} />}
+          title="Pipeline"
+          subtitle={`${contacts.length} people tracked. Keep the list ordered by urgency.`}
+        />
+        {canAdd && (
+          <button
+            onClick={onAdd}
+            style={{
+              width: "100%",
+              marginTop: 14,
+              padding: "9px 12px",
+              background: colors.accent,
+              border: "none",
+              borderRadius: 8,
+              color: colors.onAccent,
+              fontSize: 12,
+              fontWeight: 850,
+              cursor: "pointer",
+            }}
+          >
+            Add contact
+          </button>
+        )}
+      </WorkspacePanel>
+
+      <WorkspacePanel style={{ padding: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {STATUSES.map((status) => {
+            const style = STATUS_STYLES[status];
+            return (
+              <div
+                key={status}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 10px",
+                  borderRadius: 7,
+                  background: counts[status] ? `${style.color}14` : "transparent",
+                }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: 4, background: counts[status] ? style.color : colors.border }} />
+                <span style={{ flex: 1, color: counts[status] ? colors.text : colors.textFaint, fontSize: 12.5, fontWeight: 750 }}>{status}</span>
+                <span style={{ color: counts[status] ? style.color : colors.textFaint, fontSize: 12, fontWeight: 850 }}>{counts[status]}</span>
+              </div>
+            );
+          })}
+        </div>
+      </WorkspacePanel>
+
+      {dueCount > 0 && (
+        <WorkspacePanel tone="sunken" style={{ borderColor: `${colors.danger}70` }}>
+          <WorkspaceTitle
+            icon={<BrandIcon name="warning" color={colors.dangerBright} size={17} />}
+            title={`${dueCount} follow-up${dueCount > 1 ? "s" : ""} due`}
+            subtitle="These lose momentum when they slip."
+          />
+        </WorkspacePanel>
+      )}
+    </>
+  );
+}
+
+function ContactsRightRail({ dueContacts, funnel }) {
+  return (
+    <>
+      <FunnelDashboard summary={funnel} compact />
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="calendar" color={dueContacts.length ? colors.dangerBright : colors.successBright} size={17} />}
+          title={dueContacts.length ? "Due now" : "No overdue actions"}
+          subtitle={dueContacts.length ? "Clear these first." : "Your follow-up queue is calm."}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+          {dueContacts.slice(0, 5).map((contact) => (
+            <div key={contact.id} style={{ fontSize: 12, lineHeight: 1.45 }}>
+              <div style={{ color: colors.textBright, fontWeight: 800 }}>{contact.name}</div>
+              <div style={{ color: colors.textFaint }}>{contact.nextAction}</div>
+            </div>
+          ))}
+          {dueContacts.length === 0 && <p style={{ margin: 0, color: colors.textFaint, fontSize: 12 }}>Add next actions to keep the pipeline moving.</p>}
+        </div>
+      </WorkspacePanel>
+    </>
   );
 }
 
@@ -297,8 +367,9 @@ function ContactCard({
             color: due ? colors.dangerBright : colors.warningBright,
           }}
         >
-          <span style={{ fontWeight: 600 }}>{due ? "🔴 DUE" : "⏰"}</span>
+          <BrandIcon name={due ? "warning" : "calendar"} color={due ? colors.dangerBright : colors.warningBright} size={15} />
           <span style={{ flex: 1 }}>
+            {due && <span style={{ fontWeight: 600 }}>DUE · </span>}
             {c.nextAction}
             {c.nextActionDate && <span style={{ opacity: 0.7 }}> · {c.nextActionDate}</span>}
           </span>
@@ -316,7 +387,7 @@ function ContactCard({
               cursor: "pointer",
             }}
           >
-            Done ✓
+            Done
           </button>
         </div>
       )}
@@ -334,9 +405,14 @@ function ContactCard({
             fontSize: 11,
             fontWeight: 600,
             cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
           }}
         >
-          📓 Retros ({retros.length}) {showRetros ? "▴" : "▾"}
+          <BrandIcon name="retro" color={colors.textDim} size={12} />
+          Retros ({retros.length})
+          <BrandIcon name={showRetros ? "arrowUp" : "arrowDown"} color={colors.textDim} size={11} />
         </button>
       )}
 
@@ -362,12 +438,13 @@ function ContactCard({
                   marginLeft: "auto",
                   background: "transparent",
                   border: "none",
-                  color: colors.textFaint,
                   cursor: "pointer",
-                  fontSize: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  padding: 0,
                 }}
               >
-                ×
+                <BrandIcon name="close" color={colors.textFaint} size={11} />
               </button>
             </div>
             <RetroLine label="Questions asked" text={r.questions} />

@@ -2,6 +2,8 @@
 // interpolation. English-only today; adding a locale = adding a dictionary
 // and calling setLocale. Upgrade path if plurals/ICU are ever needed: i18next.
 
+import { brand } from "./tokens.js";
+
 export const en = {
   "common.save": "Save",
   "common.saving": "Saving",
@@ -15,10 +17,11 @@ export const en = {
   "common.done": "Done ✓",
   "common.next": "Next →",
 
-  "auth.appName": "Interview Prep",
+  "auth.appName": brand.productName,
   "auth.signIn": "Sign in",
   "auth.createAccount": "Create account",
-  "auth.tagline": "Your pipeline and scores live behind your account.",
+  "auth.tagline": brand.tagline,
+  "auth.promise": brand.promise,
   "auth.emailPlaceholder": "you@email.com",
   "auth.passwordPlaceholder": "password",
   "auth.newPasswordPlaceholder": "password (8+ characters)",
@@ -32,11 +35,12 @@ export const en = {
   "tabs.stories": "Stories",
   "tabs.board": "Arch Board",
   "tabs.contacts": "Quest",
+  "tabs.profile": "Profile",
 
-  "prep.drillWeakest": "🎯 Drill weakest",
+  "prep.drillWeakest": "Drill weakest",
   "prep.ranking": "Ranking",
-  "prep.strongest": "💪 Strongest",
-  "prep.needsWork": "📉 Needs work",
+  "prep.strongest": "Strongest",
+  "prep.needsWork": "Needs work",
   "prep.xpRules": "+{correct} XP per correct answer · +{bonus} XP for a perfect quiz",
   "prep.xpToNext": "{xp} XP to {rank}",
   "prep.accuracySummary": "{pct}% accuracy · {count} answered",
@@ -45,7 +49,7 @@ export const en = {
   "prep.incorrect": "Incorrect",
   "prep.docs": "Docs ↗",
   "prep.finish": "Finish ✓",
-  "prep.drillTag": "🎯 DRILL",
+  "prep.drillTag": "DRILL",
   "prep.exit": "Exit",
   "prep.backToCards": "Back to cards",
   "prep.drillResult": "+{xp} XP{bonus} — accuracy recorded per tech, so the next drill adapts.",
@@ -60,8 +64,8 @@ export const en = {
   "celebration.rankTitle": "{rank} unlocked",
   "celebration.rankSubtitle": "{xp} XP reached. The ladder noticed.",
 
-  "stories.myStories": "✍️ My stories",
-  "stories.drillPrompts": "🎤 Drill prompts",
+  "stories.myStories": "My stories",
+  "stories.drillPrompts": "Drill prompts",
   "stories.addStory": "+ Add story",
   "stories.empty": "No stories yet. Start with your best \"impact\" story.",
   "stories.loadError": "Couldn't load stories: {message}",
@@ -70,15 +74,15 @@ export const en = {
   "stories.answerOutLoud": "Answer out loud — aim for 90 seconds.",
   "stories.reveal": "Reveal my stories",
   "stories.nextPrompt": "Next →",
-  "stories.noStoryFor": "⚠️ No story tagged \"{competency}\" yet — that's a gap an interviewer will find first.",
+  "stories.noStoryFor": "No story tagged \"{competency}\" yet — that's a gap an interviewer will find first.",
 
   "contacts.addContact": "+ Add contact",
   "contacts.loadError": "Couldn't load contacts: {message}",
-  "contacts.dueBanner": "⏰ {count} follow-up{plural} due — these lose offers when they slip.",
+  "contacts.dueBanner": "{count} follow-up{plural} due — these lose offers when they slip.",
   "contacts.deleteTitle": "Delete contact",
   "contacts.deleteMessage": "Delete \"{name}\"?",
   "contacts.addRetro": "+ Retro",
-  "contacts.retros": "📓 Retros ({count})",
+  "contacts.retros": "Retros ({count})",
   "contacts.saveRetro": "Save retro",
 
   "funnel.title": "Quest funnel",
@@ -93,7 +97,7 @@ export const en = {
 
   "board.saved": "Saved",
   "board.evaluate": "Evaluate",
-  "board.fit": "⛶ Fit",
+  "board.fit": "Fit",
   "board.savedBoards": "Saved boards",
   "board.savedTotal": "{count} total",
   "board.savedEmpty": "Save a board to reuse or refine it later.",
@@ -112,7 +116,7 @@ export const en = {
     "Add components below, drag to arrange,\ntap a node's ● handle then a target to wire them up.\nPinch to zoom · drag empty space to pan.",
   "board.designChecks": "DESIGN CHECKS",
   "board.meetingNotes": "MEETING NOTES",
-  "board.verdictShip": "Ship it 🚀",
+  "board.verdictShip": "Ship it",
   "board.verdictReview": "Needs review before the meeting",
   "board.verdictWhiteboard": "Back to the whiteboard",
 };

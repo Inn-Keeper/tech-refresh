@@ -1,0 +1,285 @@
+Tech-Refresh Brand Identity
+A complete brand guide for the interview prep and hiring pipeline tool. Designed for developers leveling up, job hunters, and students facing the "painful period" of job search — serious purpose with playful, encouraging energy.
+
+Brand Positioning
+Promise: Navigate the job hunt with confidence, one skill at a time.
+
+Archetype: The Mentor + Cheerleader (serious expertise + genuine encouragement)
+
+Audience:
+
+Developers leveling up to the next role
+Active job hunters (week 1 → week 52)
+CS students preparing for careers
+Tone:
+
+Primary: Calm, clear, competent (like Linear, Supabase)
+Secondary: Playful morale-booster during hard moments (mascot celebrations, XP wins, rank-ups)
+Never: Patronizing, frivolous, or tone-deaf to job search stress
+Visual Identity
+Core Aesthetic
+Inspired by Linear (minimal, geometric grace) and Supabase (dark, accessible, developer-first).
+
+Palette: Dark elevation ladder + teal accent (existing tokens.js)
+Style: Organic, rounded forms (not cold geometric)
+Hierarchy: Calm surfaces, teal highlights, dark breathing room
+Motion: Intentional, celebratory (Reanimated on mobile)
+Logo
+Concept: Organic upward motion + teal + literary depth
+
+Visual Language:
+
+Flowing, hand-drawn quality (like Supabase's wavy form) but more structured
+Upward trajectory or ascending path
+Teal as primary color on dark background
+Readable at 16px (favicon) through 512px (social)
+Works in monochrome (for accessibility, print, small sizes)
+Logo Variations:
+
+Primary mark: Full logo with wordmark (horizontal lockup)
+Symbol only: Standalone icon for app, favicon, avatar
+Stacked: Logo above/below wordmark (vertical lockup for app stores)
+Monochrome: Black/white + teal (social, press, accessibility)
+Design Direction: Imagine a path or flow that ascends organically, like a bird's journey or a career trajectory. Teal highlights the "forward momentum." The form should feel alive, not rigid.
+
+Mascot: The Raven
+Name: Quill (or Raven, or Poe — your choice)
+
+Inspiration: Edgar Allan Poe's "The Raven" — wisdom, mystery, resilience, literary depth. A crow/raven that's clever, encouraging, and slightly mischievous.
+
+Personality:
+
+Wise but not condescending
+Celebratory (pops up during XP wins, rank-ups, quiz perfect scores)
+Sardonic sense of humor (acknowledges job search pain)
+Supportive cheerleader ("You got this" energy)
+Visual Design:
+
+Organic, slightly illustrated style (not cartoonish, not photo-real)
+Intelligent eyes (reflecting thoughtfulness)
+Teal accent (feathers, eye glint, or aura)
+Size: Works as a small corner element (mobile notification) to full celebration burst
+Animations: Landing, bobbing, wing flutter during celebrations
+Key Moments:
+
+First rank-up: Quill lands on screen, does a little celebration dance
+Quiz perfect score: Quill flies across the screen with confetti
+Job search milestone (7-day streak, etc.): Quill delivers an encouraging message
+Error states: Quill tilts sympathetically ("That didn't work, but you've got this")
+Tone in Text: When Quill "speaks," use phrases like:
+
+"One skill at a time, friend."
+"Your next role is in there somewhere."
+"Back to the practice board."
+"This is the way." (Poe + Mandalorian energy)
+Color Palette (Extended)
+Existing Tokens (from packages/core/src/tokens.js)
+Accent (Teal): #14B8A6 — action, progress, Quill highlights
+Accent Bright: #2DD4BF — glow, celebration
+Dark grade: #10131A → #272C3A — elevation, breathing room
+New Brand Colors (Optional Additions)
+Quill Gold: #D4A574 — warmth, literary depth, highlights in mascot
+Subtle Green: #2D6A4F — growth, natural progression (use sparingly)
+Celebration Burst: Mix teal + gold + existing decorative ramp
+Color Usage:
+
+Teal: Primary brand action; interactive elements; Quill accents
+Gold: Mascot personality; special celebrations; literary vibes
+Dark greys: Elevation, text hierarchy, breathing room
+Avoid: Harsh reds (reserve for errors only); neon saturation
+Typography
+(From existing tokens.js — no changes needed)
+
+Role	Token	Size	Weight	Use
+Hero	display	28px	800	Onboarding, milestone screens
+Heading	heading	20px	700	Section titles, card titles
+Subheading	title	17px	600	Tab names, emphasis
+Body	body	13px	400	Copy, lists, descriptions
+Small	small	12px	500	Secondary info, captions
+Label	label	11px	600	Form labels, badges
+Caption	caption	10px	700	Meta, timestamps, hints
+Tone through typography:
+
+Generous line-height (1.5–1.6) for breathing room
+Teal for interactive callouts (CTAs, links)
+Muted greys for secondary info (respects focus)
+Logo Execution Roadmap
+Phase 1: Concept (Midjourney, 2–3 hours)
+Prompt for Midjourney:
+
+A minimal, organic logo combining teal (#14B8A6) and dark background.
+Symbolizes: career growth journey, upward momentum, bird flight, resilience.
+Style: Modern, flowing, hand-drawn quality like Supabase but more organic curves.
+Inspired by: Linear's minimalism, Supabase's fluidity.
+Elements: Ascending path or flowing form suggesting forward motion. Teal as primary.
+Never: Hard geometric shapes, corporate clip-art, too many details.
+Context: For developers, job hunters, students. Tech-interview prep + hiring tools.
+Usage: App icon, favicon, social media, website header.
+Format: SVG-ready (clean vector lines, minimal fills).
+Expected output: 4–5 variations to choose from.
+
+Phase 2: Refinement (Figma, 1–2 hours)
+Once you pick a direction from Midjourney:
+
+Download as PNG
+Trace in Figma (or use Midjourney's SVG export)
+Create lockup variations:
+Horizontal (logo + wordmark)
+Stacked (vertical)
+Symbol only (favicon)
+Monochrome (black, white, teal)
+Test at multiple sizes (16px, 32px, 64px, 256px)
+Phase 3: Mascot (Midjourney + Figma, 2–3 hours)
+Prompt for Midjourney (Raven/Quill):
+
+A clever, wise raven or crow in an organic, slightly illustrated style.
+Personality: Intelligent, encouraging, slightly mischievous. Companion mascot.
+Visual style: Not cartoonish, not photo-real. Organic flowing lines like our brand.
+Colors: Black with teal accents (eye glint, feather highlights). Warm gold (#D4A574) for depth.
+Size variations: Works as small corner element (20px) to full celebration burst (400px).
+Emotion: Can convey wisdom, celebration, sympathy, encouragement through posture/expression.
+Inspired by: Edgar Allan Poe's "The Raven" + modern minimalism.
+Context: Appears during job hunt milestones, quiz wins, rank-ups, error states.
+Format: Illustrated, animation-friendly (layered for Lottie or frame-based animation).
+Expected output: 3–4 character variations (different poses, emotions).
+
+Phase 4: Brand Guide (Figma, 1 hour)
+Create a 1-page brand guide in Figma:
+
+Logo lockups
+Color palette with hex codes
+Typography scale
+Mascot usage guidelines
+"Do's and Don'ts"
+Export as PDF for social/press
+Implementation Checklist
+Assets Needed
+ Logo symbol (SVG + PNG, multiple sizes: 16px, 32px, 64px, 128px, 256px, 512px)
+ Horizontal wordmark lockup (SVG + PNG)
+ Stacked lockup (SVG + PNG)
+ Monochrome variation (SVG + PNG)
+ Raven mascot (4+ poses: neutral, celebrating, sympathetic, thoughtful)
+ Mascot animations (Lottie JSON or frame sequences)
+ Brand guide (PDF)
+ Social media templates (16:9, 1:1, 9:16)
+ Favicon (ICO, PNG)
+ App icon (iOS 1024x1024, Android adaptive)
+Integration Points
+Mobile app:
+
+Splash screen logo
+App icon + adaptive icon (Android)
+Tab bar icons (re-theme with teal)
+Mascot celebration on rank-up, quiz perfect score
+Error state mascot
+Web app:
+
+Favicon
+Header logo
+Footer logo
+Social meta image (Open Graph)
+Landing page hero
+Social Media:
+
+Twitter header + avatar
+LinkedIn banner
+GitHub profile
+Product Hunt logo
+Discord server icon
+Midjourney Prompts (Ready to Use)
+Logo Concept
+/imagine A minimal organic logo in teal (#14B8A6) on dark background. 
+Symbolizes upward career growth journey. Style: Linear's minimalism meets 
+Supabase's flowing curves. Ascending path or bird-like flight form. SVG-ready 
+vector lines. App icon, favicon, social media usage. Never hard geometric 
+shapes or corporate clip art. Context: tech interview prep tool for developers, 
+job hunters, students. --ar 1:1 --v 6
+Mascot Concept
+/imagine A clever raven mascot in organic illustration style. Personality: wise, 
+encouraging, slightly mischievous. Black with teal eye glints and warm gold 
+(#D4A574) feather accents. Postures: neutral, celebrating, sympathetic, 
+thoughtful. Not cartoonish, not photo-real. Inspired by Edgar Allan Poe's 
+"The Raven" + modern minimalism. Animation-friendly layers. Works at 20px and 
+400px scales. --ar 1:1 --v 6
+Full Brand Mark
+/imagine Create a complete brand identity: organic flowing logo in teal representing 
+upward momentum + a wise raven mascot. Style: Linear meets Supabase. Dark background. 
+Logo is minimal and SVG-ready; raven is slightly illustrated with personality. 
+Together they tell a story of guided growth through career challenges. Context: 
+interview prep tool for all levels. --ar 16:9 --v 6
+Tone of Voice
+When writing copy with the Raven mascot or brand voice:
+
+Empathetic Language:
+
+❌ "Failed quiz" → ✅ "Let's build on this"
+❌ "No jobs yet" → ✅ "Your next role is out there"
+❌ "Only 3/10" → ✅ "3 stronger than yesterday"
+Encouraging but Honest:
+
+"This is hard. You're doing it anyway. That counts."
+"One skill at a time, friend. That's how mastery works."
+"Rejected today, stronger tomorrow."
+Playful but Respectful:
+
+Use Poe references sparingly ("Nevermore struggle" on a win, "Quoth the Raven: try again" on retry)
+Celebrate wins, acknowledge pain (never trivialize job search)
+Light humor, never mean-spirited
+Next Steps
+Week 1: Generate logo + mascot concepts with Midjourney (1–2 hours DIY, or $500–$1500 for designer)
+Week 2: Refine in Figma, create brand guide PDF
+Week 3: Integrate into mobile app (splash screen, app icon, mascot animations)
+Week 4: Deploy to web, social media presence
+Ongoing: Use brand guide for consistency across all touchpoints
+Files to Create
+repo/
+├── BRAND.md                        (this file)
+├── assets/
+│   ├── logo/
+│   │   ├── logo-symbol.svg         (icon only)
+│   │   ├── logo-horizontal.svg     (logo + wordmark)
+│   │   ├── logo-stacked.svg        (vertical)
+│   │   └── logo-monochrome.svg     (black/white)
+│   ├── mascot/
+│   │   ├── raven-neutral.svg
+│   │   ├── raven-celebrating.svg
+│   │   ├── raven-sympathetic.svg
+│   │   ├── raven-celebration.lottie (or JSON frames)
+│   │   └── raven-xp-burst.lottie
+│   ├── social/
+│   │   ├── twitter-header-1500x500.png
+│   │   ├── linkedin-banner-1200x627.png
+│   │   ├── og-image-1200x630.png
+│   │   └── discord-icon-512x512.png
+│   └── brand-guide.pdf
+└── apps/
+    ├── mobile/
+    │   └── assets/icons/           (app icon, tab icons, splash)
+    └── web/
+        └── public/favicon.ico
+Inspiration Boards
+Linear Vibe:
+
+Clean, minimal, geometric but breathing
+Teal/blue as accent color
+Dark mode by default
+Simple, confident typography
+Supabase Vibe:
+
+Organic flowing forms
+Dark + green accent
+Playful mascot vibes
+Developer-first, accessible
+Your Hybrid:
+
+Linear's clarity + Supabase's warmth
+Organic (curved, flowing, natural)
+Teal (from existing tokens)
+Raven mascot (literary + tech)
+Job hunt = serious + celebratory
+Brand Values
+Competence: You'll get better at this.
+Clarity: No fluff, just what you need to practice.
+Encouragement: The job hunt is hard. We've got your back.
+Community: Everyone here is leveling up together.
+Art + Tech: Interview prep meets literary depth (Poe reference).

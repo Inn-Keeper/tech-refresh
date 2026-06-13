@@ -4,6 +4,7 @@ import { useTabBarHidden } from "@/lib/uiStore";
 import { colors } from "@/theme";
 
 const { Icon, Label } = NativeTabs.Trigger;
+const tabChrome = `${colors.bgDeep}E6`;
 
 // True native tab bar (UITabBarController on iOS — Liquid Glass on current
 // versions, native bottom navigation on Android) instead of JS-rendered tabs.
@@ -12,7 +13,21 @@ export default function TabLayout() {
   const hidden = useTabBarHidden();
 
   return (
-    <NativeTabs hidden={hidden} tintColor={colors.accent}>
+    <NativeTabs
+      hidden={hidden}
+      tintColor={colors.accent}
+      backgroundColor={tabChrome}
+      blurEffect="systemUltraThinMaterialDark"
+      shadowColor={`${colors.border}CC`}
+      iconColor={{ default: colors.textFaint, selected: colors.accentBright }}
+      labelStyle={{
+        default: { color: colors.textFaint, fontSize: 11, fontWeight: "700" },
+        selected: { color: colors.accentBright, fontSize: 11, fontWeight: "800" },
+      }}
+      indicatorColor={colors.accent}
+      rippleColor={`${colors.accent}22`}
+      disableTransparentOnScrollEdge
+    >
       <NativeTabs.Trigger name="index">
         <Icon sf={{ default: "book", selected: "book.fill" }} />
         <Label>{t("tabs.prep")}</Label>
@@ -28,6 +43,10 @@ export default function TabLayout() {
       <NativeTabs.Trigger name="contacts">
         <Icon sf={{ default: "map", selected: "map.fill" }} />
         <Label>{t("tabs.contacts")}</Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger name="profile">
+        <Icon sf={{ default: "person.crop.circle", selected: "person.crop.circle.fill" }} />
+        <Label>{t("tabs.profile")}</Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

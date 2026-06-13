@@ -1,18 +1,37 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { NODE_TYPES, TYPE_COLORS, meta, SCENARIOS, evaluate } from "@tech-refresh/core/arch";
+import { NODE_TYPES, TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, buildCustomChecks, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
 import * as api from "./api.js";
-import { colors } from "@tech-refresh/core/tokens";
+import { colors, layout } from "@tech-refresh/core/tokens";
+import { BrandIcon, nodeIconName } from "./BrandIcon.jsx";
 
 const NODE_W = 132;
 const NODE_H = 54;
 
+const CUSTOM_CATEGORY = "My scenarios";
+
+const CATEGORY_ICONS = {
+  Commerce: "cost",
+  Fintech: "payment",
+  Social: "contact",
+  Realtime: "spark",
+  "Content & Media": "cloud",
+  "Data & Analytics": "accuracy",
+  Infrastructure: "gateway",
+  "Mobility & Logistics": "globe",
+  Gaming: "drill",
+  "B2B SaaS": "service",
+  [CUSTOM_CATEGORY]: "board",
+};
+
 export default function ArchBoard() {
-  const [scenarioIdx, setScenarioIdx] = useState(0);
+  const [scenarioId, setScenarioId] = useState(SCENARIOS[0].id);
+  const [creatorOpen, setCreatorOpen] = useState(false);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [connectFrom, setConnectFrom] = useState(null);
+  const [connectDrag, setConnectDrag] = useState(null);
   const [result, setResult] = useState(null);
   const [savedOpen, setSavedOpen] = useState(false);
   const [activeBoardId, setActiveBoardId] = useState(null);
@@ -20,9 +39,18 @@ export default function ArchBoard() {
   const queryClient = useQueryClient();
   const canvasRef = useRef(null);
   const dragRef = useRef(null);
+  const connectDragRef = useRef(null);
   const suppressClickRef = useRef(false);
 
-  const scenario = SCENARIOS[scenarioIdx];
+  const { data: customScenarios = [] } = useQuery({
+    queryKey: ["custom-scenarios"],
+    queryFn: api.listCustomScenarios,
+  });
+  const allScenarios = [
+    ...SCENARIOS,
+    ...customScenarios.map((s) => ({ ...s, category: CUSTOM_CATEGORY, custom: true })),
+  ];
+  const scenario = allScenarios.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
   const nodeById = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
   const { data: savedBoards = [], error: boardsError } = useQuery({
@@ -30,6 +58,7 @@ export default function ArchBoard() {
     queryFn: api.listBoards,
   });
   const invalidateBoards = () => queryClient.invalidateQueries({ queryKey: ["arch-boards"] });
+  const invalidateCustomScenarios = () => queryClient.invalidateQueries({ queryKey: ["custom-scenarios"] });
   const saveBoardMutation = useMutation({
     mutationFn: () =>
       api.upsertBoard({
@@ -55,17 +84,37 @@ export default function ArchBoard() {
       invalidateBoards();
     },
   });
+  const saveScenarioMutation = useMutation({
+    mutationFn: api.upsertCustomScenario,
+    onSuccess: (saved) => {
+      invalidateCustomScenarios();
+      setCreatorOpen(false);
+      switchScenario(saved.id);
+    },
+  });
+  const deleteScenarioMutation = useMutation({
+    mutationFn: api.deleteCustomScenario,
+    onSuccess: (_data, id) => {
+      invalidateCustomScenarios();
+      if (id === scenarioId) switchScenario(SCENARIOS[0].id);
+    },
+  });
+
+  const cancelConnection = () => {
+    connectDragRef.current = null;
+    setConnectDrag(null);
+    setConnectFrom(null);
+  };
 
   const loadBoard = (board) => {
-    const nextScenarioIdx = SCENARIOS.findIndex((item) => item.id === board.scenarioId);
-    if (nextScenarioIdx < 0) {
+    if (!allScenarios.some((item) => item.id === board.scenarioId)) {
       window.alert(t("board.unknownScenarioMessage", { scenarioId: board.scenarioId }));
       return;
     }
-    setScenarioIdx(nextScenarioIdx);
+    setScenarioId(board.scenarioId);
     setNodes(board.nodes);
     setEdges(board.edges);
-    setConnectFrom(null);
+    cancelConnection();
     setResult(null);
     setActiveBoardId(board.id ?? null);
     setActiveBoardTitle(board.title);
@@ -74,11 +123,11 @@ export default function ArchBoard() {
   const liveCost = nodes.reduce((s, n) => s + meta(n.type).cost, 0);
   const liveMaint = nodes.reduce((s, n) => s + meta(n.type).maint, 0);
 
-  const switchScenario = (i) => {
-    setScenarioIdx(i);
+  const switchScenario = (id) => {
+    setScenarioId(id);
     setNodes([]);
     setEdges([]);
-    setConnectFrom(null);
+    cancelConnection();
     setResult(null);
     setActiveBoardId(null);
     setActiveBoardTitle(null);
@@ -96,7 +145,7 @@ export default function ArchBoard() {
   const removeNode = (id) => {
     setNodes(nodes.filter((n) => n.id !== id));
     setEdges(edges.filter((e) => e.from !== id && e.to !== id));
-    if (connectFrom === id) setConnectFrom(null);
+    if (connectFrom === id || connectDrag?.from === id) cancelConnection();
     setResult(null);
   };
 
@@ -111,25 +160,91 @@ export default function ArchBoard() {
     setResult(null);
   };
 
-  const onNodePointerDown = (e, n) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
+  const canvasPoint = (e) => {
     const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    dragRef.current = { id: n.id, dx: e.clientX - rect.left - n.x, dy: e.clientY - rect.top - n.y, moved: false };
+    if (!rect) return null;
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top, rect };
+  };
+
+  const nodeAtPoint = (x, y, sourceId) =>
+    nodes.find((node) => {
+      if (node.id === sourceId) return false;
+      const inBody = x >= node.x && x <= node.x + NODE_W && y >= node.y && y <= node.y + NODE_H;
+      const leftAxis = Math.hypot(x - node.x, y - (node.y + NODE_H / 2)) <= 16;
+      const rightAxis = Math.hypot(x - (node.x + NODE_W), y - (node.y + NODE_H / 2)) <= 16;
+      return inBody || leftAxis || rightAxis;
+    });
+
+  const nodeAxisPoint = (node, target = connectDrag) => {
+    const targetX = target?.x ?? node.x + NODE_W;
+    const useRight = targetX >= node.x + NODE_W / 2;
+    return { x: node.x + (useRight ? NODE_W : 0), y: node.y + NODE_H / 2 };
+  };
+
+  const startConnectionDrag = (e, n) => {
+    const point = canvasPoint(e);
+    if (!point) return;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    setConnectFrom(n.id);
+    const next = { from: n.id, x: point.x, y: point.y, moved: false };
+    connectDragRef.current = next;
+    setConnectDrag(next);
+  };
+
+  const updateConnectionDrag = (e) => {
+    const point = canvasPoint(e);
+    if (!point) return;
+    const current = connectDragRef.current;
+    if (!current) return;
+    const next = { ...current, x: point.x, y: point.y, moved: true };
+    connectDragRef.current = next;
+    setConnectDrag(next);
+  };
+
+  const finishConnectionDrag = (e) => {
+    const current = connectDragRef.current;
+    const point = canvasPoint(e);
+    if (current && point) {
+      const target = nodeAtPoint(point.x, point.y, current.from);
+      if (target) addEdge(current.from, target.id);
+    }
+    connectDragRef.current = null;
+    setConnectDrag(null);
+    setConnectFrom(null);
+    suppressClickRef.current = true;
+  };
+
+  const onNodePointerDown = (e, n) => {
+    if (e.shiftKey) {
+      startConnectionDrag(e, n);
+      return;
+    }
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const point = canvasPoint(e);
+    if (!point) return;
+    dragRef.current = { id: n.id, dx: point.x - n.x, dy: point.y - n.y, moved: false };
   };
 
   const onNodePointerMove = (e) => {
+    if (connectDragRef.current) {
+      updateConnectionDrag(e);
+      return;
+    }
     const d = dragRef.current;
     if (!d) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const x = Math.max(0, Math.min(rect.width - NODE_W, e.clientX - rect.left - d.dx));
-    const y = Math.max(0, Math.min(rect.height - NODE_H, e.clientY - rect.top - d.dy));
+    const point = canvasPoint(e);
+    if (!point) return;
+    const x = Math.max(0, Math.min(point.rect.width - NODE_W, point.x - d.dx));
+    const y = Math.max(0, Math.min(point.rect.height - NODE_H, point.y - d.dy));
     d.moved = true;
     setNodes((prev) => prev.map((n) => (n.id === d.id ? { ...n, x, y } : n)));
   };
 
-  const onNodePointerUp = () => {
+  const onNodePointerUp = (e) => {
+    if (connectDragRef.current) {
+      finishConnectionDrag(e);
+      return;
+    }
     if (dragRef.current?.moved) suppressClickRef.current = true;
     dragRef.current = null;
   };
@@ -141,55 +256,106 @@ export default function ArchBoard() {
     }
     if (connectFrom && connectFrom !== n.id) {
       addEdge(connectFrom, n.id);
-      setConnectFrom(null);
+      cancelConnection();
     } else if (connectFrom === n.id) {
-      setConnectFrom(null);
+      cancelConnection();
     }
   };
 
   return (
-    <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px 48px" }}>
+    <main style={{ minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`, width: "100%", padding: "32px 32px 56px", boxSizing: "border-box" }}>
       <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
         Arch Board
       </h1>
       <p style={{ margin: "0 0 16px", color: colors.textFaint, fontSize: 13 }}>
-        Pick a scenario, drag components onto the canvas, wire them with arrows (click a node's ● handle, then the
-        target), then evaluate your design — like defending it in an architecture meeting.
+        Pick a scenario, drag components onto the canvas, then wire them with arrows. Click a node's side axis handle
+        then a target, or hold Shift and drag from one node axis to another.
       </p>
 
-      {/* Scenario tabs */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-        {SCENARIOS.map((s, i) => (
+      {/* Scenario picker */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
+        <BrandIcon name={CATEGORY_ICONS[scenario.category] ?? "board"} color={colors.accentBright} size={16} />
+        <select
+          value={scenario.id}
+          onChange={(e) => switchScenario(e.target.value)}
+          style={{
+            flex: 1, minWidth: 260, padding: "9px 12px",
+            background: colors.bgDeep, border: `1px solid ${colors.border}`, borderRadius: 8,
+            color: colors.text, fontSize: 13, fontWeight: 600, outline: "none",
+          }}
+        >
+          {[...SCENARIO_CATEGORIES, CUSTOM_CATEGORY].map((category) => {
+            const group = allScenarios.filter((s) => s.category === category);
+            if (group.length === 0) return null;
+            return (
+              <optgroup key={category} label={category}>
+                {group.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </optgroup>
+            );
+          })}
+        </select>
+        <span style={{ fontSize: 11, color: colors.textFaint, fontWeight: 600 }}>
+          {allScenarios.length} scenarios
+        </span>
+        {scenario.custom && (
           <button
-            key={s.id}
-            onClick={() => switchScenario(i)}
+            onClick={() => window.confirm(`Delete scenario "${scenario.name}"?`) && deleteScenarioMutation.mutate(scenario.id)}
             style={{
-              padding: "7px 14px", borderRadius: 20, border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: 600,
-              background: scenarioIdx === i ? colors.accent : colors.surface,
-              color: scenarioIdx === i ? colors.onAccent : colors.textDim,
+              padding: "7px 14px", background: "transparent", border: `1px solid ${colors.danger}50`,
+              borderRadius: 8, color: colors.dangerBright, fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}
           >
-            {s.name}
+            {t("common.delete")}
           </button>
-        ))}
+        )}
+        <button
+          onClick={() => setCreatorOpen((value) => !value)}
+          style={{
+            display: "flex", alignItems: "center", gap: 5,
+            padding: "7px 14px", background: "transparent",
+            border: `1px solid ${creatorOpen ? colors.accent : `${colors.accent}60`}`,
+            borderRadius: 8, color: colors.accentBright, fontSize: 12, fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          <BrandIcon name="board" color={colors.accentBright} size={13} />
+          New scenario
+        </button>
       </div>
 
-      <div
-        style={{
-          padding: "12px 16px", background: colors.well, border: `1px solid ${colors.border}`,
-          borderRadius: 10, marginBottom: 14, fontSize: 13, lineHeight: 1.6, color: colors.textDim,
-        }}
-      >
-        {scenario.brief}
-      </div>
+      {creatorOpen && (
+        <ScenarioForm
+          onSave={(form) => saveScenarioMutation.mutate(form)}
+          onCancel={() => setCreatorOpen(false)}
+          saving={saveScenarioMutation.isPending}
+          error={saveScenarioMutation.error}
+        />
+      )}
+
+      {scenario.brief && (
+        <div
+          style={{
+            padding: "12px 16px", background: colors.well, border: `1px solid ${colors.border}`,
+            borderRadius: 10, marginBottom: 14, fontSize: 13, lineHeight: 1.6, color: colors.textDim,
+          }}
+        >
+          {scenario.brief}
+        </div>
+      )}
 
       {/* Live cost ticker + actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, fontWeight: 600, color: liveCost > scenario.budget ? colors.danger : colors.textDim }}>
-          💰 Cost {liveCost} / budget {scenario.budget}
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: liveCost > scenario.budget ? colors.danger : colors.textDim }}>
+          <BrandIcon name="cost" color={liveCost > scenario.budget ? colors.danger : colors.textDim} size={14} />
+          Cost {liveCost} / budget {scenario.budget}
         </span>
-        <span style={{ fontSize: 12, fontWeight: 600, color: colors.textDim }}>🔧 Maintenance load {liveMaint}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: colors.textDim }}>
+          <BrandIcon name="maintenance" color={colors.textDim} size={14} />
+          Maintenance load {liveMaint}
+        </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <button
             onClick={() => setSavedOpen((value) => !value)}
@@ -211,7 +377,7 @@ export default function ArchBoard() {
             {saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
           </button>
           <button
-            onClick={() => { setNodes([]); setEdges([]); setConnectFrom(null); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
+            onClick={() => { setNodes([]); setEdges([]); cancelConnection(); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
             style={{
               padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
               borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
@@ -248,7 +414,7 @@ export default function ArchBoard() {
             <p style={{ margin: 0, fontSize: 12, color: colors.textFaint }}>{t("board.savedEmpty")}</p>
           ) : (
             savedBoards.map((board) => {
-              const boardScenario = SCENARIOS.find((item) => item.id === board.scenarioId);
+              const boardScenario = allScenarios.find((item) => item.id === board.scenarioId);
               const active = board.id === activeBoardId;
               return (
                 <div
@@ -301,7 +467,7 @@ export default function ArchBoard() {
               }}
               title={`cost ${t.cost} · maint ${t.maint}`}
             >
-              <span>{t.emoji}</span>
+              <BrandIcon name={nodeIconName(t.type)} color={TYPE_COLORS[t.type]} size={16} />
               <span style={{ flex: 1 }}>{t.label}</span>
               <span style={{ color: colors.textFaint, fontSize: 10 }}>{"$".repeat(t.cost) || "free"}</span>
             </button>
@@ -311,9 +477,11 @@ export default function ArchBoard() {
         {/* Canvas */}
         <div
           ref={canvasRef}
-          onClick={(e) => { if (e.target === canvasRef.current) setConnectFrom(null); }}
+          onPointerMove={(e) => { if (connectDragRef.current) updateConnectionDrag(e); }}
+          onPointerUp={(e) => { if (connectDragRef.current) finishConnectionDrag(e); }}
+          onClick={(e) => { if (e.target === canvasRef.current) cancelConnection(); }}
           style={{
-            position: "relative", flex: 1, minWidth: 480, height: 560,
+            position: "relative", flex: 1, minWidth: 480, height: "calc(100vh - 360px)", minHeight: 560,
             background: colors.bgDeep,
             backgroundImage: `radial-gradient(${colors.border} 1px, transparent 1px)`,
             backgroundSize: "22px 22px",
@@ -327,7 +495,7 @@ export default function ArchBoard() {
                 justifyContent: "center", color: colors.textFaint, fontSize: 13, pointerEvents: "none",
               }}
             >
-              ← Add components from the palette, then wire them up
+              Add components from the palette, then click or Shift-drag between node axis handles to wire them up.
             </div>
           )}
 
@@ -364,6 +532,12 @@ export default function ArchBoard() {
                 </g>
               );
             })}
+            {connectDrag && nodeById[connectDrag.from] && (() => {
+              const start = nodeAxisPoint(nodeById[connectDrag.from], connectDrag);
+              const mx = (start.x + connectDrag.x) / 2;
+              const d = `M ${start.x} ${start.y} C ${mx} ${start.y}, ${mx} ${connectDrag.y}, ${connectDrag.x} ${connectDrag.y}`;
+              return <path d={d} fill="none" stroke={colors.accentBright} strokeWidth="2" strokeDasharray="5 5" markerEnd="url(#arrow)" />;
+            })()}
           </svg>
 
           {/* Nodes */}
@@ -371,6 +545,43 @@ export default function ArchBoard() {
             const t = meta(n.type);
             const color = TYPE_COLORS[n.type];
             const isSource = connectFrom === n.id;
+            const axisHandle = (side) => (
+              <button
+                onPointerDown={(ev) => {
+                  ev.stopPropagation();
+                  if (ev.shiftKey) startConnectionDrag(ev, n);
+                }}
+                onPointerMove={(ev) => {
+                  ev.stopPropagation();
+                  if (connectDragRef.current) updateConnectionDrag(ev);
+                }}
+                onPointerUp={(ev) => {
+                  ev.stopPropagation();
+                  if (connectDragRef.current) finishConnectionDrag(ev);
+                }}
+                onClick={(ev) => {
+                  ev.stopPropagation();
+                  if (suppressClickRef.current) {
+                    suppressClickRef.current = false;
+                    return;
+                  }
+                  setConnectFrom(isSource ? null : n.id);
+                }}
+                title={isSource ? "Cancel connection" : "Connect from here, or hold Shift and drag to another node axis"}
+                style={{
+                  position: "absolute",
+                  [side]: -9,
+                  top: NODE_H / 2 - 9,
+                  width: 18,
+                  height: 18,
+                  borderRadius: "50%",
+                  border: `2px solid ${colors.bgDeep}`,
+                  background: color,
+                  cursor: "crosshair",
+                  padding: 0,
+                }}
+              />
+            );
             return (
               <div
                 key={n.id}
@@ -388,7 +599,7 @@ export default function ArchBoard() {
                   boxShadow: isSource ? `0 0 0 3px ${color}30` : "none",
                 }}
               >
-                <span style={{ fontSize: 18 }}>{t.emoji}</span>
+                <BrandIcon name={nodeIconName(n.type)} color={color} size={18} />
                 <span style={{ fontSize: 11, fontWeight: 600, color: colors.text, lineHeight: 1.2 }}>{t.label}</span>
                 <button
                   onPointerDown={(ev) => ev.stopPropagation()}
@@ -396,22 +607,15 @@ export default function ArchBoard() {
                   title="Remove"
                   style={{
                     position: "absolute", top: -8, right: -8, width: 18, height: 18,
-                    borderRadius: "50%", border: "none", background: colors.border, color: colors.textDim,
-                    fontSize: 11, lineHeight: 1, cursor: "pointer", padding: 0,
+                    borderRadius: "50%", border: "none", background: colors.border,
+                    cursor: "pointer", padding: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
                   }}
                 >
-                  ×
+                  <BrandIcon name="close" color={colors.textDim} size={10} />
                 </button>
-                <button
-                  onPointerDown={(ev) => ev.stopPropagation()}
-                  onClick={(ev) => { ev.stopPropagation(); setConnectFrom(isSource ? null : n.id); }}
-                  title={isSource ? "Cancel connection" : "Connect from here — then click a target node"}
-                  style={{
-                    position: "absolute", right: -9, top: NODE_H / 2 - 9, width: 18, height: 18,
-                    borderRadius: "50%", border: `2px solid ${colors.bgDeep}`, background: color,
-                    cursor: "pointer", padding: 0,
-                  }}
-                />
+                {axisHandle("left")}
+                {axisHandle("right")}
               </div>
             );
           })}
@@ -431,10 +635,13 @@ export default function ArchBoard() {
               {result.score}%
             </span>
             <span style={{ fontSize: 14, fontWeight: 600, color: colors.textBright }}>
-              {result.score >= 80 ? "Ship it 🚀" : result.score >= 50 ? "Needs review before the meeting" : "Back to the whiteboard"}
+              {result.score >= 80 ? t("board.verdictShip") : result.score >= 50 ? t("board.verdictReview") : t("board.verdictWhiteboard")}
             </span>
-            <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textDim }}>
-              💰 {result.cost}/{scenario.budget} · 🔧 maint {result.maint} ({result.maint <= 8 ? "lean" : result.maint <= 14 ? "moderate" : "heavy"})
+            <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: colors.textDim }}>
+              <BrandIcon name="cost" color={colors.textDim} size={14} />
+              {result.cost}/{scenario.budget} ·
+              <BrandIcon name="maintenance" color={colors.textDim} size={14} />
+              maint {result.maint} ({result.maint <= 8 ? "lean" : result.maint <= 14 ? "moderate" : "heavy"})
             </span>
           </div>
 
@@ -445,9 +652,11 @@ export default function ArchBoard() {
               </div>
               <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
                 {result.checks.map((c) => (
-                  <li key={c.label} style={{ fontSize: 12.5, lineHeight: 1.5, color: c.passed ? colors.successBright : colors.dangerBright }}>
-                    {c.passed ? "✅" : "❌"} {c.label}{" "}
-                    <span style={{ color: colors.textFaint }}>({c.points} pts)</span>
+                  <li key={c.label} style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 12.5, lineHeight: 1.5, color: c.passed ? colors.successBright : colors.dangerBright }}>
+                    <BrandIcon name={c.passed ? "check" : "error"} color={c.passed ? colors.successBright : colors.dangerBright} size={14} />
+                    <span style={{ flex: 1 }}>
+                      {c.label} <span style={{ color: colors.textFaint }}>({c.points} pts)</span>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -459,8 +668,9 @@ export default function ArchBoard() {
                 </div>
                 <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
                   {result.warnings.map((w) => (
-                    <li key={w} style={{ fontSize: 12.5, lineHeight: 1.5, color: colors.warningBright }}>
-                      ⚠️ {w}
+                    <li key={w} style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 12.5, lineHeight: 1.5, color: colors.warningBright }}>
+                      <BrandIcon name="warning" color={colors.warningBright} size={14} />
+                      <span style={{ flex: 1 }}>{w}</span>
                     </li>
                   ))}
                 </ul>
@@ -469,6 +679,164 @@ export default function ArchBoard() {
           </div>
         </div>
       )}
+    </main>
+  );
+}
+
+// Authoring form for custom scenarios: requirements are picked from the
+// palette and compiled into evaluator checks via buildCustomChecks.
+function ScenarioForm({ onSave, onCancel, saving, error }) {
+  const [name, setName] = useState("");
+  const [brief, setBrief] = useState("");
+  const [budget, setBudget] = useState(12);
+  const [requiredNodes, setRequiredNodes] = useState([]);
+  const [requiredEdges, setRequiredEdges] = useState([]);
+
+  const inputStyle = {
+    boxSizing: "border-box", padding: "8px 10px",
+    background: colors.bgDeep, border: `1px solid ${colors.border}`, borderRadius: 8,
+    color: colors.text, fontSize: 13, outline: "none", fontFamily: "inherit",
+  };
+  const labelStyle = { fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" };
+
+  const toggleNode = (type) =>
+    setRequiredNodes((prev) => (prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type]));
+  const setEdgeAt = (index, side, value) =>
+    setRequiredEdges((prev) => prev.map((e, i) => (i === index ? { ...e, [side]: value } : e)));
+
+  const canSave = name.trim() && (requiredNodes.length > 0 || requiredEdges.length > 0);
+
+  const save = () =>
+    onSave({
+      name: name.trim(),
+      brief: brief.trim(),
+      budget,
+      checks: buildCustomChecks(requiredNodes, requiredEdges),
+    });
+
+  return (
+    <div
+      style={{
+        marginBottom: 14, padding: "16px 18px", background: colors.surface,
+        border: `1px solid ${colors.accent}60`, borderRadius: 12,
+        display: "flex", flexDirection: "column", gap: 12,
+      }}
+    >
+      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={labelStyle}>Name *</span>
+          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ticketing webhook storm" autoFocus />
+        </label>
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={labelStyle}>Budget (sum of component costs)</span>
+          <input
+            style={inputStyle}
+            type="number"
+            min={4}
+            max={30}
+            value={budget}
+            onChange={(e) => setBudget(Math.max(4, Math.min(30, Number(e.target.value) || 4)))}
+          />
+        </label>
+      </div>
+      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <span style={labelStyle}>Brief — the problem statement you'd get in the interview</span>
+        <textarea
+          style={{ ...inputStyle, minHeight: 52, resize: "vertical", lineHeight: 1.5 }}
+          value={brief}
+          onChange={(e) => setBrief(e.target.value)}
+        />
+      </label>
+
+      <div>
+        <div style={{ ...labelStyle, marginBottom: 6 }}>Required components — each is a scored check</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {NODE_TYPES.map((spec) => {
+            const active = requiredNodes.includes(spec.type);
+            return (
+              <button
+                key={spec.type}
+                onClick={() => toggleNode(spec.type)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "5px 10px", borderRadius: 16, cursor: "pointer",
+                  border: `1px solid ${active ? TYPE_COLORS[spec.type] : colors.border}`,
+                  background: active ? `${TYPE_COLORS[spec.type]}25` : "transparent",
+                  color: active ? colors.text : colors.textDim, fontSize: 11, fontWeight: 600,
+                }}
+              >
+                <BrandIcon name={nodeIconName(spec.type)} color={TYPE_COLORS[spec.type]} size={12} />
+                {spec.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <div style={{ ...labelStyle, marginBottom: 6 }}>Required connections — scored when the edge exists</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {requiredEdges.map((e, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <select style={inputStyle} value={e.from} onChange={(ev) => setEdgeAt(i, "from", ev.target.value)}>
+                {NODE_TYPES.map((spec) => (
+                  <option key={spec.type} value={spec.type}>{spec.label}</option>
+                ))}
+              </select>
+              <BrandIcon name="arrowRight" color={colors.textFaint} size={12} />
+              <select style={inputStyle} value={e.to} onChange={(ev) => setEdgeAt(i, "to", ev.target.value)}>
+                {NODE_TYPES.map((spec) => (
+                  <option key={spec.type} value={spec.type}>{spec.label}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => setRequiredEdges((prev) => prev.filter((_, j) => j !== i))}
+                title="Remove connection"
+                style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", padding: 4 }}
+              >
+                <BrandIcon name="close" color={colors.textFaint} size={11} />
+              </button>
+            </div>
+          ))}
+          <button
+            onClick={() => setRequiredEdges((prev) => [...prev, { from: "client", to: "service" }])}
+            style={{
+              alignSelf: "flex-start", padding: "5px 12px", background: "transparent",
+              border: `1px solid ${colors.border}`, borderRadius: 8,
+              color: colors.textDim, fontSize: 11, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            Add connection
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <p style={{ margin: 0, fontSize: 12, color: colors.dangerBright }}>Save failed: {error.message}</p>
+      )}
+
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
+            borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
+          }}
+        >
+          {t("common.cancel")}
+        </button>
+        <button
+          onClick={save}
+          disabled={!canSave || saving}
+          style={{
+            padding: "7px 16px", background: colors.accent, border: "none", borderRadius: 8,
+            color: colors.onAccent, fontSize: 12, fontWeight: 600,
+            cursor: canSave && !saving ? "pointer" : "not-allowed", opacity: canSave && !saving ? 1 : 0.5,
+          }}
+        >
+          {saving ? t("common.saving") : "Save scenario"}
+        </button>
+      </div>
     </div>
   );
 }

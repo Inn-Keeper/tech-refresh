@@ -1,6 +1,9 @@
-# Tech-Refresh Brand Identity
+# Grip Brand Identity
 
-A complete brand guide for the interview prep and hiring pipeline tool. Designed for developers leveling up, job hunters, and students facing the "painful period" of job search — serious purpose with playful, encouraging energy.
+A complete brand guide for the interview prep and hiring pipeline tool. Designed for developers leveling up, job hunters, and students facing the "painful period" of job search - serious purpose with playful, encouraging energy.
+
+**Product name:** Grip
+**Tagline:** Get a grip. Buckle up.
 
 ---
 
@@ -302,28 +305,24 @@ When writing copy with the Raven mascot or brand voice:
 repo/
 ├── BRAND.md                        (this file)
 ├── assets/
-│   ├── logo/
-│   │   ├── logo-symbol.svg         (icon only)
-│   │   ├── logo-horizontal.svg     (logo + wordmark)
-│   │   ├── logo-stacked.svg        (vertical)
-│   │   └── logo-monochrome.svg     (black/white)
-│   ├── mascot/
-│   │   ├── raven-neutral.svg
-│   │   ├── raven-celebrating.svg
-│   │   ├── raven-sympathetic.svg
-│   │   ├── raven-celebration.lottie (or JSON frames)
-│   │   └── raven-xp-burst.lottie
-│   ├── social/
-│   │   ├── twitter-header-1500x500.png
-│   │   ├── linkedin-banner-1200x627.png
-│   │   ├── og-image-1200x630.png
-│   │   └── discord-icon-512x512.png
-│   └── brand-guide.pdf
+│   └── brand/
+│       ├── source/
+│       ├── logo/
+│       │   ├── logo-symbol.svg     (icon only)
+│       │   ├── logo-horizontal.svg (logo + wordmark)
+│       │   ├── logo-stacked.svg    (vertical)
+│       │   └── logo-monochrome.svg (black/white)
+│       └── mascot/
+│           ├── raven-neutral.svg
+│           ├── raven-celebrating.svg
+│           ├── raven-sympathetic.svg
+│           ├── raven-celebration.lottie (or JSON frames)
+│           └── raven-xp-burst.lottie
 └── apps/
     ├── mobile/
-    │   └── assets/icons/           (app icon, tab icons, splash)
+    │   └── assets/brand/           (app icon, tab icons, splash)
     └── web/
-        └── public/favicon.ico
+        └── public/                 (favicon, Open Graph image, logo mark)
 ```
 
 ---

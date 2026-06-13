@@ -7,7 +7,7 @@ const PAD_X = 12;
 const PAD_Y = 14;
 
 // SVG twin of the mobile Skia chart: cumulative accuracy per day.
-export function AccuracyChart({ points }) {
+export function AccuracyChart({ points, compact = false }) {
   const latest = points.at(-1);
   const innerW = WIDTH - PAD_X * 2;
   const innerH = HEIGHT - PAD_Y * 2;
@@ -24,9 +24,9 @@ export function AccuracyChart({ points }) {
       style={{
         background: colors.well,
         border: `1px solid ${colors.border}`,
-        borderRadius: 12,
-        padding: "12px 14px",
-        marginBottom: 20,
+        borderRadius: compact ? 8 : 12,
+        padding: compact ? "12px 14px 8px" : "12px 14px",
+        marginBottom: compact ? 0 : 20,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -40,11 +40,11 @@ export function AccuracyChart({ points }) {
       </div>
 
       {points.length < 2 ? (
-        <div style={{ height: HEIGHT, display: "flex", alignItems: "center", justifyContent: "center", color: colors.textFaint, fontSize: 11 }}>
+        <div style={{ height: compact ? 64 : HEIGHT, display: "flex", alignItems: "center", justifyContent: "center", color: colors.textFaint, fontSize: 11 }}>
           {t("accuracy.empty")}
         </div>
       ) : (
-        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} style={{ width: "100%", height: HEIGHT, display: "block" }}>
+        <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} style={{ width: "100%", height: compact ? 64 : HEIGHT, display: "block" }}>
           <path
             d={`M ${PAD_X} ${PAD_Y} L ${PAD_X} ${HEIGHT - PAD_Y} L ${WIDTH - PAD_X} ${HEIGHT - PAD_Y}`}
             fill="none"

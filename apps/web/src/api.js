@@ -9,6 +9,9 @@ export const {
   listBoards,
   upsertBoard,
   deleteBoard,
+  listCustomScenarios,
+  upsertCustomScenario,
+  deleteCustomScenario,
   listStatusEvents,
   getAccuracyTimeline,
   listContacts,
@@ -20,6 +23,10 @@ export const {
   upsertStory,
   deleteStory,
   getScores,
+  getQuestions,
   recordAnswer,
   addXp,
+  resetScores,
+  getUser,
+  updateProfile
 } = api;

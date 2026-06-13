@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
 import * as api from "./api.js";
 import { colors, tints } from "@tech-refresh/core/tokens";
+import { BrandIcon } from "./BrandIcon.jsx";
+import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
 
 const EMPTY_FORM = {
   title: "",
@@ -60,18 +62,31 @@ export default function StoryBank() {
       deleteMutation.mutate(s.id);
     }
   };
+  const storyList = stories ?? [];
 
   return (
-    <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 24px 48px" }}>
+    <WorkspaceLayout
+      mainLabel="Story bank"
+      left={
+        <StoryLeftRail
+          canAdd={!!stories && editingId !== "new"}
+          mode={mode}
+          onAdd={() => setEditingId("new")}
+          setMode={setMode}
+          stories={storyList}
+        />
+      }
+      right={<StoryCoverage stories={storyList} />}
+    >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
-          Story Bank
+        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 850, color: colors.textBright }}>
+          {mode === "drill" ? "Drill prompts" : "Story Bank"}
         </h1>
         <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 500 }}>
           {stories ? `${stories.length} stories` : "loading…"}
         </span>
       </div>
-      <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13 }}>
+      <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13, maxWidth: 760, lineHeight: 1.6 }}>
         Your STAR stories for behavioral interviews. Aim for 8–10 covering different competencies — one
         real story can serve several prompts.
       </p>
@@ -87,44 +102,10 @@ export default function StoryBank() {
         </div>
       )}
 
-      {/* Mode toggle */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {[
-          { id: "stories", label: "✍️ My stories" },
-          { id: "drill", label: "🎤 Drill prompts" },
-        ].map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setMode(m.id)}
-            style={{
-              padding: "7px 14px", borderRadius: 20, border: "none", cursor: "pointer",
-              fontSize: 13, fontWeight: 600,
-              background: mode === m.id ? colors.accent : colors.surface,
-              color: mode === m.id ? colors.onAccent : colors.textDim,
-            }}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
-
       {mode === "drill" ? (
         <PromptDrill stories={stories || []} />
       ) : (
         <>
-          {stories && editingId !== "new" && (
-            <button
-              onClick={() => setEditingId("new")}
-              style={{
-                marginBottom: 16, padding: "9px 16px", background: tints.accentSoft,
-                border: `1px solid ${colors.accent}60`, borderRadius: 10, color: colors.accentBright,
-                fontSize: 13, fontWeight: 600, cursor: "pointer",
-              }}
-            >
-              + Add story
-            </button>
-          )}
-
           {editingId === "new" && (
             <div style={{ marginBottom: 16 }}>
               <StoryForm initial={EMPTY_FORM} onSave={handleSave} onCancel={() => setEditingId(null)} />
@@ -147,7 +128,105 @@ export default function StoryBank() {
           </div>
         </>
       )}
-    </div>
+    </WorkspaceLayout>
+  );
+}
+
+function StoryLeftRail({ canAdd, mode, onAdd, setMode, stories }) {
+  return (
+    <>
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="story" color={colors.accentBright} size={17} />}
+          title="Behavioral prep"
+          subtitle={`${stories.length} saved stories. Keep the center for writing and rehearsing.`}
+        />
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 14 }}>
+          {[
+            { id: "stories", icon: "story", label: "My stories" },
+            { id: "drill", icon: "prompt", label: "Drill prompts" },
+          ].map((item) => {
+            const active = mode === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setMode(item.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "9px 10px",
+                  border: "none",
+                  borderRadius: 7,
+                  background: active ? tints.accentSoft : "transparent",
+                  color: active ? colors.accentBright : colors.textDim,
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                <BrandIcon name={item.icon} color={active ? colors.accentBright : colors.textFaint} size={14} />
+                {item.label}
+              </button>
+            );
+          })}
+        </div>
+      </WorkspacePanel>
+
+      <WorkspacePanel tone="sunken">
+        <WorkspaceTitle
+          icon={<BrandIcon name="spark" color={colors.warningBright} size={17} />}
+          title="Next useful action"
+          subtitle={mode === "stories" ? "Write one specific story, then reuse it across prompts." : "Answer out loud before revealing matching stories."}
+        />
+        {canAdd && (
+          <button
+            onClick={onAdd}
+            style={{
+              width: "100%",
+              marginTop: 14,
+              padding: "9px 12px",
+              background: colors.accent,
+              border: "none",
+              borderRadius: 8,
+              color: colors.onAccent,
+              fontSize: 12,
+              fontWeight: 850,
+              cursor: "pointer",
+            }}
+          >
+            Add story
+          </button>
+        )}
+      </WorkspacePanel>
+    </>
+  );
+}
+
+function StoryCoverage({ stories }) {
+  const counts = Object.fromEntries(COMPETENCIES.map((competency) => [competency, stories.filter((s) => s.competency === competency).length]));
+  const covered = COMPETENCIES.filter((competency) => counts[competency] > 0).length;
+
+  return (
+    <WorkspacePanel>
+      <WorkspaceTitle
+        icon={<BrandIcon name="accuracy" color={colors.successBright} size={17} />}
+        title="Coverage"
+        subtitle={`${covered}/${COMPETENCIES.length} competencies have at least one story.`}
+      />
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+        {COMPETENCIES.map((competency) => {
+          const color = COMPETENCY_COLORS[competency] || colors.textFaint;
+          return (
+            <div key={competency} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, background: counts[competency] ? color : colors.border }} />
+              <span style={{ flex: 1, color: counts[competency] ? colors.text : colors.textFaint }}>{competency}</span>
+              <span style={{ color: counts[competency] ? color : colors.textFaint, fontWeight: 850 }}>{counts[competency]}</span>
+            </div>
+          );
+        })}
+      </div>
+    </WorkspacePanel>
   );
 }
 
@@ -357,8 +436,9 @@ function PromptDrill({ stories }) {
       {revealed && (
         <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
           {matching.length === 0 ? (
-            <p style={{ color: colors.warningBright, fontSize: 13, textAlign: "center" }}>
-              ⚠️ No story tagged "{prompt.competency}" yet — that's a gap an interviewer will find first. Write one.
+            <p style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: colors.warningBright, fontSize: 13, textAlign: "center" }}>
+              <BrandIcon name="warning" color={colors.warningBright} size={14} />
+              <span>No story tagged "{prompt.competency}" yet — that's a gap an interviewer will find first. Write one.</span>
             </p>
           ) : (
             matching.map((s) => <StoryCard key={s.id} story={s} readOnly />)

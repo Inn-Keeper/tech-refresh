@@ -1,7 +1,9 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
+import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { colors } from "@/theme";
+import { BrandIcon } from "@/components/BrandIcon";
 import { QuizView } from "./QuizView";
 
 export type Drill = {
@@ -10,6 +12,7 @@ export type Drill = {
   answered: number | null;
   correctCount: number;
   done: boolean;
+  difficulty: string;
 };
 
 type Props = {
@@ -20,6 +23,9 @@ type Props = {
 };
 
 export function DrillSession({ drill, onAnswer, onNext, onExit }: Props) {
+  const tier = difficultyByKey(drill.difficulty);
+  const perAnswerXp = tier?.xp ?? CORRECT_XP;
+
   if (drill.done) {
     const perfect = drill.correctCount === drill.questions.length;
     return (
@@ -35,14 +41,25 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: Props) {
           gap: 8,
         }}
       >
-        <Text style={{ fontSize: 34 }}>
-          {perfect ? "🏆" : drill.correctCount >= drill.questions.length / 2 ? "💪" : "📚"}
-        </Text>
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: `${perfect ? colors.success : colors.accent}20`,
+            borderWidth: 1,
+            borderColor: `${perfect ? colors.success : colors.accent}60`,
+          }}
+        >
+          <BrandIcon name={perfect ? "rank" : drill.correctCount >= drill.questions.length / 2 ? "spark" : "story"} color={perfect ? colors.successBright : colors.accentBright} size={25} />
+        </View>
         <Text style={{ fontSize: 22, fontWeight: "700", color: colors.textBright }}>
           {drill.correctCount} / {drill.questions.length}
         </Text>
         <Text style={{ fontSize: 13, color: colors.textDim, textAlign: "center" }}>
-          +{drill.correctCount * CORRECT_XP} XP{perfect ? ` · +${PERFECT_QUIZ_BONUS} perfect bonus` : ""}
+          +{drill.correctCount * perAnswerXp} XP{perfect ? ` · +${PERFECT_QUIZ_BONUS} perfect bonus` : ""}
         </Text>
         <TouchableOpacity
           onPress={onExit}
@@ -69,9 +86,18 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: Props) {
       }}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontSize: 10, fontWeight: "700", color: cur.color, letterSpacing: 0.8 }}>🎯 DRILL</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          <BrandIcon name="drill" color={cur.color} size={13} />
+          <Text style={{ fontSize: 10, fontWeight: "700", color: cur.color, letterSpacing: 0.8 }}>DRILL</Text>
+          {tier && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: `${tier.color}1A`, borderWidth: 1, borderColor: `${tier.color}60` }}>
+              <Text style={{ fontSize: 10 }}>{tier.emoji}</Text>
+              <Text style={{ fontSize: 9.5, fontWeight: "700", color: tier.color, letterSpacing: 0.3 }}>{tier.label.toUpperCase()}</Text>
+            </View>
+          )}
+        </View>
         <TouchableOpacity onPress={onExit}>
-          <Text style={{ fontSize: 11, color: colors.textFaint }}>Exit ✕</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}><Text style={{ fontSize: 11, color: colors.textFaint }}>Exit</Text><BrandIcon name="close" color={colors.textFaint} size={11} /></View>
         </TouchableOpacity>
       </View>
       <QuizView

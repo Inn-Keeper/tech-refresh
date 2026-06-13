@@ -1,6 +1,8 @@
-# Tech-Refresh
+# Grip
 
-A full-stack interview prep and hiring pipeline manager — **web + React Native mobile** sharing one Postgres database via Supabase. Built as a **study case**, where each layer maps to an interview-prep topic.
+Get a grip. Buckle up.
+
+A full-stack interview prep and hiring pipeline manager - **web + React Native mobile** sharing one Postgres database via Supabase. Built as a **study case**, where each layer maps to an interview-prep topic.
 
 ## What It Does
 
@@ -42,7 +44,7 @@ A full-stack interview prep and hiring pipeline manager — **web + React Native
 ## Project Structure
 
 ```
-tech-refresh/
+grip/
 ├── apps/
 │   ├── mobile/                 # Expo app (React Native)
 │   │   ├── src/app/            # expo-router (nested)

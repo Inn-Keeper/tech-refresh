@@ -1,4 +1,4 @@
-import { buildDrill, shuffleOptions } from "../quiz.js";
+import { buildDrill, buildDrillFromQuestions, selectDrillTechs, shuffleOptions } from "../quiz.js";
 
 const question = {
   question: "Which one is right?",
@@ -76,5 +76,53 @@ describe("buildDrill", () => {
       expect(entry.color).toMatch(/^#/);
       expect(entry.q.options[entry.q.correct]).toBe("a");
     }
+  });
+});
+
+describe("selectDrillTechs", () => {
+  const categories = [
+    { items: ["t1", "t2", "t3"].map((tech) => ({ tech })) },
+    { items: ["t4", "t5", "t6"].map((tech) => ({ tech })) },
+  ];
+
+  it("orders attempted techs weakest-accuracy first", () => {
+    const answers = {
+      t2: { correct: 1, wrong: 1 }, // 50%
+      t1: { correct: 0, wrong: 3 }, // 0% — weakest
+      t3: { correct: 3, wrong: 0 }, // 100%
+    };
+    expect(selectDrillTechs(categories, answers, { techCount: 3 })).toEqual(["t1", "t2", "t3"]);
+  });
+
+  it("pads with never-attempted techs and respects techCount", () => {
+    const techs = selectDrillTechs(categories, { t1: { correct: 0, wrong: 1 } }, { techCount: 4 });
+    expect(techs).toHaveLength(4);
+    expect(techs[0]).toBe("t1");
+    expect(new Set(techs).size).toBe(4); // no repeats
+  });
+});
+
+describe("buildDrillFromQuestions", () => {
+  const rows = [1, 2, 3].map((n) => ({
+    tech: "TypeScript",
+    prompt: `q${n}`,
+    options: ["right", "a", "b", "c"],
+    correct: 0,
+  }));
+
+  it("maps DB rows to shuffled drill entries with resolved colors", () => {
+    const drill = buildDrillFromQuestions(rows, { colorByTech: { TypeScript: "#abcdef" }, fallbackColor: "#000000", size: 10 });
+    expect(drill).toHaveLength(3);
+    for (const entry of drill) {
+      expect(entry.tech).toBe("TypeScript");
+      expect(entry.color).toBe("#abcdef");
+      expect(entry.q.options[entry.q.correct]).toBe("right");
+    }
+  });
+
+  it("falls back to the fallback color for an unmapped tech and caps at size", () => {
+    const drill = buildDrillFromQuestions(rows, { fallbackColor: "#123456", size: 2 });
+    expect(drill).toHaveLength(2);
+    expect(drill[0].color).toBe("#123456");
   });
 });

@@ -13,6 +13,7 @@ import Animated, {
 } from "react-native-reanimated";
 import type { BoardEdge, BoardNode } from "@tech-refresh/core/arch";
 import { colors } from "@/theme";
+import { BrandIcon } from "@/components/BrandIcon";
 import { NODE_H, NODE_W, NodeView } from "./NodeView";
 
 const EDGE_COLOR = colors.textDim;
@@ -340,7 +341,7 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
               borderRadius: 18,
             }}
           >
-            <Text style={{ color: colors.textDim, fontSize: 12, fontWeight: "600" }}>⛶ Fit</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><BrandIcon name="fit" color={colors.textDim} size={13} /><Text style={{ color: colors.textDim, fontSize: 12, fontWeight: "600" }}>Fit</Text></View>
           </TouchableOpacity>
         )}
       </View>

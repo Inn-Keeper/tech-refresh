@@ -1,23 +1,39 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
 import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
-import { buildDrill, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
+import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
+import { DIFFICULTIES, difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
 import * as api from "./api.js";
 import { useScores } from "./useScores.js";
 import { AccuracyChart } from "./AccuracyChart.jsx";
 import { CelebrationOverlay } from "./CelebrationOverlay.jsx";
-import { colors, tints } from "@tech-refresh/core/tokens";
+import { colors, layout, tints } from "@tech-refresh/core/tokens";
+import { BrandIcon, categoryIconName } from "./BrandIcon.jsx";
+import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
+import styles from "./InterviewPrep.module.css";
+
+const DRILL_SIZE = 10;
+
+// Map every tech to its category color so a fetched question can be themed.
+const colorByTech = Object.fromEntries(
+  categories.flatMap((c) => c.items.map((item) => [item.tech, c.color]))
+);
+const allTechs = Object.keys(colorByTech);
 
 export default function InterviewPrep() {
   const [activeCategory, setActiveCategory] = useState(0);
   const [cardState, setCardState] = useState({});
   const [search, setSearch] = useState("");
   const [drill, setDrill] = useState(null);
+  const [picking, setPicking] = useState(false);
+  const [loadingTier, setLoadingTier] = useState(null);
+  const [pickError, setPickError] = useState(null);
   const [celebration, setCelebration] = useState(null);
   const previousRank = useRef(null);
+  const queryClient = useQueryClient();
   const { scores, record, addXp } = useScores();
   const { data: accuracy = [] } = useQuery({ queryKey: ["accuracy-timeline"], queryFn: api.getAccuracyTimeline });
 
@@ -46,6 +62,9 @@ export default function InterviewPrep() {
     : null;
 
   const displayCategory = categories[activeCategory];
+  const summary = summarizeScores(scores);
+  const visibleItems = filtered ?? displayCategory.items.map((item) => ({ ...item, color: displayCategory.color, emoji: displayCategory.emoji }));
+  const activeTitle = filtered ? "Search results" : displayCategory.name;
 
   const getState = (key) =>
     cardState[key] || { phase: "front", quizIndex: 0, answered: null, runCorrect: 0, shuffled: null };
@@ -89,12 +108,44 @@ export default function InterviewPrep() {
     }
   };
 
-  const startDrill = () => {
-    const questions = buildDrill(categories, scores.answers).map((entry) => ({
-      ...entry,
-      link: techLinks[entry.tech],
-    }));
-    setDrill({ questions, index: 0, answered: null, correctCount: 0, done: false });
+  const handleFlipBack = (key) => {
+    setCardState((prev) => {
+      const s = prev[key];
+      if (!s) return prev;
+      return { ...prev, [key]: { ...s, phase: "front" } };
+    });
+  };
+
+  // Fetches one tier's questions (cached by React Query), preferring the user's
+  // weakest techs but falling back to the whole bank so a partially-seeded tier
+  // still yields a drill.
+  const fetchTierQuestions = (difficulty, techs) =>
+    queryClient.fetchQuery({
+      queryKey: ["questions", difficulty, techs],
+      queryFn: () => api.getQuestions({ techs, difficulty, limit: DRILL_SIZE * 3 }),
+    });
+
+  const startDrill = async (difficulty) => {
+    setLoadingTier(difficulty);
+    setPickError(null);
+    try {
+      const weakest = selectDrillTechs(categories, scores.answers, { techCount: 5 });
+      let questions = await fetchTierQuestions(difficulty, weakest);
+      if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
+      if (questions.length === 0) {
+        setPickError(`No ${difficultyByKey(difficulty)?.label ?? difficulty} questions yet — more land soon.`);
+        return;
+      }
+      const entries = buildDrillFromQuestions(questions, { colorByTech, fallbackColor: colors.accent, size: DRILL_SIZE }).map(
+        (entry) => ({ ...entry, link: techLinks[entry.tech] })
+      );
+      setDrill({ questions: entries, index: 0, answered: null, correctCount: 0, done: false, difficulty });
+      setPicking(false);
+    } catch {
+      setPickError("Couldn't load questions. Check your connection and retry.");
+    } finally {
+      setLoadingTier(null);
+    }
   };
 
   const answerDrill = (optionIndex) => {
@@ -102,7 +153,7 @@ export default function InterviewPrep() {
     const cur = drill.questions[drill.index];
     const isCorrect = optionIndex === cur.q.correct;
     setDrill({ ...drill, answered: optionIndex, correctCount: drill.correctCount + (isCorrect ? 1 : 0) });
-    record(cur.tech, isCorrect, "drill");
+    record(cur.tech, isCorrect, "drill", drill.difficulty);
   };
 
   const nextDrill = () => {
@@ -123,104 +174,80 @@ export default function InterviewPrep() {
   };
 
   return (
-    <div>
-      <div style={{ padding: "24px 24px 0", maxWidth: 960, margin: "0 auto" }}>
-        <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13, display: "flex", gap: 12 }}>
-          <span>Tap a card to read prep notes · tap again to start a quiz · finish the quiz to reset.</span>
-          <span style={{ marginLeft: "auto", fontWeight: 500, whiteSpace: "nowrap" }}>
-            {allItems.length} technologies
-          </span>
-        </p>
-
-        <StatsBar scores={scores} onDrill={startDrill} drillActive={!!drill} />
-
-        {!drill && <AccuracyChart points={accuracy} />}
-
-        <div style={{ position: "relative", marginBottom: 24 }}>
-          <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: colors.textFaint, fontSize: 14 }}>🔍</span>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search any technology…"
-            style={{
-              width: "100%", boxSizing: "border-box",
-              padding: "10px 12px 10px 36px",
-              background: colors.surface, border: `1px solid ${colors.border}`,
-              borderRadius: 10, color: colors.text, fontSize: 14,
-              outline: "none",
-            }}
-          />
+    <WorkspaceLayout
+      mainLabel="Interview prep"
+      left={
+        <PrepLeftRail
+          activeCategory={activeCategory}
+          allItems={allItems}
+          categories={categories}
+          scores={scores}
+          search={search}
+          setSearch={setSearch}
+          onCategory={(index) => {
+            setActiveCategory(index);
+            setSearch("");
+            setCardState({});
+          }}
+        />
+      }
+      right={<PrepRightRail accuracy={accuracy} drillActive={!!drill || picking} onDrill={() => setPicking(true)} scores={scores} summary={summary} />}
+    >
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 18, marginBottom: 16 }}>
+        <div>
+          <p style={{ margin: "0 0 6px", color: colors.textFaint, fontSize: 12, fontWeight: 700 }}>
+            {filtered ? `${filtered.length} of ${allItems.length} technologies` : `${displayCategory.items.length} technologies`}
+          </p>
+          <h1 style={{ margin: 0, color: colors.textBright, fontSize: 26, lineHeight: 1.12, fontWeight: 850 }}>
+            {activeTitle}
+          </h1>
         </div>
+        <p style={{ margin: 0, color: colors.textFaint, fontSize: 12, lineHeight: 1.5, textAlign: "right", maxWidth: 360 }}>
+          Tap a card for prep notes, then quiz. The workspace keeps cards compact so scanning stays fast.
+        </p>
       </div>
 
       {drill ? (
-        <div style={{ maxWidth: 720, margin: "0 auto", padding: "0 24px 48px" }}>
+        <div style={{ width: "min(100%, 860px)", paddingBottom: 48 }}>
           <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={() => setDrill(null)} />
         </div>
-      ) : filtered ? (
-        <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px 48px" }}>
-          {filtered.length === 0 ? (
-            <p style={{ color: colors.textFaint, textAlign: "center", marginTop: 40 }}>No matches found.</p>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-              {filtered.map((item) => {
-                const key = `search-${item.tech}`;
-                return (
-                  <Card
-                    key={key}
-                    item={item}
-                    stat={scores.answers[item.tech]}
-                    state={getState(key)}
-                    onFlip={() => handleFlip(key, item)}
-                    onAnswer={(i) => handleAnswer(key, item.tech, i)}
-                    onNext={() => handleNextQuestion(key)}
-                  />
-                );
-              })}
-            </div>
-          )}
+      ) : picking ? (
+        <div style={{ width: "min(100%, 560px)", paddingBottom: 48 }}>
+          <DifficultyPanel
+            onPick={startDrill}
+            onCancel={() => {
+              setPicking(false);
+              setPickError(null);
+            }}
+            loadingKey={loadingTier}
+            error={pickError}
+          />
         </div>
+      ) : visibleItems.length === 0 ? (
+        <WorkspacePanel tone="sunken" style={{ textAlign: "center", color: colors.textFaint, padding: 28 }}>
+          No matches found.
+        </WorkspacePanel>
       ) : (
-        <>
-          <div style={{ maxWidth: 960, margin: "0 auto", padding: "0 24px" }}>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingBottom: 12 }}>
-              {categories.map((cat, i) => (
-                <button
-                  key={cat.name}
-                  onClick={() => { setActiveCategory(i); setCardState({}); }}
-                  style={{
-                    padding: "7px 14px", borderRadius: 20, border: "none", cursor: "pointer",
-                    fontSize: 13, fontWeight: 600, whiteSpace: "nowrap",
-                    background: activeCategory === i ? cat.color : colors.surface,
-                    color: activeCategory === i ? colors.onAccent : colors.textDim,
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {cat.emoji} {cat.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ maxWidth: 960, margin: "16px auto 0", padding: "0 24px 48px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-              {displayCategory.items.map((item) => {
-                const key = `${activeCategory}-${item.tech}`;
-                return (
-                  <Card
-                    key={key}
-                    item={{ ...item, color: displayCategory.color, emoji: displayCategory.emoji }}
-                    stat={scores.answers[item.tech]}
-                    state={getState(key)}
-                    onFlip={() => handleFlip(key, item)}
-                    onAnswer={(i) => handleAnswer(key, item.tech, i)}
-                    onNext={() => handleNextQuestion(key)}
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </>
+        <div
+          className={styles.cardGrid}
+        >
+          {visibleItems.map((item, index) => {
+            const key = filtered ? `search-${item.tech}` : `${activeCategory}-${item.tech}`;
+            return (
+              <Card
+                key={key}
+                index={index}
+                item={item}
+                stat={scores.answers[item.tech]}
+                state={getState(key)}
+                onFlip={() => handleFlip(key, item)}
+                onBack={() => handleFlipBack(key)}
+                onAnswer={(i) => handleAnswer(key, item.tech, i)}
+                onNext={() => handleNextQuestion(key)}
+              />
+            );
+          })}
+        </div>
       )}
 
       {celebration && (
@@ -231,28 +258,234 @@ export default function InterviewPrep() {
           onDone={() => setCelebration(null)}
         />
       )}
+    </WorkspaceLayout>
+  );
+}
+
+function summarizeScores(scores) {
+  const entries = Object.entries(scores.answers);
+  const totals = entries.reduce(
+    (acc, [, s]) => ({ correct: acc.correct + s.correct, wrong: acc.wrong + s.wrong }),
+    { correct: 0, wrong: 0 }
+  );
+  const attempts = totals.correct + totals.wrong;
+  const accuracy = attempts ? Math.round((totals.correct / attempts) * 100) : null;
+  const ranked = entries
+    .filter(([, s]) => s.correct + s.wrong > 0)
+    .map(([tech, s]) => ({
+      tech,
+      acc: Math.round((s.correct / (s.correct + s.wrong)) * 100),
+      n: s.correct + s.wrong,
+    }))
+    .sort((a, b) => b.acc - a.acc || b.n - a.n);
+
+  return { attempts, accuracy, ranked };
+}
+
+function categoryAnswered(cat, scores) {
+  return cat.items.filter((item) => scores.answers[item.tech]?.correct || scores.answers[item.tech]?.wrong).length;
+}
+
+function PrepLeftRail({ activeCategory, allItems, categories, scores, search, setSearch, onCategory }) {
+  return (
+    <>
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="layers" color={colors.accentBright} size={17} />}
+          title="Practice map"
+          subtitle={`${allItems.length} technologies grouped by interview surface.`}
+        />
+        <div style={{ position: "relative", marginTop: 14 }}>
+          <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", display: "flex" }}>
+            <BrandIcon name="search" color={colors.textFaint} size={13} />
+          </span>
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search technology"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "9px 10px 9px 32px",
+              background: colors.bgDeep,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 8,
+              color: colors.text,
+              fontSize: 13,
+              outline: "none",
+            }}
+          />
+        </div>
+      </WorkspacePanel>
+
+      <WorkspacePanel style={{ padding: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {categories.map((cat, index) => {
+            const active = activeCategory === index && !search.trim();
+            const answered = categoryAnswered(cat, scores);
+            const pct = Math.round((answered / cat.items.length) * 100);
+            return (
+              <button
+                key={cat.name}
+                onClick={() => onCategory(index)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 9,
+                  padding: "9px 10px",
+                  border: "none",
+                  borderRadius: 7,
+                  background: active ? `${cat.color}24` : "transparent",
+                  color: active ? colors.textBright : colors.textDim,
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                <BrandIcon name={categoryIconName(cat.name)} color={active ? cat.color : colors.textFaint} size={15} />
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 12.5, fontWeight: 750 }}>{cat.name}</span>
+                  <span style={{ display: "block", marginTop: 3, color: colors.textFaint, fontSize: 10.5 }}>
+                    {answered}/{cat.items.length} touched
+                  </span>
+                </span>
+                <span style={{ width: 34, textAlign: "right", color: pct > 0 ? cat.color : colors.textFaint, fontSize: 11, fontWeight: 800 }}>
+                  {pct}%
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </WorkspacePanel>
+    </>
+  );
+}
+
+function PrepRightRail({ accuracy, drillActive, onDrill, scores, summary }) {
+  const rank = rankForXp(scores.xp);
+  const next = RANKS[RANKS.indexOf(rank) + 1];
+  const progress = next ? Math.round(((scores.xp - rank.min) / (next.min - rank.min)) * 100) : 100;
+  const strongest = summary.ranked.slice(0, 4);
+  const weakest = [...summary.ranked].reverse().slice(0, 4);
+
+  return (
+    <>
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="rank" color={colors.accentBright} size={17} />}
+          title={rank.name}
+          subtitle={`${scores.xp} XP earned`}
+          right={
+            <span style={{ color: summary.accuracy !== null && summary.accuracy >= 70 ? colors.successBright : colors.warningBright, fontSize: 12, fontWeight: 850 }}>
+              {summary.accuracy === null ? "--" : `${summary.accuracy}%`}
+            </span>
+          }
+        />
+        <div style={{ height: 7, background: colors.well, borderRadius: 999, overflow: "hidden", marginTop: 14 }}>
+          <div style={{ width: `${progress}%`, height: "100%", background: colors.accent }} />
+        </div>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginTop: 9, color: colors.textFaint, fontSize: 11 }}>
+          <span>{summary.attempts} answered</span>
+          <span>{next ? `${next.min - scores.xp} XP to ${next.name}` : "Top rank"}</span>
+        </div>
+        <button
+          onClick={onDrill}
+          disabled={drillActive}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 7,
+            marginTop: 14,
+            padding: "9px 12px",
+            background: tints.accentSoft,
+            border: `1px solid ${colors.accent}60`,
+            borderRadius: 8,
+            color: colors.accentBright,
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: drillActive ? "default" : "pointer",
+            opacity: drillActive ? 0.55 : 1,
+          }}
+        >
+          <BrandIcon name="drill" color={colors.accentBright} size={14} />
+          Drill weakest
+        </button>
+      </WorkspacePanel>
+
+      <AccuracyChart points={accuracy} compact />
+
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="accuracy" color={colors.successBright} size={17} />}
+          title="Signal"
+          subtitle="Use this to choose what to rehearse next."
+        />
+        <RailList title="Strongest" icon="arrowUp" items={strongest} color={colors.successBright} />
+        <RailList title="Needs reps" icon="arrowDown" items={weakest} color={colors.warningBright} />
+      </WorkspacePanel>
+    </>
+  );
+}
+
+function RailList({ color, icon, items, title }) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, color: colors.textDim, fontSize: 11, fontWeight: 800, marginBottom: 8 }}>
+        <BrandIcon name={icon} color={color} size={12} />
+        {title}
+      </div>
+      {items.length === 0 ? (
+        <p style={{ margin: 0, color: colors.textFaint, fontSize: 11, lineHeight: 1.5 }}>Answer a few questions to build a signal.</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          {items.map((item) => (
+            <div key={item.tech} style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 12 }}>
+              <span style={{ color: colors.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.tech}</span>
+              <span style={{ color, fontWeight: 800 }}>{item.acc}%</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function Card({ item, stat, state, onFlip, onAnswer, onNext }) {
+function Card({ index = 0, item, stat, state, onFlip, onBack, onAnswer, onNext }) {
   const { phase, quizIndex, answered, shuffled } = state;
+  const flipped = phase === "back";
 
   return (
-    <div style={{ borderRadius: 14, overflow: "hidden", minHeight: 200 }}>
-      {phase === "front" && <FrontFace item={item} stat={stat} onFlip={onFlip} />}
-      {phase === "back" && <BackFace item={item} onFlip={onFlip} />}
-      {phase === "quiz" && shuffled && (
-        <QuizFace
-          item={item}
-          link={techLinks[item.tech]}
-          question={shuffled[quizIndex]}
-          questionNumber={quizIndex + 1}
-          total={shuffled.length}
-          answered={answered}
-          onAnswer={onAnswer}
-          onNext={onNext}
-        />
+    <div
+      className={styles.card}
+      style={{
+        borderRadius: 10,
+        animationDelay: `${Math.min(index * 45, 360)}ms`,
+        "--prep-card-min-height": `${layout.prepCardMinHeight}px`,
+      }}
+    >
+      {phase === "quiz" && shuffled ? (
+        <div className={styles.quiz}>
+          <QuizFace
+            item={item}
+            link={techLinks[item.tech]}
+            question={shuffled[quizIndex]}
+            questionNumber={quizIndex + 1}
+            total={shuffled.length}
+            answered={answered}
+            onAnswer={onAnswer}
+            onNext={onNext}
+          />
+        </div>
+      ) : (
+        <div className={`${styles.cardInner}${flipped ? ` ${styles.isBack}` : ""}`}>
+          <div className={styles.cardFace}>
+            <FrontFace item={item} stat={stat} onFlip={onFlip} />
+          </div>
+          <div className={`${styles.cardFace} ${styles.backFace}`}>
+            <BackFace item={item} onBack={onBack} onQuiz={onFlip} />
+          </div>
+        </div>
       )}
     </div>
   );
@@ -269,45 +502,49 @@ function FrontFace({ item, stat, onFlip }) {
         cursor: "pointer",
         background: colors.surface,
         border: `1px solid ${item.color}30`,
-        borderRadius: 14,
-        padding: "20px 18px",
+        borderRadius: 10,
+        padding: "15px 14px",
         display: "flex", flexDirection: "column", justifyContent: "space-between",
-        minHeight: 160,
+        minHeight: layout.prepCardMinHeight,
+        height: "100%",
+        boxSizing: "border-box",
       }}
     >
       <div>
         <div style={{
           display: "inline-block", padding: "3px 10px",
-          background: `${item.color}20`, borderRadius: 20,
+          background: `${item.color}20`, borderRadius: 999,
           color: item.color, fontSize: 11, fontWeight: 700,
-          letterSpacing: "0.04em", marginBottom: 10,
+          letterSpacing: "0.04em", marginBottom: 9,
         }}>
           {item.tech}
         </div>
-        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: colors.text }}>
+        <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: colors.text }}>
           {item.oneliner}
         </p>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: colors.textFaint, marginTop: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 10.5, color: colors.textFaint, marginTop: 12 }}>
         <span style={{ color: accuracy === null ? colors.textFaint : accuracy >= 70 ? colors.success : colors.warning }}>
           {accuracy === null ? "" : `✓ ${accuracy}% · ${attempts} answered`}
         </span>
-        <span>tap for prep notes →</span>
+        <span style={{ whiteSpace: "nowrap" }}>prep notes</span>
       </div>
     </div>
   );
 }
 
-function BackFace({ item, onFlip }) {
+function BackFace({ item, onBack, onQuiz }) {
   return (
     <div
       style={{
         background: `linear-gradient(135deg, ${item.color}18, ${colors.surface})`,
         border: `1px solid ${item.color}50`,
-        borderRadius: 14,
-        padding: "18px",
+        borderRadius: 10,
+        padding: "15px",
         display: "flex", flexDirection: "column", gap: 12,
-        minHeight: 160,
+        minHeight: layout.prepCardMinHeight,
+        height: "100%",
+        boxSizing: "border-box",
       }}
     >
       <div>
@@ -322,23 +559,38 @@ function BackFace({ item, onFlip }) {
           ))}
         </ul>
       </div>
-      <button
-        onClick={onFlip}
-        style={{
-          marginTop: "auto",
-          padding: "8px 14px",
-          background: `${item.color}25`,
-          border: `1px solid ${item.color}60`,
-          borderRadius: 8,
-          color: item.color,
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: "pointer",
-          alignSelf: "flex-end",
-        }}
-      >
-        Take quiz →
-      </button>
+      <div style={{ marginTop: "auto", display: "flex", justifyContent: "space-between", gap: 10 }}>
+        <button
+          onClick={onBack}
+          style={{
+            padding: "8px 12px",
+            background: "transparent",
+            border: `1px solid ${colors.border}`,
+            borderRadius: 7,
+            color: colors.textFaint,
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          ← Flip back
+        </button>
+        <button
+          onClick={onQuiz}
+          style={{
+            padding: "8px 14px",
+            background: `${item.color}25`,
+            border: `1px solid ${item.color}60`,
+            borderRadius: 7,
+            color: item.color,
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Take quiz →
+        </button>
+      </div>
     </div>
   );
 }
@@ -352,8 +604,8 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
       style={{
         background: colors.well,
         border: `1px solid ${item.color}40`,
-        borderRadius: 14,
-        padding: "18px",
+        borderRadius: 10,
+        padding: "15px",
         display: "flex", flexDirection: "column", gap: 12,
       }}
     >
@@ -366,7 +618,7 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
         </div>
       </div>
 
-      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: colors.text, fontWeight: 500 }}>
+      <p style={{ margin: 0, fontSize: 15, lineHeight: 1.55, color: colors.text, fontWeight: 700 }}>
         {question.question}
       </p>
 
@@ -437,6 +689,9 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
           <button
             onClick={onNext}
             style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
               padding: "7px 14px",
               background: `${item.color}25`,
               border: `1px solid ${item.color}60`,
@@ -447,7 +702,8 @@ function QuizFace({ item, link, question, questionNumber, total, answered, onAns
               cursor: "pointer",
             }}
           >
-            {isLast ? "Done ✓" : "Next →"}
+            {isLast ? "Done" : "Next"}
+            <BrandIcon name={isLast ? "check" : "arrowRight"} color={item.color} size={12} />
           </button>
         </div>
       )}
@@ -490,8 +746,9 @@ function StatsBar({ scores, onDrill, drillActive }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 14, fontWeight: 700, color: colors.textBright }}>
-          🏆 {rank.name}
+        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 700, color: colors.textBright }}>
+          <BrandIcon name="rank" color={colors.accentBright} size={16} />
+          {rank.name}
         </span>
         <span style={{ fontSize: 12, color: colors.textDim, fontWeight: 600 }}>{scores.xp} XP</span>
         <div style={{ flex: 1, minWidth: 120, height: 6, background: colors.surfaceHi, borderRadius: 3, overflow: "hidden" }}>
@@ -511,6 +768,9 @@ function StatsBar({ scores, onDrill, drillActive }) {
           onClick={onDrill}
           disabled={drillActive}
           style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 5,
             padding: "5px 12px",
             background: tints.accentSoft,
             border: `1px solid ${colors.accent}60`,
@@ -522,12 +782,16 @@ function StatsBar({ scores, onDrill, drillActive }) {
             opacity: drillActive ? 0.5 : 1,
           }}
         >
-          🎯 Drill weakest
+          <BrandIcon name="drill" color={colors.accentBright} size={13} />
+          Drill weakest
         </button>
         {ranked.length > 0 && (
           <button
             onClick={() => setShowRanking((v) => !v)}
             style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
               padding: "5px 12px",
               background: "transparent",
               border: `1px solid ${colors.border}`,
@@ -538,7 +802,8 @@ function StatsBar({ scores, onDrill, drillActive }) {
               cursor: "pointer",
             }}
           >
-            Ranking {showRanking ? "▴" : "▾"}
+            Ranking
+            <BrandIcon name={showRanking ? "arrowUp" : "arrowDown"} color={colors.textDim} size={11} />
           </button>
         )}
       </div>
@@ -549,18 +814,19 @@ function StatsBar({ scores, onDrill, drillActive }) {
 
       {showRanking && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 14 }}>
-          <RankingList title="💪 Strongest" items={ranked.slice(0, 5)} color={colors.success} />
-          <RankingList title="📉 Needs work" items={[...ranked].reverse().slice(0, 5)} color={colors.warning} />
+          <RankingList icon="arrowUp" title="Strongest" items={ranked.slice(0, 5)} color={colors.success} />
+          <RankingList icon="arrowDown" title="Needs work" items={[...ranked].reverse().slice(0, 5)} color={colors.warning} />
         </div>
       )}
     </div>
   );
 }
 
-function RankingList({ title, items, color }) {
+function RankingList({ icon, title, items, color }) {
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
+        <BrandIcon name={icon} color={color} size={12} />
         {title}
       </div>
       <ol style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -575,8 +841,61 @@ function RankingList({ title, items, color }) {
   );
 }
 
+// Sassy tier selector shown before a drill — mirrors the mobile DifficultyPicker.
+function DifficultyPanel({ onPick, onCancel, loadingKey, error }) {
+  return (
+    <div style={{ background: colors.well, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: colors.textBright }}>Pick your pain</span>
+        <button
+          onClick={onCancel}
+          style={{ display: "flex", alignItems: "center", gap: 4, padding: "4px 10px", background: "transparent", border: `1px solid ${colors.border}`, borderRadius: 8, color: colors.textFaint, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
+        >
+          Cancel
+          <BrandIcon name="close" color={colors.textFaint} size={11} />
+        </button>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+        {DIFFICULTIES.map((d) => {
+          const loading = loadingKey === d.key;
+          const disabled = loadingKey !== null;
+          return (
+            <button
+              key={d.key}
+              onClick={() => onPick(d.key)}
+              disabled={disabled}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                textAlign: "left",
+                padding: "12px 14px",
+                background: `${d.color}1A`,
+                border: `1px solid ${d.color}60`,
+                borderRadius: 10,
+                cursor: disabled ? "default" : "pointer",
+                opacity: disabled && !loading ? 0.5 : 1,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>{d.emoji}</span>
+              <span style={{ flex: 1 }}>
+                <span style={{ display: "block", fontSize: 14, fontWeight: 800, color: d.color }}>{d.label}</span>
+                <span style={{ display: "block", fontSize: 11.5, color: colors.textDim }}>{d.blurb}</span>
+              </span>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: d.color }}>{loading ? "Loading…" : `+${d.xp} XP`}</span>
+            </button>
+          );
+        })}
+      </div>
+      {error && <p style={{ margin: 0, fontSize: 12, color: colors.warning }}>{error}</p>}
+    </div>
+  );
+}
+
 function DrillSession({ drill, onAnswer, onNext, onExit }) {
   const { questions, index, answered, correctCount, done } = drill;
+  const tier = difficultyByKey(drill.difficulty);
+  const perAnswerXp = tier?.xp ?? CORRECT_XP;
 
   if (done) {
     const perfect = correctCount === questions.length;
@@ -587,12 +906,30 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
           padding: "32px 24px", textAlign: "center",
         }}
       >
-        <div style={{ fontSize: 32, marginBottom: 8 }}>{perfect ? "🏆" : correctCount >= questions.length / 2 ? "💪" : "📚"}</div>
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            margin: "0 auto 8px",
+            borderRadius: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: `${perfect ? colors.success : colors.accent}20`,
+            border: `1px solid ${perfect ? colors.success : colors.accent}60`,
+          }}
+        >
+          <BrandIcon
+            name={perfect ? "rank" : correctCount >= questions.length / 2 ? "spark" : "story"}
+            color={perfect ? colors.successBright : colors.accentBright}
+            size={25}
+          />
+        </div>
         <div style={{ fontSize: 20, fontWeight: 700, color: colors.textBright, marginBottom: 6 }}>
           {correctCount} / {questions.length}
         </div>
         <p style={{ margin: "0 0 20px", fontSize: 13, color: colors.textDim }}>
-          +{correctCount * CORRECT_XP} XP{perfect ? ` · +${PERFECT_QUIZ_BONUS} perfect bonus` : ""} — accuracy recorded
+          +{correctCount * perAnswerXp} XP{perfect ? ` · +${PERFECT_QUIZ_BONUS} perfect bonus` : ""} — accuracy recorded
           per tech, so the next drill adapts.
         </p>
         <button
@@ -620,24 +957,34 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: 10, fontWeight: 700, color: cur.color, letterSpacing: "0.08em" }}>
-          🎯 DRILL · {cur.tech}
+        <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 10, fontWeight: 700, color: cur.color, letterSpacing: "0.08em" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <BrandIcon name="drill" color={cur.color} size={13} />
+            DRILL · {cur.tech}
+          </span>
+          {tier && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, background: `${tier.color}1A`, border: `1px solid ${tier.color}60`, color: tier.color, letterSpacing: "0.04em" }}>
+              {tier.emoji} {tier.label.toUpperCase()}
+            </span>
+          )}
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 10, color: colors.textFaint }}>{index + 1} / {questions.length}</span>
           <button
             onClick={onExit}
             style={{
+              display: "flex", alignItems: "center", gap: 4,
               padding: "3px 10px", background: "transparent", border: `1px solid ${colors.border}`,
               borderRadius: 8, color: colors.textFaint, fontSize: 10, fontWeight: 600, cursor: "pointer",
             }}
           >
             Exit
+            <BrandIcon name="close" color={colors.textFaint} size={11} />
           </button>
         </span>
       </div>
 
-      <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: colors.text, fontWeight: 500 }}>
+      <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, color: colors.text, fontWeight: 750 }}>
         {cur.q.question}
       </p>
 
@@ -683,7 +1030,7 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, color: isCorrect ? colors.success : colors.danger, fontWeight: 600 }}>
-              {isCorrect ? `Correct! +${CORRECT_XP} XP` : "Incorrect"}
+              {isCorrect ? `Correct! +${perAnswerXp} XP` : "Incorrect"}
             </span>
             {cur.link && (
               <a
@@ -699,11 +1046,13 @@ function DrillSession({ drill, onAnswer, onNext, onExit }) {
           <button
             onClick={onNext}
             style={{
+              display: "flex", alignItems: "center", gap: 5,
               padding: "7px 14px", background: `${cur.color}25`, border: `1px solid ${cur.color}60`,
               borderRadius: 8, color: cur.color, fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}
           >
-            {isLast ? "Finish ✓" : "Next →"}
+            {isLast ? "Finish" : "Next"}
+            <BrandIcon name={isLast ? "check" : "arrowRight"} color={cur.color} size={12} />
           </button>
         </div>
       )}

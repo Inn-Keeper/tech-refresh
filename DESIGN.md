@@ -1,4 +1,4 @@
-# Design Guidelines — Tech-Refresh
+# Design Guidelines - Grip
 
 The single source of truth for the product's visual identity. Token values live in
 [`packages/core/src/tokens.js`](packages/core/src/tokens.js) and are consumed by both apps
@@ -50,6 +50,8 @@ shadows are reserved for board nodes (colored glow = node identity).
 | `accent` | `#14B8A6` | Focus teal: primary actions, fills, active states, the XP bar |
 | `accentBright` | `#2DD4BF` | Links, glow, active accents on dark planes |
 | `onAccent` | `#0F141C` | Text/icons **on** accent or category-color fills. Never use white on teal — it fails contrast (~2.5:1); `onAccent` clears 7:1. |
+
+Canonical product constants live in `brand` / `brandColors`: Grip, Poe, "Get a grip. Buckle up.", and the job-hunt confidence promise from [BRAND.md](BRAND.md).
 
 ### Status
 
@@ -136,7 +138,7 @@ Gamified register for product nouns: **Quest** (pipeline tab), XP, ranks, drills
 
 ## Out of scope / follow-ups
 
-- App icon, splash icon, Android adaptive set, favicon still carry the old blue identity —
+- App icon, splash icon, Android adaptive set, favicon still carry temporary identity assets -
   regenerating them needs design tooling (binary assets). The Android adaptive background
   (`#E6F4FE`) intentionally stays until the foreground PNG is redone.
 - Full spacing/typography migration beyond `ui.tsx` happens opportunistically.

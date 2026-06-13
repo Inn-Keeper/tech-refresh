@@ -1,5 +1,6 @@
 import { createApi, dateToDb, dateToUi } from "../api.js";
 import { CORRECT_XP } from "../gamification.js";
+import { difficultyByKey } from "../difficulty.js";
 
 describe("date mapping", () => {
   it("converts ISO to DD-MM-YYYY and back", () => {
@@ -18,9 +19,12 @@ describe("date mapping", () => {
  * Minimal chainable stand-in for the Supabase client: every query resolves
  * with the table's rows, and writes are recorded for assertions.
  */
-function fakeSupabase(tables = {}) {
+function fakeSupabase(tables = {}, authUser = null) {
   const calls = { inserts: [], updates: [], deletes: [], rpcs: [] };
   const client = {
+    auth: {
+      getUser: async () => ({ data: { user: authUser }, error: null }),
+    },
     from(table) {
       const result = { data: tables[table] ?? [], error: null };
       const query = {
@@ -30,6 +34,11 @@ function fakeSupabase(tables = {}) {
           query._eq = { column, value };
           return query;
         },
+        in: (column, values) => {
+          query._in = { column, values };
+          return query;
+        },
+        limit: () => query,
         maybeSingle: async () => ({ data: (tables[table] ?? [])[0] ?? null, error: null }),
         single: async () => ({ data: Array.isArray(result.data) ? result.data[0] : result.data, error: null }),
         insert: (rows) => {
@@ -40,6 +49,17 @@ function fakeSupabase(tables = {}) {
         update: (rows) => {
           calls.updates.push({ table, rows });
           result.data = { id: query._eq?.value ?? "existing-id", created_at: "2026-01-01", updated_at: rows.updated_at ?? "2026-01-02", ...rows };
+          return query;
+        },
+        upsert: (rows) => {
+          calls.updates.push({ table, rows });
+          result.data = {
+            user_id: rows.user_id,
+            xp: 0,
+            created_at: "2026-01-01",
+            updated_at: "2026-01-02",
+            ...rows,
+          };
           return query;
         },
         delete: () => {
@@ -83,6 +103,90 @@ describe("createApi", () => {
 
     const scores = await api.getScores();
     expect(scores).toEqual({ xp: 0, answers: {} });
+  });
+
+  it("merges auth identity with the app profile row", async () => {
+    const { client } = fakeSupabase(
+      {
+        profiles: [
+          {
+            user_id: "user-1",
+            email: "profile@example.com",
+            display_name: "Profile Name",
+            headline: "Frontend engineer",
+            target_role: "Staff Frontend Engineer",
+            location: "Stockholm",
+            github_url: "https://github.com/profile",
+            xp: 120,
+            onboarding_completed: true,
+            created_at: "2026-01-01",
+            updated_at: "2026-01-02",
+          },
+        ],
+      },
+      {
+        id: "user-1",
+        email: "auth@example.com",
+        user_metadata: { full_name: "Auth Name" },
+      }
+    );
+    const api = createApi(client);
+
+    await expect(api.getUser()).resolves.toMatchObject({
+      id: "user-1",
+      displayName: "Profile Name",
+      email: "auth@example.com",
+      headline: "Frontend engineer",
+      targetRole: "Staff Frontend Engineer",
+      location: "Stockholm",
+      githubUrl: "https://github.com/profile",
+      xp: 120,
+      onboardingCompleted: true,
+    });
+  });
+
+  it("falls back to auth metadata when the profile row is missing", async () => {
+    const { client } = fakeSupabase(
+      { profiles: [] },
+      { id: "user-1", email: "auth@example.com", user_metadata: { full_name: "Auth Name" } }
+    );
+    const api = createApi(client);
+
+    await expect(api.getUser()).resolves.toMatchObject({
+      id: "user-1",
+      displayName: "Auth Name",
+      email: "auth@example.com",
+      xp: 0,
+      onboardingCompleted: false,
+    });
+  });
+
+  it("updates editable profile fields without changing auth-owned email", async () => {
+    const { client, calls } = fakeSupabase(
+      {},
+      { id: "user-1", email: "auth@example.com", user_metadata: {} }
+    );
+    const api = createApi(client);
+
+    const saved = await api.updateProfile({
+      displayName: "  Ada  ",
+      targetRole: "Principal Engineer",
+      githubUrl: "",
+      onboardingCompleted: true,
+    });
+
+    expect(calls.updates[0]).toMatchObject({
+      table: "profiles",
+      rows: {
+        user_id: "user-1",
+        email: "auth@example.com",
+        display_name: "Ada",
+        target_role: "Principal Engineer",
+        github_url: null,
+        onboarding_completed: true,
+      },
+    });
+    expect(saved).toMatchObject({ id: "user-1", displayName: "Ada", email: "auth@example.com" });
   });
 
   it("lists saved boards from newest to oldest", async () => {
@@ -165,7 +269,7 @@ describe("createApi", () => {
 
     await api.recordAnswer("Kubernetes", true, "drill");
     expect(calls.inserts).toEqual([
-      { table: "answer_events", rows: { tech: "Kubernetes", correct: true, source: "drill" } },
+      { table: "answer_events", rows: { tech: "Kubernetes", correct: true, source: "drill", difficulty: null } },
     ]);
     expect(calls.rpcs).toEqual([{ fn: "add_xp", args: { points: CORRECT_XP } }]);
   });
@@ -177,5 +281,48 @@ describe("createApi", () => {
     await api.recordAnswer("Kubernetes", false);
     expect(calls.inserts).toHaveLength(1);
     expect(calls.rpcs).toHaveLength(0);
+  });
+
+  it("stores the tier and awards scaled XP for a tiered answer", async () => {
+    const { client, calls } = fakeSupabase();
+    const api = createApi(client);
+
+    await api.recordAnswer("TypeScript", true, "drill", "ultra");
+    expect(calls.inserts).toEqual([
+      { table: "answer_events", rows: { tech: "TypeScript", correct: true, source: "drill", difficulty: "ultra" } },
+    ]);
+    expect(calls.rpcs).toEqual([{ fn: "add_xp", args: { points: difficultyByKey("ultra").xp } }]);
+  });
+
+  it("resets XP and answer history for the signed-in user", async () => {
+    const { client, calls } = fakeSupabase(
+      {},
+      { id: "user-1", email: "auth@example.com", user_metadata: {} }
+    );
+    const api = createApi(client);
+
+    await expect(api.resetScores()).resolves.toEqual({ xp: 0, answers: {} });
+    expect(calls.deletes).toEqual([{ table: "answer_events" }]);
+    expect(calls.updates[0]).toMatchObject({
+      table: "profiles",
+      rows: { user_id: "user-1", email: "auth@example.com", xp: 0 },
+    });
+  });
+
+  it("fetches tiered questions for the given techs", async () => {
+    const rows = [
+      { id: "q1", tech: "TypeScript", category: "Languages", difficulty: "mid", prompt: "p", options: ["a", "b", "c", "d"], correct: 0, explanation: null },
+    ];
+    const { client } = fakeSupabase({ questions: rows });
+    const api = createApi(client);
+
+    await expect(api.getQuestions({ techs: ["TypeScript"], difficulty: "mid", limit: 10 })).resolves.toEqual(rows);
+  });
+
+  it("returns no questions (and skips the query) when no techs are given", async () => {
+    const { client } = fakeSupabase({ questions: [{ id: "q1" }] });
+    const api = createApi(client);
+
+    await expect(api.getQuestions({ techs: [], difficulty: "mid" })).resolves.toEqual([]);
   });
 });

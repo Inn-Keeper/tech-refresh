@@ -1,6 +1,6 @@
-# Tech-Refresh Mobile — Plan
+# Grip Mobile - Plan
 
-Goal: a React Native (Expo) version of the tech-refresh toolkit, sharing one Postgres database
+Goal: a React Native (Expo) version of the Grip toolkit, sharing one Postgres database
 with the existing web app, built deliberately as a **study case** — every layer maps to an
 interview-prep topic, and the project itself becomes a STAR story.
 
@@ -19,7 +19,7 @@ interview-prep topic, and the project itself becomes a STAR story.
 ## Target layout
 
 ```text
-tech-refresh/                  (git repo — init first, this isn't one yet!)
+grip/                          (git repo - init first, this isn't one yet!)
   pnpm-workspace.yaml
   packages/
     core/                      prepData, techLinks, arch scenarios, scoring/rank logic, shared types

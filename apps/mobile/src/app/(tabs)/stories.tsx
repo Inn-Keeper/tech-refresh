@@ -6,6 +6,7 @@ import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/sto
 import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
 import { colors } from "@/theme";
+import { BrandIcon } from "@/components/BrandIcon";
 import { Badge, Button, Field, HeaderAction, MiniButton, Pill, Screen, ScreenHeader, Section, SegmentedPills, inputStyle, multilineStyle } from "@/components/ui";
 import type { Story } from "@tech-refresh/core/api";
 
@@ -45,12 +46,12 @@ export default function StoriesScreen() {
       <ScreenHeader
         title={t("tabs.stories")}
         subtitle="STAR stories and interview prompt reps."
-        right={<HeaderAction label={t("stories.addStory")} onPress={() => setEditing(EMPTY_FORM)} />}
+        right={<HeaderAction icon="story" label={t("stories.addStory")} onPress={() => setEditing(EMPTY_FORM)} />}
       >
         <SegmentedPills
           options={[
-            { key: "stories", label: t("stories.myStories") },
-            { key: "drill", label: t("stories.drillPrompts") },
+            { key: "stories", label: t("stories.myStories"), icon: "story" },
+            { key: "drill", label: t("stories.drillPrompts"), icon: "prompt" },
           ]}
           activeKey={mode}
           onChange={(key) => setMode(key as "stories" | "drill")}
@@ -97,7 +98,7 @@ function StoryCard({ story, onEdit, onDelete }: StoryCardProps) {
       >
         <Badge label={story.competency} color={color} />
         <Text style={{ flex: 1, color: colors.textBright, fontSize: 14, fontWeight: "600" }}>{story.title}</Text>
-        <Text style={{ color: colors.textFaint, fontSize: 12 }}>{expanded ? "▴" : "▾"}</Text>
+        <BrandIcon name={expanded ? "arrowUp" : "arrowDown"} color={colors.textFaint} size={13} />
       </TouchableOpacity>
 
       {expanded && (

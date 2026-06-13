@@ -5,13 +5,16 @@ import InterviewPrep from "./InterviewPrep.jsx";
 import Contacts from "./Contacts.jsx";
 import ArchBoard from "./ArchBoard.jsx";
 import StoryBank from "./StoryBank.jsx";
-import { colors } from "@tech-refresh/core/tokens";
+import Profile from "./Profile.tsx";
+import { brand, colors, layout } from "@tech-refresh/core/tokens";
+import { BrandIcon } from "./BrandIcon.jsx";
 
 const pages = [
-  { id: "prep", label: `📚 ${t("tabs.prep")}` },
-  { id: "stories", label: `⭐ ${t("tabs.stories")}` },
-  { id: "board", label: `🧩 ${t("tabs.board")}` },
-  { id: "contacts", label: `🗺️ ${t("tabs.contacts")}` },
+  { id: "prep", icon: "layers", label: t("tabs.prep") },
+  { id: "stories", icon: "story", label: t("tabs.stories") },
+  { id: "board", icon: "board", label: t("tabs.board") },
+  { id: "contacts", icon: "contact", label: t("tabs.contacts") },
+  { id: "profile", icon: "profile", label: t("tabs.profile") },
 ];
 
 export default function App() {
@@ -37,8 +40,6 @@ export default function App() {
       >
         <div
           style={{
-            maxWidth: 960,
-            margin: "0 auto",
             padding: "12px 24px",
             display: "flex",
             alignItems: "center",
@@ -46,9 +47,8 @@ export default function App() {
             flexWrap: "wrap",
           }}
         >
-          <span style={{ fontSize: 22 }}>⚡</span>
           <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.3px", color: colors.textBright }}>
-            Interview Prep
+            {brand.productName}
           </span>
           {session && (
             <>
@@ -58,6 +58,9 @@ export default function App() {
                     key={p.id}
                     onClick={() => setPage(p.id)}
                     style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
                       padding: "7px 14px",
                       borderRadius: 20,
                       border: "none",
@@ -69,6 +72,7 @@ export default function App() {
                       transition: "all 0.15s",
                     }}
                   >
+                    <BrandIcon name={p.icon} color={page === p.id ? colors.onAccent : colors.textDim} size={14} />
                     {p.label}
                   </button>
                 ))}
@@ -95,7 +99,17 @@ export default function App() {
       </header>
 
       {session === undefined && (
-        <p style={{ textAlign: "center", marginTop: 80, color: colors.textFaint, fontSize: 13 }}>Loading…</p>
+        <main
+          style={{
+            minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`,
+            display: "grid",
+            placeItems: "center",
+            color: colors.textFaint,
+            fontSize: 13,
+          }}
+        >
+          Loading…
+        </main>
       )}
       {session === null && <SignIn />}
       {session && (
@@ -104,6 +118,7 @@ export default function App() {
           {page === "stories" && <StoryBank />}
           {page === "board" && <ArchBoard />}
           {page === "contacts" && <Contacts />}
+          {page === "profile" && <Profile />}
         </>
       )}
     </div>
@@ -152,73 +167,83 @@ function SignIn() {
   };
 
   return (
-    <div style={{ maxWidth: 380, margin: "100px auto 0", padding: "0 24px", textAlign: "center" }}>
-      <div style={{ fontSize: 36, marginBottom: 12 }}>🔐</div>
-      <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: colors.textBright }}>
-        {mode === "signin" ? "Sign in" : "Create account"}
-      </h1>
-      <p style={{ margin: "0 0 24px", fontSize: 13, color: colors.textFaint, lineHeight: 1.6 }}>
-        Your pipeline and scores live behind your account.
-      </p>
+    <main
+      style={{
+        minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`,
+        display: "grid",
+        placeItems: "center",
+        padding: "32px 24px",
+        boxSizing: "border-box",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: 380, textAlign: "center" }}>
+        <img src="/logo-symbol.svg" alt="" style={{ width: 76, height: 62, objectFit: "contain", marginBottom: 12 }} />
+        <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: colors.textBright }}>
+          {brand.productName}
+        </h1>
+        <p style={{ margin: "0 0 24px", fontSize: 13, color: colors.textFaint, lineHeight: 1.6 }}>
+          {brand.promise}
+        </p>
 
-      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@email.com"
-          autoComplete="email"
-          style={inputStyle}
-        />
-        <input
-          type="password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={mode === "signup" ? "password (8+ characters)" : "password"}
-          autoComplete={mode === "signup" ? "new-password" : "current-password"}
-          style={inputStyle}
-        />
+        <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@email.com"
+            autoComplete="email"
+            style={inputStyle}
+          />
+          <input
+            type="password"
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={mode === "signup" ? "password (8+ characters)" : "password"}
+            autoComplete={mode === "signup" ? "new-password" : "current-password"}
+            style={inputStyle}
+          />
+          <button
+            type="submit"
+            disabled={busy}
+            style={{
+              padding: "11px 14px",
+              background: colors.accent,
+              border: "none",
+              borderRadius: 10,
+              color: colors.onAccent,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: busy ? "wait" : "pointer",
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+          </button>
+          {error && <p style={{ margin: 0, fontSize: 12, color: colors.dangerBright }}>{error}</p>}
+          {notice && <p style={{ margin: 0, fontSize: 12, color: colors.warningBright, lineHeight: 1.5 }}>{notice}</p>}
+        </form>
+
         <button
-          type="submit"
-          disabled={busy}
+          onClick={() => {
+            setMode(mode === "signin" ? "signup" : "signin");
+            setError(null);
+            setNotice(null);
+          }}
           style={{
-            padding: "11px 14px",
-            background: colors.accent,
+            marginTop: 18,
+            background: "transparent",
             border: "none",
-            borderRadius: 10,
-            color: colors.onAccent,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: busy ? "wait" : "pointer",
-            opacity: busy ? 0.6 : 1,
+            color: colors.textDim,
+            fontSize: 13,
+            cursor: "pointer",
           }}
         >
-          {busy ? "…" : mode === "signin" ? "Sign in" : "Create account"}
+          {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
         </button>
-        {error && <p style={{ margin: 0, fontSize: 12, color: colors.dangerBright }}>{error}</p>}
-        {notice && <p style={{ margin: 0, fontSize: 12, color: colors.warningBright, lineHeight: 1.5 }}>{notice}</p>}
-      </form>
-
-      <button
-        onClick={() => {
-          setMode(mode === "signin" ? "signup" : "signin");
-          setError(null);
-          setNotice(null);
-        }}
-        style={{
-          marginTop: 18,
-          background: "transparent",
-          border: "none",
-          color: colors.textDim,
-          fontSize: 13,
-          cursor: "pointer",
-        }}
-      >
-        {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
-      </button>
-    </div>
+      </div>
+    </main>
   );
 }

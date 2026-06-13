@@ -14,6 +14,7 @@ const activeDrill: Drill = {
   answered: null,
   correctCount: 0,
   done: false,
+  difficulty: "mid",
 };
 
 describe("DrillSession", () => {

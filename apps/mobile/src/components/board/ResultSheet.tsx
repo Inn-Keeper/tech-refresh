@@ -2,6 +2,7 @@ import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import type { EvalResult, Scenario } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@/theme";
+import { BrandIcon } from "@/components/BrandIcon";
 import { Button } from "@/components/ui";
 
 type Props = {
@@ -41,9 +42,16 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
           <Text style={{ fontSize: 30, fontWeight: "700", color }}>{result.score}%</Text>
           <Text style={{ fontSize: 14, fontWeight: "600", color: colors.textBright, flex: 1 }}>{label}</Text>
         </View>
-        <Text style={{ fontSize: 12, color: colors.textDim, marginBottom: 14 }}>
-          💰 {result.cost}/{scenario.budget} budget · 🔧 maintenance {result.maint} ({maintLabel})
-        </Text>
+        <View style={{ flexDirection: "row", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <BrandIcon name="cost" color={colors.textDim} size={14} />
+            <Text style={{ fontSize: 12, color: colors.textDim }}>{result.cost}/{scenario.budget} budget</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+            <BrandIcon name="maintenance" color={colors.textDim} size={14} />
+            <Text style={{ fontSize: 12, color: colors.textDim }}>maintenance {result.maint} ({maintLabel})</Text>
+          </View>
+        </View>
 
         <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 14, paddingBottom: 8 }}>
           <View style={{ gap: 6 }}>
@@ -51,12 +59,12 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
               {t("board.designChecks")}
             </Text>
             {result.checks.map((check) => (
-              <Text
-                key={check.label}
-                style={{ fontSize: 12.5, lineHeight: 18, color: check.passed ? colors.successBright : colors.dangerBright }}
-              >
-                {check.passed ? "✅" : "❌"} {check.label} ({check.points} pts)
-              </Text>
+              <View key={check.label} style={{ flexDirection: "row", alignItems: "flex-start", gap: 7 }}>
+                <BrandIcon name={check.passed ? "check" : "error"} color={check.passed ? colors.successBright : colors.dangerBright} size={14} />
+                <Text style={{ flex: 1, fontSize: 12.5, lineHeight: 18, color: check.passed ? colors.successBright : colors.dangerBright }}>
+                  {check.label} ({check.points} pts)
+                </Text>
+              </View>
             ))}
           </View>
 
@@ -66,9 +74,10 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
                 {t("board.meetingNotes")}
               </Text>
               {result.warnings.map((warning) => (
-                <Text key={warning} style={{ fontSize: 12.5, lineHeight: 18, color: colors.warningBright }}>
-                  ⚠️ {warning}
-                </Text>
+                <View key={warning} style={{ flexDirection: "row", alignItems: "flex-start", gap: 7 }}>
+                  <BrandIcon name="warning" color={colors.warningBright} size={14} />
+                  <Text style={{ flex: 1, fontSize: 12.5, lineHeight: 18, color: colors.warningBright }}>{warning}</Text>
+                </View>
               ))}
             </View>
           )}

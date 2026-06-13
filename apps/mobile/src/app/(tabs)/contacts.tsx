@@ -7,6 +7,7 @@ import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
 import { colors, tints } from "@/theme";
+import { BrandIcon } from "@/components/BrandIcon";
 import { Badge, Button, Field, HeaderAction, MiniButton, Pill, Screen, ScreenHeader, Section, inputStyle, multilineStyle } from "@/components/ui";
 import { DateField } from "@/components/DateField";
 import type { Contact } from "@tech-refresh/core/api";
@@ -82,7 +83,7 @@ export default function ContactsScreen() {
       <ScreenHeader
         title={t("tabs.contacts")}
         subtitle="Pipeline, follow-ups, and interview retros."
-        right={<HeaderAction label={t("contacts.addContact")} onPress={() => setEditing({ ...EMPTY_FORM, date: todayDDMMYYYY() })} />}
+        right={<HeaderAction icon="contact" label={t("contacts.addContact")} onPress={() => setEditing({ ...EMPTY_FORM, date: todayDDMMYYYY() })} />}
       />
       <FlatList
         data={sorted}
@@ -321,8 +322,9 @@ function ContactCard({
             borderRadius: 8,
           }}
         >
+          <BrandIcon name={due ? "warning" : "calendar"} color={due ? colors.dangerBright : colors.warningBright} size={15} />
           <Text style={{ flex: 1, fontSize: 12.5, color: due ? colors.dangerBright : colors.warningBright }}>
-            {due ? "🔴 DUE · " : "⏰ "}
+            {due ? "DUE · " : ""}
             {contact.nextAction}
             {!!contact.nextActionDate && ` · ${contact.nextActionDate}`}
           </Text>
@@ -333,7 +335,7 @@ function ContactCard({
       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
         {retros.length > 0 && (
           <MiniButton
-            label={`${t("contacts.retros", { count: retros.length })} ${showRetros ? "▴" : "▾"}`}
+            label={`${t("contacts.retros", { count: retros.length })} ${showRetros ? "Collapse" : "Expand"}`}
             color={colors.textDim}
             onPress={() => setShowRetros((value) => !value)}
           />
@@ -360,7 +362,7 @@ function ContactCard({
                 {retro.round || "Interview"}
               </Text>
               <Text style={{ fontSize: 11, color: colors.textFaint }}>{retro.date}</Text>
-              <MiniButton label="✕" color={colors.textFaint} onPress={() => onDeleteRetro(retro.id)} />
+              <MiniButton label="Remove" color={colors.textFaint} onPress={() => onDeleteRetro(retro.id)} />
             </View>
             <Section label="Questions asked" text={retro.questions} />
             <Section label="Went well" text={retro.wentWell} />

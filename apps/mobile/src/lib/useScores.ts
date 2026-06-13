@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CORRECT_XP } from "@tech-refresh/core/gamification";
+import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import type { Scores } from "@tech-refresh/core/api";
 import { api } from "./api";
 
@@ -18,11 +19,11 @@ export function useScores() {
   const rollback = () => queryClient.invalidateQueries({ queryKey: ["scores"] });
 
   const recordMutation = useMutation({
-    mutationFn: ({ tech, isCorrect, source }: { tech: string; isCorrect: boolean; source: string }) =>
-      api.recordAnswer(tech, isCorrect, source),
-    onMutate: ({ tech, isCorrect }) =>
+    mutationFn: ({ tech, isCorrect, source, difficulty }: { tech: string; isCorrect: boolean; source: string; difficulty: string | null }) =>
+      api.recordAnswer(tech, isCorrect, source, difficulty),
+    onMutate: ({ tech, isCorrect, difficulty }) =>
       patch((s) => ({
-        xp: s.xp + (isCorrect ? CORRECT_XP : 0),
+        xp: s.xp + (isCorrect ? (difficultyByKey(difficulty ?? "")?.xp ?? CORRECT_XP) : 0),
         answers: {
           ...s.answers,
           [tech]: {
@@ -43,8 +44,8 @@ export function useScores() {
 
   return {
     scores,
-    record: (tech: string, isCorrect: boolean, source = "card") =>
-      recordMutation.mutate({ tech, isCorrect, source }),
+    record: (tech: string, isCorrect: boolean, source = "card", difficulty: string | null = null) =>
+      recordMutation.mutate({ tech, isCorrect, source, difficulty }),
     addXp: (points: number) => xpMutation.mutate(points),
   };
 }

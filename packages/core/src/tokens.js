@@ -51,6 +51,23 @@ export const tints = {
   modalScrim: "#00000090",
 };
 
+/** Canonical Grip brand palette. @type {Record<string, string>} */
+export const brandColors = {
+  teal: "#14B8A6",
+  tealBright: "#2DD4BF",
+  gold: "#D4A574",
+  ink: "#10131A",
+  slate: "#272C3A",
+};
+
+export const brand = {
+  productName: "Grip",
+  mascotName: "Poe",
+  tagline: "Get a grip. Buckle up.",
+  promise: "Navigate the job hunt with confidence, one skill at a time.",
+  colors: brandColors,
+};
+
 // Font weights stay as string literals in code ("600" etc.) — React Native's
 // fontWeight type only accepts literals, so a string-typed token can't carry them.
 export const font = {
@@ -60,3 +77,14 @@ export const font = {
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
 
 export const radius = { sm: 8, md: 12, lg: 16, pill: 999 };
+
+export const layout = {
+  webHeaderHeight: 57,
+  workspaceTop: 79,
+  workspaceBottomInset: 22,
+  workspaceRailMin: 230,
+  workspaceLeftRailMax: 290,
+  workspaceRightRailMin: 260,
+  workspaceRightRailMax: 340,
+  prepCardMinHeight: 236,
+};

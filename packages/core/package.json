@@ -6,6 +6,8 @@
   "exports": {
     "./api": "./src/api.js",
     "./quiz": "./src/quiz.js",
+    "./difficulty": "./src/difficulty.js",
+    "./questions": "./src/questions.js",
     "./stories": "./src/stories.js",
     "./contacts": "./src/contacts.js",
     "./prepData": "./src/prepData.js",
@@ -15,7 +17,8 @@
     "./funnel": "./src/funnel.js",
     "./accuracy": "./src/accuracy.js",
     "./i18n": "./src/i18n.js",
-    "./tokens": "./src/tokens.js"
+    "./tokens": "./src/tokens.js",
+    "./user": "./src/user.js"
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",

@@ -1,7 +1,7 @@
 # The music daemon that broke my mobile E2E suite
 
 > STAR story — fits **"tell me about a tricky bug"**, **Ambiguity**, or **Delivery**.
-> Date: 11-06-2026 · Project: tech-refresh (Expo / React Native study case)
+> Date: 11-06-2026 · Project: Grip (Expo / React Native study case)
 
 ## Situation
 

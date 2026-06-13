@@ -100,87 +100,35 @@ export const TYPE_COLORS = {
  */
 export const meta = (type) => NODE_TYPES.find((t) => t.type === type) ?? NODE_TYPES[0];
 
-/** @type {Scenario[]} */
-export const SCENARIOS = [
-  {
-    id: "payment",
-    name: "💳 Payment end-to-end",
-    brief:
-      "Design checkout payment processing: accept a payment, call the provider, survive retries and webhooks, and keep records consistent. Card data must never touch your own database.",
-    budget: 16,
-    checks: [
-      { kind: "node", type: ["client"], label: "A client initiates checkout", points: 5 },
-      { kind: "edge", from: ["client"], to: ["gateway", "lb"], label: "Traffic enters through a gateway or load balancer — clients never hit services directly", points: 10 },
-      { kind: "node", type: ["auth"], label: "Authentication sits in front of money movement", points: 10 },
-      { kind: "edge", from: ["gateway", "lb", "auth"], to: ["service"], label: "Requests are routed to a payment service", points: 10 },
-      { kind: "edge", from: ["service"], to: ["psp"], label: "The service calls the payment provider — your servers own that integration", points: 15 },
-      { kind: "edge", from: ["psp"], to: ["service", "worker", "queue"], label: "A webhook path back from the provider for async confirmations and disputes", points: 15 },
-      { kind: "node", type: ["queue"], label: "A queue decouples confirmation and reconciliation work", points: 10 },
-      { kind: "edge", from: ["queue"], to: ["worker"], bidi: true, label: "Workers consume from the queue", points: 10 },
-      { kind: "edge", from: ["service", "worker"], to: ["sql", "nosql"], label: "Payment state is persisted durably", points: 10 },
-      { kind: "node", type: ["monitor"], label: "Observability on the money path", points: 5 },
-    ],
-    warnings: [
-      {
-        when: ({ hasEdge }) => hasEdge(["client"], ["psp"]),
-        text: "The client integrates the payment provider directly — API secrets belong on the server, and you lose the ability to record the attempt.",
-      },
-      {
-        when: ({ hasNode }) => !hasNode(["sql", "nosql"]),
-        text: "Nowhere durable to store payment state — reconciliation against the provider becomes impossible.",
-      },
-    ],
-  },
-  {
-    id: "catalog",
-    name: "🛍️ Read-heavy product catalog",
-    brief:
-      "Millions of reads, few writes. Serve product pages fast and cheap worldwide without melting the database.",
-    budget: 11,
-    checks: [
-      { kind: "node", type: ["client"], label: "A client browses the catalog", points: 5 },
-      { kind: "node", type: ["cdn"], label: "A CDN exists for static assets", points: 10 },
-      { kind: "edge", from: ["client"], to: ["cdn"], label: "Clients fetch static assets from the CDN", points: 10 },
-      { kind: "edge", from: ["client", "cdn"], to: ["lb", "gateway"], label: "API traffic is load-balanced", points: 10 },
-      { kind: "edge", from: ["lb", "gateway"], to: ["service"], label: "A stateless API tier serves catalog reads", points: 10 },
-      { kind: "node", type: ["cache"], label: "Hot reads come from a cache", points: 15 },
-      { kind: "edge", from: ["service"], to: ["cache"], label: "The service reads cache-aside", points: 15 },
-      { kind: "edge", from: ["service"], to: ["sql", "nosql"], label: "The source of truth lives in a database", points: 15 },
-      { kind: "node", type: ["monitor"], label: "Latency and error budgets are observable", points: 10 },
-    ],
-    warnings: [
-      {
-        when: ({ hasNode }) => !hasNode(["cdn"]),
-        text: "Every image and JS bundle ships from origin — a CDN is the cheapest win available here.",
-      },
-    ],
-  },
-  {
-    id: "flashsale",
-    name: "🎟️ Flash-sale ticket burst",
-    brief:
-      "Spiky traffic: 100× normal load for 10 minutes when sales open. Don't oversell inventory, don't fall over, and keep the queue of buyers fair.",
-    budget: 14,
-    checks: [
-      { kind: "node", type: ["client"], label: "A client tries to buy", points: 5 },
-      { kind: "edge", from: ["client"], to: ["lb", "gateway"], label: "Traffic enters through a load balancer or gateway", points: 10 },
-      { kind: "edge", from: ["lb", "gateway"], to: ["service"], label: "Stateless services absorb the burst horizontally", points: 10 },
-      { kind: "node", type: ["queue"], label: "A queue buffers purchase requests instead of dropping them", points: 15 },
-      { kind: "edge", from: ["service"], to: ["queue"], label: "The service enqueues purchases for ordered processing", points: 10 },
-      { kind: "edge", from: ["queue"], to: ["worker"], bidi: true, label: "Workers drain the queue at a sustainable rate", points: 10 },
-      { kind: "node", type: ["cache"], label: "Inventory counts served from a cache, not the DB", points: 10 },
-      { kind: "edge", from: ["service"], to: ["cache"], label: "The service checks availability against the cache", points: 10 },
-      { kind: "edge", from: ["worker", "service"], to: ["sql", "nosql"], label: "Orders are persisted durably", points: 10 },
-      { kind: "node", type: ["monitor"], label: "You can see the spike happening in real time", points: 10 },
-    ],
-    warnings: [
-      {
-        when: ({ hasNode, hasEdge }) => hasNode(["service"]) && hasEdge(["service"], ["sql", "nosql"]) && !hasNode(["queue"]),
-        text: "Synchronous writes straight to the database — at 100× load this is where it falls over. Buffer through a queue.",
-      },
-    ],
-  },
-];
+// The 100-scenario default library lives in scenarios.js; re-exported here so
+// both apps keep importing everything board-related from "@tech-refresh/core/arch".
+export { SCENARIOS, SCENARIO_CATEGORIES } from "./scenarios.js";
+
+/**
+ * Compiles a user-authored custom scenario's requirements into evaluator checks.
+ * Points are split evenly so every custom scenario scores out of the same scale.
+ * @param {string[]} requiredNodes - node types that must be on the board
+ * @param {{ from: string, to: string }[]} requiredEdges - connections that must exist
+ * @returns {Check[]}
+ */
+export function buildCustomChecks(requiredNodes, requiredEdges) {
+  /** @type {Check[]} */
+  const checks = [
+    ...requiredNodes.map((type) => ({
+      kind: "node",
+      type: [type],
+      label: `${meta(type).label} is part of the design`,
+    })),
+    ...requiredEdges.map(({ from, to }) => ({
+      kind: "edge",
+      from: [from],
+      to: [to],
+      label: `${meta(from).label} connects to ${meta(to).label}`,
+    })),
+  ];
+  const points = Math.max(1, Math.round(100 / Math.max(1, checks.length)));
+  return checks.map((check) => ({ ...check, points }));
+}
 
 /**
  * Scores a board against a scenario's checks, budget, and global design rules.

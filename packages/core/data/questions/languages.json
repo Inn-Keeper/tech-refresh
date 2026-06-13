@@ -1,0 +1,1082 @@
+[
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword declares a value that can't be reassigned?",
+    "options": ["const", "let", "var", "static"],
+    "correct": 0,
+    "explanation": "const creates a binding that can't be reassigned. (The object it points to can still be mutated.)"
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you annotate a variable as a number?",
+    "options": ["let count: number", "let count = number", "let count<number>", "number count"],
+    "correct": 0,
+    "explanation": "Type annotations follow the identifier after a colon: `let count: number`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What symbol marks an interface property as optional?",
+    "options": ["?", "!", "*", "~"],
+    "correct": 0,
+    "explanation": "A trailing `?` (e.g. `name?: string`) makes the property optional."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which type represents true/false values?",
+    "options": ["boolean", "bit", "bool", "binary"],
+    "correct": 0,
+    "explanation": "TypeScript's primitive for true/false is `boolean` (lowercase)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does the `any` type do?",
+    "options": ["Opts a value out of type checking entirely", "Restricts a value to primitives", "Forces a runtime type check", "Makes a value read-only"],
+    "correct": 0,
+    "explanation": "`any` disables type checking for that value — convenient but it forfeits safety."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `keyof T` evaluate to?",
+    "options": ["A union of T's property names", "An array of T's values", "The number of properties in T", "A copy of T with optional keys"],
+    "correct": 0,
+    "explanation": "`keyof T` produces the union of T's keys as string/number literal types."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is the key difference between `unknown` and `any`?",
+    "options": ["unknown requires a type check before use; any bypasses checking entirely", "any is only for primitives; unknown also works with objects", "unknown throws at runtime when misused; any fails silently", "any is deprecated; unknown replaces it"],
+    "correct": 0,
+    "explanation": "`unknown` is the type-safe counterpart of `any`: you must narrow it before using it."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the `readonly` modifier do on a property?",
+    "options": ["Prevents reassignment of the property after initialization", "Makes the property optional", "Hides the property from JSON output", "Freezes the entire object at runtime"],
+    "correct": 0,
+    "explanation": "`readonly` is a compile-time check that blocks reassignment; it has no runtime effect."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "Which capability is unique to `interface` (not `type`)?",
+    "options": ["Declaration merging across multiple declarations", "Aliasing a union type", "Aliasing a primitive like string", "Using mapped types"],
+    "correct": 0,
+    "explanation": "Interfaces with the same name merge their members; type aliases cannot be reopened."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `as const` do to an object literal?",
+    "options": ["Infers the narrowest literal types and makes it deeply readonly", "Converts it to a runtime constant", "Removes optional properties", "Casts it to any"],
+    "correct": 0,
+    "explanation": "`as const` narrows values to literals and marks every property readonly."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is `infer` used for in a conditional type?",
+    "options": ["Capturing a type from within the type being matched", "Forcing a value to a specific type", "Declaring a generic default", "Widening a literal to its base type"],
+    "correct": 0,
+    "explanation": "`infer R` introduces a type variable inside a conditional type, e.g. `T extends Array<infer R> ? R : never`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does the `satisfies` operator do?",
+    "options": ["Checks a value matches a type without widening its inferred type", "Asserts a value is a type at runtime", "Casts a value, bypassing checks", "Makes a type's properties optional"],
+    "correct": 0,
+    "explanation": "`satisfies` validates against a type while preserving the more specific inferred type of the value."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does a mapped type `{ [K in keyof T]: ... }` do?",
+    "options": ["Builds a new type by transforming each property of T", "Iterates T's values at runtime", "Returns the keys of T as an array", "Removes all properties from T"],
+    "correct": 0,
+    "explanation": "Mapped types project over each key of T to construct a new type (the basis of Partial, Readonly, etc.)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "In `T extends U ? X : Y`, what is being tested?",
+    "options": ["Whether T is assignable to U", "Whether T and U are identical", "Whether T inherits a class U", "Whether U is a subtype of T"],
+    "correct": 0,
+    "explanation": "Conditional types branch on assignability — is T assignable to U."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Why narrow `unknown` input rather than typing it `any`?",
+    "options": ["unknown keeps type safety by forcing a check before use", "unknown is faster at runtime", "any cannot be assigned to objects", "unknown auto-casts to the right type"],
+    "correct": 0,
+    "explanation": "`unknown` preserves safety: the compiler blocks use until you narrow, while `any` silently allows anything."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How do distributive conditional types behave over a union?",
+    "options": ["The condition is applied to each member of the union separately", "The union is treated as a single opaque type", "Only the first member is tested", "Distribution requires an explicit decorator"],
+    "correct": 0,
+    "explanation": "A naked type parameter in a conditional distributes over unions; wrapping in a tuple `[T] extends [U]` disables it."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does a `const` type parameter `<const T>` (TS 5.0) do?",
+    "options": ["Infers the narrowest literal type for the argument", "Makes the function pure", "Freezes the argument at runtime", "Requires the argument to be a constant"],
+    "correct": 0,
+    "explanation": "A `const` type parameter infers literal types as if the caller wrote `as const`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Which constructs support declaration merging?",
+    "options": ["Interfaces, namespaces, and enums", "Type aliases only", "Classes and type aliases", "Every type construct"],
+    "correct": 0,
+    "explanation": "Interfaces, namespaces, and enums can merge; type aliases cannot be redeclared."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is a variadic tuple type?",
+    "options": ["A tuple that includes a spread of another array/tuple type", "A tuple whose length is fixed at four", "A union of tuple types", "A tuple that can hold only one type"],
+    "correct": 0,
+    "explanation": "Variadic tuples use `...T` to compose tuples of arbitrary length, e.g. `[string, ...number[]]`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What commonly triggers \"Type instantiation is excessively deep and possibly infinite\"?",
+    "options": ["A recursive conditional/mapped type exceeding the depth limit", "Too many properties on an interface", "Using any in a generic", "Importing a circular module"],
+    "correct": 0,
+    "explanation": "Deeply recursive type-level computation hits TypeScript's instantiation depth guard."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword declares a block-scoped variable?",
+    "options": ["let", "var", "def", "scope"],
+    "correct": 0,
+    "explanation": "`let` (and `const`) are block-scoped; `var` is function-scoped."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does `typeof \"hello\"` return?",
+    "options": ["\"string\"", "\"text\"", "\"String\"", "\"char\""],
+    "correct": 0,
+    "explanation": "`typeof` returns the lowercase string `\"string\"` for string values."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which operator checks both value and type without coercion?",
+    "options": ["===", "==", "=", "=>"],
+    "correct": 0,
+    "explanation": "`===` is strict equality; `==` performs type coercion before comparing."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does `Array.prototype.push` do?",
+    "options": ["Adds one or more elements to the end of the array", "Removes the last element", "Adds an element to the front", "Returns a sorted copy"],
+    "correct": 0,
+    "explanation": "`push` appends to the end and returns the new length; `unshift` adds to the front."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you write a single-line comment?",
+    "options": ["// comment", "# comment", "<!-- comment -->", "-- comment"],
+    "correct": 0,
+    "explanation": "`//` starts a single-line comment; `/* */` wraps a block comment."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "In the event loop, which runs first after the current task?",
+    "options": ["Microtasks (Promise callbacks)", "Macrotasks (setTimeout)", "Whichever was scheduled first", "Render/paint callbacks"],
+    "correct": 0,
+    "explanation": "The microtask queue (Promises, queueMicrotask) fully drains before the next macrotask runs."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does a closure capture?",
+    "options": ["Variables from its enclosing lexical scope", "A deep copy of all globals", "Only the arguments passed to it", "The value of this at call time"],
+    "correct": 0,
+    "explanation": "A closure retains references to variables in the scope where it was defined."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `Array.prototype.map` return?",
+    "options": ["A new array of the same length with transformed elements", "The original array, mutated", "A single accumulated value", "The first matching element"],
+    "correct": 0,
+    "explanation": "`map` returns a new array; it does not mutate the source. `reduce` accumulates a single value."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What determines `this` inside an arrow function?",
+    "options": ["The this of the enclosing lexical scope", "The object the function is called on", "Always the global object", "The first argument passed"],
+    "correct": 0,
+    "explanation": "Arrow functions don't bind their own `this`; they inherit it from where they were defined."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "For `{ ...a, ...b }`, which value wins on a duplicate key?",
+    "options": ["The one from b (the later spread)", "The one from a (the earlier spread)", "It throws a duplicate-key error", "Both are kept as an array"],
+    "correct": 0,
+    "explanation": "Later spreads overwrite earlier ones, so b's value wins for shared keys."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How does `Promise.all` behave when one input rejects?",
+    "options": ["It rejects immediately with that error", "It waits for all, then rejects", "It resolves with the successful results", "It retries the rejected promise"],
+    "correct": 0,
+    "explanation": "`Promise.all` short-circuits: the first rejection rejects the whole thing. Use `allSettled` to wait for every outcome."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `Object.freeze` guarantee?",
+    "options": ["Top-level properties can't be added, removed, or changed", "The whole object tree becomes immutable", "The object can't be read", "The object is deep-cloned"],
+    "correct": 0,
+    "explanation": "`Object.freeze` is shallow — nested objects remain mutable unless frozen too."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is a generator function (`function*`) for?",
+    "options": ["Producing an iterator that can pause and resume with yield", "Running code on a background thread", "Generating random values", "Auto-creating class instances"],
+    "correct": 0,
+    "explanation": "Generators yield values lazily and suspend execution between `yield`s."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Difference between `Promise.all` and `Promise.allSettled`?",
+    "options": ["allSettled never rejects and reports each promise's status", "all is the async version of allSettled", "allSettled resolves only when all succeed", "all preserves order while allSettled doesn't"],
+    "correct": 0,
+    "explanation": "`allSettled` always resolves with an array of {status, value/reason}, regardless of rejections."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `Array.prototype.reduce` do?",
+    "options": ["Folds the array into a single accumulated value", "Filters out falsy elements", "Returns a reversed copy", "Splits the array in half"],
+    "correct": 0,
+    "explanation": "`reduce` applies a reducer across elements, carrying an accumulator to a final value."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is the temporal dead zone (TDZ)?",
+    "options": ["The span where a let/const binding exists but can't be accessed yet", "A region of unreachable code", "The delay before a setTimeout fires", "A garbage-collection pause"],
+    "correct": 0,
+    "explanation": "From scope entry until the let/const declaration runs, accessing the binding throws a ReferenceError."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does implementing `Symbol.iterator` enable?",
+    "options": ["The object becomes usable with for...of and spread", "The object is automatically frozen", "The object gains private fields", "The object is serialized to JSON"],
+    "correct": 0,
+    "explanation": "An object with a `[Symbol.iterator]()` method is iterable, so for...of and `...` work on it."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How do WeakMap keys differ from Map keys regarding memory?",
+    "options": ["WeakMap holds keys weakly, so they can be garbage-collected", "WeakMap keys are copied by value", "WeakMap keys must be strings", "WeakMap keeps keys alive forever"],
+    "correct": 0,
+    "explanation": "A WeakMap doesn't prevent its object keys from being collected, avoiding leaks; it isn't iterable for that reason."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What's the difference between `for...in` and `for...of`?",
+    "options": ["for...in iterates enumerable keys; for...of iterates iterable values", "They are identical", "for...of works only on arrays of numbers", "for...in is the async version"],
+    "correct": 0,
+    "explanation": "`for...in` walks enumerable property keys (including inherited ones); `for...of` walks values of an iterable."
+  },
+  {
+    "tech": "JavaScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "When you call a bound function (from `bind`) with `new`, what happens to `this`?",
+    "options": ["The bound this is ignored; this is the newly created instance", "It throws a TypeError", "this is the bound value", "this becomes undefined"],
+    "correct": 0,
+    "explanation": "`new` overrides a bound `this` (the new instance wins), though bound leading arguments are still applied."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword defines a function?",
+    "options": ["def", "func", "function", "fn"],
+    "correct": 0,
+    "explanation": "`def name(args):` defines a function in Python."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you start a single-line comment?",
+    "options": ["#", "//", "--", "/*"],
+    "correct": 0,
+    "explanation": "Python comments begin with `#`."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which built-in returns the number of items in a list?",
+    "options": ["len(x)", "x.length", "count(x)", "size(x)"],
+    "correct": 0,
+    "explanation": "`len()` returns the length of a sequence or collection."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does the literal `{}` create?",
+    "options": ["An empty dict", "An empty set", "An empty list", "An empty tuple"],
+    "correct": 0,
+    "explanation": "`{}` is an empty dict; an empty set needs `set()`."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword iterates over a sequence?",
+    "options": ["for", "loop", "foreach", "iterate"],
+    "correct": 0,
+    "explanation": "`for item in sequence:` iterates over an iterable."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does a list comprehension `[x for x in xs]` produce?",
+    "options": ["A new list", "A generator", "A tuple", "The original list mutated"],
+    "correct": 0,
+    "explanation": "A list comprehension builds a new list; use parentheses for a generator expression."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "How does a tuple differ from a list?",
+    "options": ["A tuple is immutable", "A tuple can only hold numbers", "A tuple is always sorted", "A tuple cannot be nested"],
+    "correct": 0,
+    "explanation": "Tuples are immutable; lists are mutable."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `*args` collect in a function signature?",
+    "options": ["Extra positional arguments into a tuple", "Keyword arguments into a dict", "A single list argument", "Nothing — it is a syntax error"],
+    "correct": 0,
+    "explanation": "`*args` gathers extra positional arguments; `**kwargs` gathers keyword arguments."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the `with` statement provide?",
+    "options": ["Context management with automatic cleanup", "A faster loop", "A type annotation", "Exception suppression"],
+    "correct": 0,
+    "explanation": "`with` uses a context manager to set up and tear down resources (e.g. closing files) reliably."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "How does `is` differ from `==`?",
+    "options": ["`is` compares identity; `==` compares value", "They are identical", "`is` compares value; `==` compares identity", "`is` only works on numbers"],
+    "correct": 0,
+    "explanation": "`is` checks whether two names point to the same object; `==` checks equality of value."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does the GIL (Global Interpreter Lock) enforce in CPython?",
+    "options": ["Only one thread executes Python bytecode at a time", "All threads run truly in parallel", "Memory is garbage-collected eagerly", "Functions are compiled to machine code"],
+    "correct": 0,
+    "explanation": "The GIL serializes bytecode execution, so CPU-bound threads don't run in parallel; use multiprocessing for that."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is a generator function?",
+    "options": ["A function using yield that produces values lazily", "A function that auto-generates random data", "A class factory", "A function that runs on another thread"],
+    "correct": 0,
+    "explanation": "Generators use `yield` to produce values one at a time, suspending state between calls."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does a decorator do?",
+    "options": ["Wraps a function and returns a new callable", "Adds type hints automatically", "Documents a function", "Caches all return values by default"],
+    "correct": 0,
+    "explanation": "A decorator takes a function and returns a (usually wrapped) function, applied with `@name`."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How does `@classmethod` differ from `@staticmethod`?",
+    "options": ["classmethod receives the class as cls; staticmethod receives no implicit arg", "staticmethod receives self; classmethod does not", "They are interchangeable", "classmethod cannot be called on the class"],
+    "correct": 0,
+    "explanation": "`classmethod` gets `cls`; `staticmethod` gets neither `self` nor `cls`."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does defining `__slots__` on a class do?",
+    "options": ["Restricts instance attributes and avoids a per-instance __dict__", "Makes the class abstract", "Enables multiple inheritance", "Auto-generates __init__"],
+    "correct": 0,
+    "explanation": "`__slots__` fixes the allowed attributes and saves memory by skipping the instance dict."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "When is a mutable default argument like `def f(x=[])` evaluated?",
+    "options": ["Once at definition time, shared across all calls", "Fresh on every call", "Never — it is a syntax error", "Only on the first call that omits it"],
+    "correct": 0,
+    "explanation": "Default values are evaluated once at def time; a shared mutable default is a classic bug — use None and create inside."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Which algorithm computes Python's method resolution order?",
+    "options": ["C3 linearization", "Depth-first left-to-right only", "Breadth-first search", "Alphabetical by class name"],
+    "correct": 0,
+    "explanation": "Python uses C3 linearization to produce a consistent MRO for multiple inheritance."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How does asyncio achieve concurrency?",
+    "options": ["A single-threaded event loop running coroutines cooperatively", "OS threads with preemptive scheduling", "Multiple processes", "Hardware interrupts"],
+    "correct": 0,
+    "explanation": "asyncio runs coroutines on one thread; they cooperatively yield control at `await` points."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does a metaclass control?",
+    "options": ["How classes themselves are created", "How instances are garbage-collected", "The import order of modules", "The size of integers"],
+    "correct": 0,
+    "explanation": "A metaclass is the class of a class; it customizes class creation (the default is `type`)."
+  },
+  {
+    "tech": "Python",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does `functools.lru_cache` do?",
+    "options": ["Memoizes results with a bounded least-recently-used cache", "Logs every function call", "Runs the function lazily", "Limits recursion depth"],
+    "correct": 0,
+    "explanation": "`lru_cache` caches return values keyed by arguments, evicting least-recently-used entries past maxsize."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword marks a variable that cannot be reassigned?",
+    "options": ["final", "const", "static", "readonly"],
+    "correct": 0,
+    "explanation": "`final` prevents reassignment of a variable in Java."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What is the standard entry-point method signature?",
+    "options": ["public static void main(String[] args)", "static int main()", "public void start()", "void main(args)"],
+    "correct": 0,
+    "explanation": "The JVM invokes `public static void main(String[] args)`."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which collection stores key-value pairs?",
+    "options": ["Map", "List", "Set", "Queue"],
+    "correct": 0,
+    "explanation": "`Map` (e.g. HashMap) stores key-to-value associations."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does JVM stand for?",
+    "options": ["Java Virtual Machine", "Java Variable Manager", "Just-in-time Virtual Memory", "Java Verified Module"],
+    "correct": 0,
+    "explanation": "The Java Virtual Machine executes compiled bytecode."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which primitive is a 32-bit signed integer?",
+    "options": ["int", "long", "short", "byte"],
+    "correct": 0,
+    "explanation": "`int` is 32 bits; `long` is 64, `short` is 16, `byte` is 8."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "For two object references, what does `==` compare?",
+    "options": ["Whether they point to the same object", "Their field values", "Their hash codes", "Their string forms"],
+    "correct": 0,
+    "explanation": "`==` compares references for objects; use `.equals()` for value equality."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is autoboxing?",
+    "options": ["Automatic conversion between primitives and their wrapper types", "Wrapping exceptions in a try block", "Boxing a class into a module", "Compressing class files"],
+    "correct": 0,
+    "explanation": "Autoboxing converts e.g. `int` ↔ `Integer` automatically."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "How do checked and unchecked exceptions differ?",
+    "options": ["Checked must be declared or caught; unchecked (RuntimeException) need not", "Unchecked must always be caught", "Checked exceptions are faster", "There is no difference"],
+    "correct": 0,
+    "explanation": "Checked exceptions are enforced at compile time; unchecked extend RuntimeException and aren't enforced."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `final` on a class declaration mean?",
+    "options": ["The class cannot be subclassed", "The class cannot be instantiated", "All methods are static", "The class is immutable automatically"],
+    "correct": 0,
+    "explanation": "A `final` class cannot be extended (e.g. `String`)."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is the main purpose of generics?",
+    "options": ["Compile-time type safety for collections", "Faster runtime performance", "Automatic memory management", "Dynamic typing"],
+    "correct": 0,
+    "explanation": "Generics let the compiler enforce element types; the type info is erased at runtime."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is type erasure?",
+    "options": ["Generic type information is removed at compile time", "Garbage collection of unused types", "Stripping comments from bytecode", "Removing unused imports"],
+    "correct": 0,
+    "explanation": "Generics are erased to their bounds at compile time, so types like `List<String>` aren't available at runtime."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How does ConcurrentHashMap differ from HashMap?",
+    "options": ["It is thread-safe with fine-grained locking", "It preserves insertion order", "It allows null keys", "It is always faster single-threaded"],
+    "correct": 0,
+    "explanation": "ConcurrentHashMap supports concurrent access without locking the whole map; HashMap is not thread-safe."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does the `volatile` keyword guarantee?",
+    "options": ["Visibility of writes across threads, but not atomicity", "Atomic compound operations", "Thread-exclusive access", "Persistence to disk"],
+    "correct": 0,
+    "explanation": "`volatile` ensures reads/writes go to main memory (visibility) but doesn't make `i++` atomic."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Which is mutable and synchronized?",
+    "options": ["StringBuffer", "String", "StringBuilder", "CharSequence"],
+    "correct": 0,
+    "explanation": "String is immutable; StringBuilder is mutable but not synchronized; StringBuffer is mutable and synchronized."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What partitioning does the HotSpot garbage collector use?",
+    "options": ["Generational heap (young and old generations)", "A single flat heap", "Reference counting", "Stack-only allocation"],
+    "correct": 0,
+    "explanation": "Generational GC separates short-lived (young) from long-lived (old) objects to collect efficiently."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does the happens-before relationship define?",
+    "options": ["Memory visibility and ordering guarantees in the Java Memory Model", "Method call order within a class", "Thread priority scheduling", "Class loading order"],
+    "correct": 0,
+    "explanation": "Happens-before establishes when one thread's writes are guaranteed visible to another."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How do Comparable and Comparator differ?",
+    "options": ["Comparable defines natural ordering via compareTo; Comparator is external/custom", "They are identical interfaces", "Comparator must be implemented by the element class", "Comparable sorts in reverse only"],
+    "correct": 0,
+    "explanation": "A class implements Comparable for its natural order; a Comparator provides an alternate ordering externally."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What do `record` types (Java 16+) provide?",
+    "options": ["Concise immutable data carriers with generated equals/hashCode/toString", "Mutable structs", "Thread-safe singletons", "Reflection-free serialization"],
+    "correct": 0,
+    "explanation": "Records auto-generate the canonical constructor, accessors, equals, hashCode, and toString for immutable data."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How does `synchronized` achieve mutual exclusion?",
+    "options": ["By acquiring the object's intrinsic monitor lock", "By disabling the scheduler", "By copying the object per thread", "By spinning on a volatile flag"],
+    "correct": 0,
+    "explanation": "Entering a synchronized block/method acquires the monitor of the lock object, blocking other threads."
+  },
+  {
+    "tech": "Java",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is escape analysis?",
+    "options": ["A JIT optimization that may stack-allocate objects that don't escape a method", "A way to handle escaped characters", "A security sandbox", "A thread-escape detector for deadlocks"],
+    "correct": 0,
+    "explanation": "If the JIT proves an object doesn't escape, it can allocate it on the stack or eliminate it, reducing GC pressure."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do all PHP variables begin?",
+    "options": ["With a $ sign", "With @", "With #", "With a type keyword"],
+    "correct": 0,
+    "explanation": "PHP variables are written as `$name`."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which operator concatenates two strings?",
+    "options": [".", "+", "&", "++"],
+    "correct": 0,
+    "explanation": "PHP uses `.` for string concatenation; `+` is numeric addition."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which tag opens a PHP code block?",
+    "options": ["<?php", "<php>", "{php}", "<%"],
+    "correct": 0,
+    "explanation": "PHP code starts with `<?php`."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which construct outputs text?",
+    "options": ["echo", "print_r only", "console.log", "write"],
+    "correct": 0,
+    "explanation": "`echo` (and `print`) output text to the response."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which superglobal holds URL query parameters?",
+    "options": ["$_GET", "$_POST", "$_QUERY", "$_PARAMS"],
+    "correct": 0,
+    "explanation": "`$_GET` contains query-string parameters; `$_POST` holds form body data."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "How does `===` differ from `==`?",
+    "options": ["`===` also compares type, with no juggling", "`===` ignores type", "`===` only works on numbers", "They are identical"],
+    "correct": 0,
+    "explanation": "`===` is identical comparison (value and type); `==` performs type juggling."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is an associative array?",
+    "options": ["An array mapping arbitrary keys to values", "A read-only array", "An array of objects only", "A multi-dimensional array"],
+    "correct": 0,
+    "explanation": "PHP arrays are ordered maps; associative arrays use string/int keys mapping to values."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the `=>` operator do in an array literal?",
+    "options": ["Maps a key to a value", "Defines an arrow function only", "Compares two values", "Returns from a function"],
+    "correct": 0,
+    "explanation": "`'key' => 'value'` associates a key with a value in array syntax."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the `->` operator access?",
+    "options": ["An object's property or method", "A static member", "An array element", "A namespace"],
+    "correct": 0,
+    "explanation": "`$obj->prop` / `$obj->method()` accesses instance members; `::` accesses static members."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the null coalescing operator `??` return?",
+    "options": ["The left operand if it is set and not null, else the right", "Always the right operand", "True if both are null", "The first falsy value"],
+    "correct": 0,
+    "explanation": "`$a ?? $b` yields `$a` when it exists and isn't null, otherwise `$b` — without a notice for undefined keys."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `declare(strict_types=1)` do?",
+    "options": ["Enforces strict scalar type checks in that file", "Enables strict comparison globally", "Disables type juggling everywhere", "Turns on error reporting"],
+    "correct": 0,
+    "explanation": "With strict types, scalar type declarations reject coercion and require exact types in that file."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is a trait?",
+    "options": ["A reusable set of methods composed horizontally into classes", "An interface with constants", "A private class", "A namespace alias"],
+    "correct": 0,
+    "explanation": "Traits enable code reuse across unrelated classes without inheritance."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How do `require` and `include` differ on failure?",
+    "options": ["`require` raises a fatal error; `include` only warns", "`include` is fatal; `require` warns", "Both silently continue", "Both stop the script"],
+    "correct": 0,
+    "explanation": "A failed `require` halts execution; a failed `include` emits a warning and continues."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does the PSR-4 standard define?",
+    "options": ["Autoloading by mapping namespaces to file paths", "A coding style guide", "An HTTP message interface", "A logging interface"],
+    "correct": 0,
+    "explanation": "PSR-4 specifies how fully-qualified class names map to file paths for autoloading (used by Composer)."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `array_map` return?",
+    "options": ["A new array with the callback applied to each element", "The original array, mutated", "A single reduced value", "A boolean"],
+    "correct": 0,
+    "explanation": "`array_map` returns a new array of transformed elements without modifying the source."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How are objects passed to functions in PHP?",
+    "options": ["By handle — the same object is referenced, not deep-copied", "Always deep-copied by value", "Always by reference variable", "As serialized strings"],
+    "correct": 0,
+    "explanation": "PHP passes an object handle by value, so the callee operates on the same underlying object (not a clone)."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does a Generator (using `yield`) enable?",
+    "options": ["Lazy iteration without building the whole array in memory", "Parallel execution", "Compile-time evaluation", "Automatic caching"],
+    "correct": 0,
+    "explanation": "Generators produce values on demand, ideal for large or infinite sequences."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does the `__invoke` magic method allow?",
+    "options": ["Calling an object instance as if it were a function", "Cloning an object", "Serializing an object", "Comparing two objects"],
+    "correct": 0,
+    "explanation": "Defining `__invoke()` makes instances callable: `$obj(...)`."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What do Fibers (PHP 8.1) provide?",
+    "options": ["Interruptible full-stack functions for cooperative multitasking", "OS-level threads", "A new array type", "Compile-time templates"],
+    "correct": 0,
+    "explanation": "Fibers let code suspend and resume an entire call stack, underpinning async runtimes."
+  },
+  {
+    "tech": "PHP",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does OPcache do?",
+    "options": ["Caches precompiled script bytecode to skip recompilation", "Caches HTTP responses", "Stores session data", "Minifies output"],
+    "correct": 0,
+    "explanation": "OPcache stores compiled opcodes in shared memory, avoiding recompiling PHP on every request."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which operator accesses a member through a pointer?",
+    "options": ["->", ".", "::", "*"],
+    "correct": 0,
+    "explanation": "`ptr->member` dereferences and accesses; `.` is for objects/references."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does `std::cout` do?",
+    "options": ["Writes to standard output", "Reads from standard input", "Allocates memory", "Throws an exception"],
+    "correct": 0,
+    "explanation": "`std::cout` is the standard output stream, used with `<<`."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which header provides `std::vector`?",
+    "options": ["<vector>", "<array>", "<list>", "<string>"],
+    "correct": 0,
+    "explanation": "`std::vector` lives in the `<vector>` header."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword declares a compile-time-unchangeable value?",
+    "options": ["const", "final", "let", "readonly"],
+    "correct": 0,
+    "explanation": "`const` declares a value that can't be modified after initialization."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does `#include` do?",
+    "options": ["Textually inserts the contents of a header", "Links a library at runtime", "Imports a module namespace", "Declares a macro"],
+    "correct": 0,
+    "explanation": "The preprocessor replaces `#include` with the named file's contents before compilation."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is RAII?",
+    "options": ["Tying resource lifetime to object lifetime", "A reference-counting allocator", "A runtime assertion macro", "A threading model"],
+    "correct": 0,
+    "explanation": "Resource Acquisition Is Initialization: acquire in the constructor, release in the destructor, so cleanup is automatic."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "How does a reference differ from a pointer?",
+    "options": ["A reference can't be null or reseated after binding", "A reference can point anywhere", "A reference takes more memory", "A pointer can't be reassigned"],
+    "correct": 0,
+    "explanation": "References must bind to an object at initialization and can't be rebound; pointers can be null and reassigned."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What ownership does `std::unique_ptr` express?",
+    "options": ["Exclusive ownership of a heap resource", "Shared ownership", "No ownership (just a view)", "Weak ownership"],
+    "correct": 0,
+    "explanation": "`unique_ptr` is move-only and owns its resource exclusively, freeing it on destruction."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does a trailing `const` on a member function mean?",
+    "options": ["The method won't modify the object's observable state", "The return value is const", "The method is static", "The method can't be overridden"],
+    "correct": 0,
+    "explanation": "`void f() const;` promises not to modify the object, so it's callable on const instances."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "How do stack and heap allocation differ?",
+    "options": ["Stack is automatic/scoped; heap is manual/dynamic", "Heap is always faster", "Stack objects never have destructors", "Heap memory frees itself automatically"],
+    "correct": 0,
+    "explanation": "Stack objects are freed when scope ends; heap memory (new/delete or smart pointers) is managed explicitly."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What do move semantics enable?",
+    "options": ["Transferring resources from an rvalue to avoid copies", "Sharing memory between threads", "Garbage collection", "Implicit type conversion"],
+    "correct": 0,
+    "explanation": "Move constructors/assignment steal an expiring object's resources (via `std::move`) instead of copying."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is the rule of five about?",
+    "options": ["If you define one of the five special members, you likely need all five", "Five levels of inheritance max", "Five-argument constructors", "Five-byte alignment"],
+    "correct": 0,
+    "explanation": "The destructor, copy/move constructors, and copy/move assignment usually need to be defined together for correct resource handling."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Why declare a base class destructor `virtual`?",
+    "options": ["So deleting through a base pointer destroys the derived object correctly", "To allow copying", "To make the class abstract", "To enable templates"],
+    "correct": 0,
+    "explanation": "Without a virtual destructor, `delete basePtr` on a derived object is undefined behavior."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How do `std::vector` and `std::list` differ structurally?",
+    "options": ["vector is contiguous (random access); list is node-based (fast splice)", "Both are contiguous", "list supports random access in O(1)", "vector cannot grow"],
+    "correct": 0,
+    "explanation": "vector stores elements contiguously for O(1) indexing; list is a doubly-linked list with O(1) splice but no random access."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How does `std::shared_ptr` track lifetime?",
+    "options": ["Reference counting via a control block", "A garbage collector", "Stack scoping", "A global registry of pointers"],
+    "correct": 0,
+    "explanation": "shared_ptr keeps a reference count; the resource is freed when the count reaches zero."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What breaks a reference cycle between two `shared_ptr`s?",
+    "options": ["Using std::weak_ptr for one side", "Calling delete manually", "Resetting both at once", "Nothing — cycles free automatically"],
+    "correct": 0,
+    "explanation": "shared_ptr cycles leak because counts never hit zero; weak_ptr observes without owning, breaking the cycle."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does `constexpr` enable?",
+    "options": ["Evaluation at compile time", "Lazy runtime evaluation", "Thread-local storage", "Implicit narrowing"],
+    "correct": 0,
+    "explanation": "`constexpr` allows values/functions to be evaluated during compilation when given constant inputs."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is undefined behavior?",
+    "options": ["A program construct for which the standard imposes no requirements", "A compiler warning", "A caught exception", "A deprecated feature"],
+    "correct": 0,
+    "explanation": "UB (e.g. signed overflow, out-of-bounds access) means the standard guarantees nothing — the compiler may do anything."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does SFINAE stand for?",
+    "options": ["Substitution Failure Is Not An Error", "Static Function Inlining And Naming Extension", "Safe Function Invocation And Error", "StandardForm Integer Numeric Expression"],
+    "correct": 0,
+    "explanation": "When template argument substitution fails, that candidate is removed from overload resolution rather than causing a hard error."
+  },
+  {
+    "tech": "C++",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How do `std::map` and `std::unordered_map` differ?",
+    "options": ["map is an ordered balanced tree (O(log n)); unordered_map is a hash table (avg O(1))", "Both are hash tables", "unordered_map keeps keys sorted", "map has O(1) lookup"],
+    "correct": 0,
+    "explanation": "map keeps keys sorted via a balanced BST; unordered_map hashes keys for average constant-time access, unordered."
+  }
+]

@@ -5,23 +5,23 @@ import { colors, tints } from "@tech-refresh/core/tokens";
 const percent = (value) => Math.round(value * 100);
 
 // Web twin of the mobile funnel dashboard: same buildFunnelSummary input.
-export function FunnelDashboard({ summary }) {
+export function FunnelDashboard({ summary, compact = false }) {
   return (
     <div
       style={{
         background: colors.surface,
         border: `1px solid ${colors.border}`,
-        borderRadius: 12,
-        padding: "16px 18px",
-        marginBottom: 16,
+        borderRadius: compact ? 8 : 12,
+        padding: compact ? 14 : "16px 18px",
+        marginBottom: compact ? 0 : 16,
         display: "flex",
         flexDirection: "column",
-        gap: 14,
+        gap: compact ? 12 : 14,
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, color: colors.textBright }}>{t("funnel.title")}</div>
+          <div style={{ fontSize: compact ? 13 : 15, fontWeight: 700, color: colors.textBright }}>{t("funnel.title")}</div>
           <div style={{ fontSize: 11, color: colors.textFaint }}>{t("funnel.subtitle")}</div>
         </div>
         <span
@@ -38,7 +38,7 @@ export function FunnelDashboard({ summary }) {
         </span>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(3, 1fr)", gap: compact ? 8 : 10 }}>
         <Metric label={t("funnel.appsPerWeek")} value={summary.applicationsPerWeek} color={colors.success} />
         <Metric label={t("funnel.interviews")} value={summary.reached.Interviewing} color={colors.warning} />
         <Metric label={t("funnel.offers")} value={summary.reached.Offer} color={STATUS_STYLES.Offer.color} />

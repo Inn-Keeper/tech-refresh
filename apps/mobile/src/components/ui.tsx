@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, font, radius, space, tints } from "@/theme";
+import { BrandIcon, type BrandIconName } from "@/components/BrandIcon";
 
 /**
  * Tab screen root: app background + safe-area insets (native tabs render no
@@ -37,14 +38,17 @@ export const inputStyle = {
 
 export const multilineStyle = { minHeight: 70, textAlignVertical: "top" } as const;
 
-type PillProps = { label: string; active: boolean; activeColor?: string; onPress: () => void };
+type PillProps = { label: string; active: boolean; activeColor?: string; icon?: BrandIconName; onPress: () => void };
 
 /** Selectable chip — category filters, mode toggles, competency/status pickers. */
-export function Pill({ label, active, activeColor = colors.accent, onPress }: PillProps) {
+export function Pill({ label, active, activeColor = colors.accent, icon, onPress }: PillProps) {
   return (
     <TouchableOpacity
       onPress={onPress}
       style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: space.xs,
         paddingHorizontal: space.md,
         paddingVertical: 7,
         borderRadius: radius.sm,
@@ -53,15 +57,16 @@ export function Pill({ label, active, activeColor = colors.accent, onPress }: Pi
         borderColor: active ? activeColor : colors.border,
       }}
     >
+      {icon && <BrandIcon name={icon} color={active ? colors.onAccent : colors.textDim} size={14} />}
       <Text style={{ fontSize: font.size.body, fontWeight: "600", color: active ? colors.onAccent : colors.textDim }}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
-type HeaderActionProps = { label: string; onPress: () => void; tone?: "accent" | "muted" | "danger"; disabled?: boolean };
+type HeaderActionProps = { label: string; onPress: () => void; icon?: BrandIconName; tone?: "accent" | "muted" | "danger"; disabled?: boolean };
 
 /** Compact action for a screen header right slot. */
-export function HeaderAction({ label, onPress, tone = "accent", disabled = false }: HeaderActionProps) {
+export function HeaderAction({ label, onPress, icon, tone = "accent", disabled = false }: HeaderActionProps) {
   const color = tone === "danger" ? colors.dangerBright : tone === "muted" ? colors.textDim : colors.accentBright;
   const borderColor = tone === "danger" ? `${colors.danger}50` : tone === "muted" ? colors.border : `${colors.accent}50`;
 
@@ -70,6 +75,9 @@ export function HeaderAction({ label, onPress, tone = "accent", disabled = false
       onPress={onPress}
       disabled={disabled}
       style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: space.xs,
         paddingHorizontal: space.md,
         paddingVertical: 7,
         borderRadius: radius.sm,
@@ -79,6 +87,7 @@ export function HeaderAction({ label, onPress, tone = "accent", disabled = false
         opacity: disabled ? 0.5 : 1,
       }}
     >
+      {icon && <BrandIcon name={icon} color={color} size={14} />}
       <Text style={{ color, fontSize: font.size.small, fontWeight: "700" }}>{label}</Text>
     </TouchableOpacity>
   );
@@ -116,7 +125,7 @@ export function ScreenHeader({ title, subtitle, right, children }: ScreenHeaderP
   );
 }
 
-type SegmentedOption = { key: string | number; label: string; color?: string };
+type SegmentedOption = { key: string | number; label: string; color?: string; icon?: BrandIconName };
 type SegmentedPillsProps = { options: SegmentedOption[]; activeKey: string | number; onChange: (key: string | number) => void };
 
 /** Horizontal segmented selector housed by ScreenHeader or form fields. */
@@ -127,6 +136,7 @@ export function SegmentedPills({ options, activeKey, onChange }: SegmentedPillsP
         <Pill
           key={String(option.key)}
           label={option.label}
+          icon={option.icon}
           active={option.key === activeKey}
           activeColor={option.color}
           onPress={() => onChange(option.key)}

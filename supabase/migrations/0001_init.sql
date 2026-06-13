@@ -1,4 +1,4 @@
--- tech-refresh schema v1: single-user job-hunt toolkit.
+-- Grip schema v1: single-user job-hunt toolkit.
 -- Every table is RLS-protected: rows belong to auth.uid().
 
 -- ── profiles: one row per user, holds accumulated XP ─────────────────────────

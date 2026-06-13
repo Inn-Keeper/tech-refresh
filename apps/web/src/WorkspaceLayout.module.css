@@ -1,0 +1,54 @@
+.shell {
+  min-height: calc(100vh - var(--app-header-height));
+  width: 100%;
+  display: grid;
+  grid-template-columns:
+    minmax(var(--workspace-rail-min), var(--workspace-left-rail-max))
+    minmax(0, 1fr)
+    minmax(var(--workspace-right-rail-min), var(--workspace-right-rail-max));
+  gap: var(--workspace-gap);
+  padding: var(--workspace-padding);
+  box-sizing: border-box;
+}
+
+.rail {
+  position: sticky;
+  top: var(--workspace-top);
+  align-self: start;
+  max-height: calc(100vh - var(--workspace-top) - var(--workspace-bottom-inset));
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.main {
+  min-width: 0;
+}
+
+@media (max-width: 1180px) {
+  .shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "main"
+      "left"
+      "right";
+  }
+
+  .leftRail {
+    grid-area: left;
+  }
+
+  .main {
+    grid-area: main;
+  }
+
+  .rightRail {
+    grid-area: right;
+  }
+
+  .rail {
+    position: static;
+    max-height: none;
+  }
+}

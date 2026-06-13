@@ -2,6 +2,7 @@
 // UI keeps DD-MM-YYYY strings; Postgres stores real dates.
 import { buildAccuracyTimeline } from "./accuracy.js";
 import { CORRECT_XP } from "./gamification.js";
+import { difficultyByKey } from "./difficulty.js";
 
 /**
  * @typedef {object} Retro
@@ -64,6 +65,25 @@ import { CORRECT_XP } from "./gamification.js";
  */
 
 /**
+ * @typedef {object} User
+ * @property {string} id
+ * @property {string} displayName
+ * @property {string} email
+ * @property {string} avatarUrl
+ * @property {string} headline
+ * @property {string} targetRole
+ * @property {string} location
+ * @property {string} portfolioUrl
+ * @property {string} githubUrl
+ * @property {string} linkedinUrl
+ * @property {string} timezone
+ * @property {boolean} onboardingCompleted
+ * @property {number} xp
+ * @property {string | null} createdAt
+ * @property {string | null} updatedAt
+ */
+
+/**
  * @typedef {object} SupabaseClient
  * @property {(table: string) => object} from
  * Minimal Supabase client interface for type safety
@@ -93,12 +113,19 @@ const fail = (error) => {
  *   deleteStory(id: string | undefined): Promise<void>,
  *   getScores(): Promise<Scores>,
  *   getAccuracyTimeline(): Promise<AccuracyPoint[]>,
- *   recordAnswer(tech: string, correct: boolean, source?: string): Promise<void>,
+ *   getQuestions(args: { techs: string[], difficulty: string, limit?: number }): Promise<{ id: string, tech: string, category: string, difficulty: string, prompt: string, options: string[], correct: number, explanation: string | null }[]>,
+ *   recordAnswer(tech: string, correct: boolean, source?: string, difficulty?: string | null): Promise<void>,
  *   addXp(points: number): Promise<void>,
+ *   resetScores(): Promise<Scores>,
  *   listBoards(): Promise<SavedBoard[]>,
  *   upsertBoard(board: SavedBoard): Promise<SavedBoard>,
  *   deleteBoard(id: string | undefined): Promise<void>,
+ *   listCustomScenarios(): Promise<{ id: string, name: string, brief: string, budget: number, checks: object[] }[]>,
+ *   upsertCustomScenario(s: object): Promise<object>,
+ *   deleteCustomScenario(id: string): Promise<void>,
  *   listStatusEvents(): Promise<{ contactId: string, status: string, createdAt: string }[]>,
+ *   getUser(): Promise<User | null>,
+ *   updateProfile(profile: Partial<User>): Promise<User>
  * }}
  */
 export function createApi(supabase) {
@@ -257,6 +284,44 @@ export function createApi(supabase) {
     if (error) fail(error);
   }
 
+  // ── custom scenarios ──────────────────────────────────────────────────────────
+
+  const scenarioToUi = (r) => ({
+    id: r.id,
+    name: r.name,
+    brief: r.brief ?? "",
+    budget: r.budget,
+    checks: r.checks ?? [],
+  });
+
+  const scenarioToDb = (s) => ({
+    name: s.name,
+    brief: s.brief ?? "",
+    budget: s.budget,
+    checks: s.checks ?? [],
+  });
+
+  async function listCustomScenarios() {
+    const { data, error } = await supabase.from("custom_scenarios").select("*").order("created_at");
+    if (error) fail(error);
+    return data.map(scenarioToUi);
+  }
+
+  async function upsertCustomScenario(s) {
+    const row = scenarioToDb(s);
+    const q = s.id
+      ? supabase.from("custom_scenarios").update(row).eq("id", s.id)
+      : supabase.from("custom_scenarios").insert(row);
+    const { data, error } = await q.select("*").single();
+    if (error) fail(error);
+    return scenarioToUi(data);
+  }
+
+  async function deleteCustomScenario(id) {
+    const { error } = await supabase.from("custom_scenarios").delete().eq("id", id);
+    if (error) fail(error);
+  }
+
   /** @returns {Promise<{ contactId: string, status: string, createdAt: string }[]>} */
   async function listStatusEvents() {
     const { data, error } = await supabase
@@ -295,12 +360,34 @@ export function createApi(supabase) {
     return buildAccuracyTimeline(data);
   }
 
-  async function recordAnswer(tech, correct, source = "card") {
-    const { error } = await supabase.from("answer_events").insert({ tech, correct, source });
+  /**
+   * Fetches tiered quiz questions for the given techs at one difficulty.
+   * @param {{ techs: string[], difficulty: string, limit?: number }} args
+   * @returns {Promise<{ id: string, tech: string, category: string, difficulty: string, prompt: string, options: string[], correct: number, explanation: string | null }[]>}
+   */
+  async function getQuestions({ techs, difficulty, limit = 10 }) {
+    if (!techs?.length) return [];
+    const { data, error } = await supabase
+      .from("questions")
+      .select("id, tech, category, difficulty, prompt, options, correct, explanation")
+      .in("tech", techs)
+      .eq("difficulty", difficulty)
+      .limit(limit);
+    if (error) fail(error);
+    return data;
+  }
+
+  // `difficulty` is optional: tiered drills pass a tier (scaled XP), while the
+  // flip cards omit it and fall back to the flat CORRECT_XP reward.
+  async function recordAnswer(tech, correct, source = "card", difficulty = null) {
+    const { error } = await supabase
+      .from("answer_events")
+      .insert({ tech, correct, source, difficulty });
     if (error) fail(error);
     if (correct) {
+      const points = difficultyByKey(difficulty)?.xp ?? CORRECT_XP;
       try {
-        await addXp(CORRECT_XP);
+        await addXp(points);
       } catch (err) {
         console.error("Failed to award XP after recording answer:", err);
         throw err;
@@ -313,5 +400,89 @@ export function createApi(supabase) {
     if (error) fail(error);
   }
 
-  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, listStatusEvents, getScores, getAccuracyTimeline, recordAnswer, addXp };
+  async function resetScores() {
+    const auth = await supabase.auth.getUser();
+    if (auth.error) fail(auth.error);
+    if (!auth.data.user) throw new Error("No signed-in user.");
+
+    const answers = await supabase.from("answer_events").delete().eq("user_id", auth.data.user.id);
+    if (answers.error) fail(answers.error);
+
+    const profile = await supabase
+      .from("profiles")
+      .upsert({ user_id: auth.data.user.id, email: auth.data.user.email, xp: 0 });
+    if (profile.error) fail(profile.error);
+
+    return { xp: 0, answers: {} };
+  }
+
+  const profileToUi = (row, authUser = null) => ({
+    id: row?.user_id ?? authUser?.id ?? "",
+    displayName:
+      row?.display_name ??
+      authUser?.user_metadata?.display_name ??
+      authUser?.user_metadata?.full_name ??
+      authUser?.user_metadata?.name ??
+      "",
+    email: authUser?.email ?? row?.email ?? "",
+    avatarUrl: row?.avatar_url ?? authUser?.user_metadata?.avatar_url ?? "",
+    headline: row?.headline ?? "",
+    targetRole: row?.target_role ?? "",
+    location: row?.location ?? "",
+    portfolioUrl: row?.portfolio_url ?? "",
+    githubUrl: row?.github_url ?? "",
+    linkedinUrl: row?.linkedin_url ?? "",
+    timezone: row?.timezone ?? "",
+    onboardingCompleted: row?.onboarding_completed ?? false,
+    xp: row?.xp ?? 0,
+    createdAt: row?.created_at ?? null,
+    updatedAt: row?.updated_at ?? null,
+  });
+
+  const profileToDb = (profile) => {
+    const row = {};
+    const textFields = [
+      ["displayName", "display_name"],
+      ["avatarUrl", "avatar_url"],
+      ["headline", "headline"],
+      ["targetRole", "target_role"],
+      ["location", "location"],
+      ["portfolioUrl", "portfolio_url"],
+      ["githubUrl", "github_url"],
+      ["linkedinUrl", "linkedin_url"],
+      ["timezone", "timezone"],
+    ];
+    for (const [uiKey, dbKey] of textFields) {
+      if (uiKey in profile) row[dbKey] = profile[uiKey]?.trim() || null;
+    }
+    if ("onboardingCompleted" in profile) row.onboarding_completed = profile.onboardingCompleted ?? false;
+    return row;
+  };
+
+  async function getUser() {
+    const auth = await supabase.auth.getUser();
+    if (auth.error) fail(auth.error);
+    if (!auth.data.user) return null;
+
+    const profile = await supabase.from("profiles").select("*").maybeSingle();
+    if (profile.error) fail(profile.error);
+    return profileToUi(profile.data, auth.data.user);
+  }
+
+  async function updateProfile(profile) {
+    const auth = await supabase.auth.getUser();
+    if (auth.error) fail(auth.error);
+    if (!auth.data.user) throw new Error("No signed-in user.");
+
+    const row = {
+      user_id: auth.data.user.id,
+      email: auth.data.user.email,
+      ...profileToDb(profile),
+    };
+    const { data, error } = await supabase.from("profiles").upsert(row).select("*").single();
+    if (error) fail(error);
+    return profileToUi(data, auth.data.user);
+  }
+
+  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, listCustomScenarios, upsertCustomScenario, deleteCustomScenario, listStatusEvents, getScores, getAccuracyTimeline, getQuestions, recordAnswer, addXp, resetScores, getUser, updateProfile };
 }

@@ -4,6 +4,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-na
 import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@/theme";
+import { BrandIcon } from "@/components/BrandIcon";
 import type { Scores } from "@/lib/useScores";
 
 type Props = { scores: Scores; onDrill: () => void; drillActive: boolean };
@@ -38,7 +39,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <Text style={{ fontSize: 14, fontWeight: "700", color: colors.textBright }}>🏆 {rank.name}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><BrandIcon name="rank" color={colors.accentBright} size={16} /><Text style={{ fontSize: 14, fontWeight: "700", color: colors.textBright }}>{rank.name}</Text></View>
         <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{scores.xp} XP</Text>
         {accuracy !== null && (
           <Text style={{ fontSize: 12, fontWeight: "600", color: accuracy >= 70 ? colors.success : colors.warning }}>
@@ -59,7 +60,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
             opacity: drillActive ? 0.5 : 1,
           }}
         >
-          <Text style={{ fontSize: 11, fontWeight: "600", color: colors.accentBright }}>{t("prep.drillWeakest")}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><BrandIcon name="drill" color={colors.accentBright} size={13} /><Text style={{ fontSize: 11, fontWeight: "600", color: colors.accentBright }}>{t("prep.drillWeakest")}</Text></View>
         </TouchableOpacity>
       </View>
 

@@ -2,6 +2,7 @@ import { Linking, Text, TouchableOpacity, View } from "react-native";
 import { techLinks } from "@tech-refresh/core/techLinks";
 import { CORRECT_XP } from "@tech-refresh/core/gamification";
 import { colors, tints } from "@/theme";
+import { BrandIcon } from "@/components/BrandIcon";
 
 type Question = { question: string; options: string[]; correct: number };
 
@@ -93,7 +94,7 @@ export function QuizView({ tech, color, question, questionNumber, total, answere
               borderRadius: 8,
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: "600", color }}>{isLast ? "Done ✓" : "Next →"}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Text style={{ fontSize: 12, fontWeight: "600", color }}>{isLast ? "Done" : "Next"}</Text><BrandIcon name={isLast ? "check" : "arrowRight"} color={color} size={12} /></View>
           </TouchableOpacity>
         </View>
       )}

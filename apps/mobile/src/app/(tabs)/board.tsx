@@ -11,6 +11,7 @@ import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import type { SavedBoard } from "@tech-refresh/core/api";
 import { colors } from "@/theme";
 import { Button, MiniButton, Screen, ScreenHeader, SegmentedPills } from "@/components/ui";
+import { BrandIcon, nodeIconName } from "@/components/BrandIcon";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
 import { ResultSheet } from "@/components/board/ResultSheet";
 
@@ -169,20 +170,26 @@ export default function BoardScreen() {
       {chrome !== "zen" && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <MiniButton
-            label={chrome === "full" ? "▾" : "▸"}
+            label={chrome === "full" ? "Hide" : "Show"}
             color={colors.textDim}
             onPress={() => setChrome(chrome === "full" ? "compact" : "full")}
           />
-          <MiniButton label="⛶" color={colors.textDim} onPress={() => setChrome("zen")} />
+          <MiniButton label="Zen" color={colors.textDim} onPress={() => setChrome("zen")} />
           {chrome === "compact" && (
             <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: colors.textDim, flexShrink: 1 }}>
               {scenario.name}
             </Text>
           )}
-          <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.danger : colors.textDim }}>
-            💰 {liveCost}/{scenario.budget}
-          </Text>
-          <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>🔧 {liveMaint}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <BrandIcon name="cost" color={overBudget ? colors.danger : colors.textDim} size={14} />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: overBudget ? colors.danger : colors.textDim }}>
+              {liveCost}/{scenario.budget}
+            </Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <BrandIcon name="maintenance" color={colors.textDim} size={14} />
+            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{liveMaint}</Text>
+          </View>
           <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto", alignItems: "center" }}>
             <MiniButton label={t("board.saved")} color={savedOpen ? colors.accent : colors.textDim} onPress={() => setSavedOpen((value) => !value)} />
             <MiniButton label={saveBoardMutation.isPending ? t("common.saving") : t("common.save")} color={colors.success} onPress={() => saveBoardMutation.mutate()} />
@@ -227,7 +234,7 @@ export default function BoardScreen() {
               }}
             >
               <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>
-                {scenario.name} · 💰 {liveCost}/{scenario.budget}
+                {scenario.name} · {liveCost}/{scenario.budget}
               </Text>
             </View>
             <TouchableOpacity
@@ -245,7 +252,7 @@ export default function BoardScreen() {
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: colors.textDim, fontSize: 13 }}>✕</Text>
+              <BrandIcon name="close" color={colors.textDim} size={14} />
             </TouchableOpacity>
           </>
         )}
@@ -281,7 +288,7 @@ export default function BoardScreen() {
                   borderRadius: 8,
                 }}
               >
-                <Text style={{ fontSize: 14 }}>{spec.emoji}</Text>
+                <BrandIcon name={nodeIconName(spec.type)} color={TYPE_COLORS[spec.type]} size={16} />
                 <Text style={{ fontSize: 11, fontWeight: "600", color: colors.text }}>{spec.label}</Text>
                 <Text style={{ fontSize: 9, color: colors.textFaint }}>{"$".repeat(spec.cost) || "free"}</Text>
               </TouchableOpacity>
