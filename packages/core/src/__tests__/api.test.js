@@ -117,6 +117,7 @@ describe("createApi", () => {
             target_role: "Staff Frontend Engineer",
             location: "Stockholm",
             github_url: "https://github.com/profile",
+            use_github_techs_for_prep: true,
             xp: 120,
             onboarding_completed: true,
             created_at: "2026-01-01",
@@ -140,6 +141,7 @@ describe("createApi", () => {
       targetRole: "Staff Frontend Engineer",
       location: "Stockholm",
       githubUrl: "https://github.com/profile",
+      useGithubTechsForPrep: true,
       xp: 120,
       onboardingCompleted: true,
     });
@@ -157,6 +159,7 @@ describe("createApi", () => {
       displayName: "Auth Name",
       email: "auth@example.com",
       githubUrl: "https://github.com/ada",
+      useGithubTechsForPrep: false,
       xp: 0,
       onboardingCompleted: false,
     });
@@ -173,6 +176,7 @@ describe("createApi", () => {
       displayName: "  Ada  ",
       targetRole: "Principal Engineer",
       githubUrl: "",
+      useGithubTechsForPrep: true,
       onboardingCompleted: true,
     });
 
@@ -184,6 +188,7 @@ describe("createApi", () => {
         display_name: "Ada",
         target_role: "Principal Engineer",
         github_url: null,
+        use_github_techs_for_prep: true,
         onboarding_completed: true,
       },
     });

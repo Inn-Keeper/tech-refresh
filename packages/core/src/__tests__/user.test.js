@@ -47,7 +47,7 @@ describe("profile form helpers", () => {
   });
 
   it("marks profile updates as onboarding-complete while preserving empty fields", () => {
-    expect(profileFormToUpdate({ displayName: "Ada", targetRole: "Principal Engineer" })).toEqual({
+    expect(profileFormToUpdate({ displayName: "Ada", targetRole: "Principal Engineer", useGithubTechsForPrep: true })).toEqual({
       displayName: "Ada",
       headline: "",
       targetRole: "Principal Engineer",
@@ -56,6 +56,7 @@ describe("profile form helpers", () => {
       githubUrl: "",
       linkedinUrl: "",
       portfolioUrl: "",
+      useGithubTechsForPrep: true,
       onboardingCompleted: true,
     });
   });

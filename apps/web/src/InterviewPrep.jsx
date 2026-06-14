@@ -42,11 +42,12 @@ export default function InterviewPrep() {
   const { scores, record, addXp } = useScores();
   const { data: accuracy = [] } = useQuery({ queryKey: ["accuracy-timeline"], queryFn: api.getAccuracyTimeline });
   const { data: profile = null } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
-  const githubUsername = githubUsernameFromUrl(profile?.githubUrl);
+  const githubPrepEnabled = !!profile?.useGithubTechsForPrep;
+  const githubUsername = githubPrepEnabled ? githubUsernameFromUrl(profile?.githubUrl) : "";
   const { data: githubTechs = [], error: githubError, isFetching: githubLoading } = useQuery({
     queryKey: ["github-techs", githubUsername],
     queryFn: () => fetchGithubTechSignals(githubUsername, allTechs),
-    enabled: !!githubUsername,
+    enabled: githubPrepEnabled && !!githubUsername,
     staleTime: 1000 * 60 * 15,
   });
 
@@ -232,6 +233,7 @@ export default function InterviewPrep() {
           categories={displayCategories}
           githubStatus={{
             hasUrl: !!githubUsername,
+            enabled: githubPrepEnabled,
             loading: githubLoading,
             error: githubError,
             count: githubCategory?.items.length ?? 0,
@@ -444,7 +446,7 @@ function PrepLeftRail({ activeCategory, allItems, categories, githubStatus, scor
         </div>
       </WorkspacePanel>
 
-      {githubStatus?.hasUrl && (
+      {githubStatus?.enabled && githubStatus?.hasUrl && (
         <WorkspacePanel tone="sunken" style={{ color: colors.textFaint, fontSize: 11.5, lineHeight: 1.5 }}>
           {githubStatus.loading
             ? "Reading public GitHub repo languages..."

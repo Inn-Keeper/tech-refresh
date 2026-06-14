@@ -19,5 +19,7 @@ export function profileToForm(profile) {
 }
 
 export function profileFormToUpdate(form) {
-  return { ...EMPTY_PROFILE_FORM, ...form, onboardingCompleted: true };
+  const update = { ...EMPTY_PROFILE_FORM, ...form, onboardingCompleted: true };
+  if ("useGithubTechsForPrep" in form) update.useGithubTechsForPrep = form.useGithubTechsForPrep;
+  return update;
 }

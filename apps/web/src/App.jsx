@@ -17,8 +17,21 @@ const pages = [
   { id: "profile", icon: "profile", label: t("tabs.profile") },
 ];
 
+const GITHUB_LINK_PENDING_KEY = "grip.githubLinkPending";
+const GITHUB_LINKED_KEY = "grip.githubLinked";
+
+const initialPage = () => {
+  if (typeof window === "undefined") return "prep";
+  const params = new URLSearchParams(window.location.search);
+  return params.get("linked") === "github" || window.localStorage.getItem(GITHUB_LINK_PENDING_KEY) === "1" || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1" ? "profile" : "prep";
+};
+
 export default function App() {
-  const [page, setPage] = useState("prep");
+  const [page, setPage] = useState(initialPage);
+  const [githubLinked, setGithubLinked] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("linked") === "github" || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1";
+  });
   const [session, setSession] = useState(undefined); // undefined = checking
   const activePageIndex = Math.max(0, pages.findIndex((p) => p.id === page));
 
@@ -26,6 +39,23 @@ export default function App() {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
+  }, []);
+
+  const signOut = () => {
+    window.localStorage.removeItem(GITHUB_LINK_PENDING_KEY);
+    window.localStorage.removeItem(GITHUB_LINKED_KEY);
+    supabase.auth.signOut();
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("linked") !== "github") return;
+    window.localStorage.removeItem(GITHUB_LINK_PENDING_KEY);
+    window.localStorage.setItem(GITHUB_LINKED_KEY, "1");
+    setGithubLinked(true);
+    params.delete("linked");
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", next);
   }, []);
 
   return (
@@ -152,7 +182,7 @@ export default function App() {
                 ))}
               </nav>
               <button
-                onClick={() => supabase.auth.signOut()}
+                onClick={signOut}
                 title={session.user.email}
                 style={{
                   minHeight: 36,
@@ -195,7 +225,7 @@ export default function App() {
             {page === "stories" && <StoryBank />}
             {page === "board" && <ArchBoard />}
             {page === "contacts" && <Contacts />}
-            {page === "profile" && <Profile />}
+            {page === "profile" && <Profile githubLinked={githubLinked} onGitHubLinkedSeen={() => setGithubLinked(false)} />}
           </>
         )}
       </div>

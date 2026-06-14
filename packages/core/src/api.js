@@ -75,6 +75,7 @@ import { difficultyByKey } from "./difficulty.js";
  * @property {string} location
  * @property {string} portfolioUrl
  * @property {string} githubUrl
+ * @property {boolean} useGithubTechsForPrep
  * @property {string} linkedinUrl
  * @property {string} timezone
  * @property {boolean} onboardingCompleted
@@ -434,6 +435,7 @@ export function createApi(supabase) {
       location: row?.location ?? "",
       portfolioUrl: row?.portfolio_url ?? "",
       githubUrl: row?.github_url ?? (githubUsername ? `https://github.com/${githubUsername}` : ""),
+      useGithubTechsForPrep: row?.use_github_techs_for_prep ?? false,
       linkedinUrl: row?.linkedin_url ?? "",
       timezone: row?.timezone ?? "",
       onboardingCompleted: row?.onboarding_completed ?? false,
@@ -460,6 +462,7 @@ export function createApi(supabase) {
       if (uiKey in profile) row[dbKey] = profile[uiKey]?.trim() || null;
     }
     if ("onboardingCompleted" in profile) row.onboarding_completed = profile.onboardingCompleted ?? false;
+    if ("useGithubTechsForPrep" in profile) row.use_github_techs_for_prep = profile.useGithubTechsForPrep ?? false;
     return row;
   };
 
