@@ -20,6 +20,7 @@ const pages = [
 export default function App() {
   const [page, setPage] = useState("prep");
   const [session, setSession] = useState(undefined); // undefined = checking
+  const activePageIndex = Math.max(0, pages.findIndex((p) => p.id === page));
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -74,7 +75,7 @@ export default function App() {
                 boxShadow: `0 0 0 1px ${colors.accent}18, 0 10px 24px rgba(0, 0, 0, 0.22)`,
               }}
             >
-              <img src="/logo-symbol.svg" alt="" style={{ width: 24, height: 24, objectFit: "contain" }} />
+              <LogoPlaceholder size={24} />
             </span>
             <span style={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: "0px", color: colors.textBright, lineHeight: 1 }}>
@@ -91,17 +92,34 @@ export default function App() {
                 aria-label="Primary"
                 style={{
                   marginLeft: "auto",
-                  display: "flex",
+                  position: "relative",
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${pages.length}, minmax(0, 1fr))`,
                   alignItems: "center",
-                  gap: 4,
-                  flexWrap: "wrap",
                   padding: 5,
                   borderRadius: 16,
                   background: `${colors.well}C7`,
                   border: `1px solid ${colors.border}`,
                   boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
+                  overflow: "hidden",
                 }}
               >
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute",
+                    top: 5,
+                    bottom: 5,
+                    left: 5,
+                    width: `calc((100% - 10px) / ${pages.length})`,
+                    borderRadius: 11,
+                    background: colors.accent,
+                    boxShadow: `0 8px 22px ${colors.accent}22`,
+                    transform: `translateX(${activePageIndex * 100}%)`,
+                    transition: "transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s ease",
+                    willChange: "transform",
+                  }}
+                />
                 {pages.map((p) => (
                   <button
                     key={p.id}
@@ -110,7 +128,10 @@ export default function App() {
                     style={{
                       display: "flex",
                       alignItems: "center",
+                      justifyContent: "center",
                       gap: 8,
+                      position: "relative",
+                      zIndex: 1,
                       minHeight: 36,
                       padding: "8px 14px",
                       borderRadius: 11,
@@ -119,10 +140,10 @@ export default function App() {
                       fontSize: 13,
                       fontWeight: 800,
                       letterSpacing: "0px",
-                      background: page === p.id ? colors.accent : "transparent",
+                      whiteSpace: "nowrap",
+                      background: "transparent",
                       color: page === p.id ? colors.onAccent : colors.textDim,
-                      boxShadow: page === p.id ? `0 8px 22px ${colors.accent}22` : "none",
-                      transition: "background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease",
+                      transition: "color 0.2s ease, transform 0.16s ease",
                     }}
                   >
                     <BrandIcon name={p.icon} color={page === p.id ? colors.onAccent : colors.textDim} size={16} />
@@ -218,7 +239,7 @@ function Footer({ onNavigate }) {
       >
         <div style={{ maxWidth: 360 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 10 }}>
-            <img src="/logo-symbol.svg" alt="" style={{ width: 28, height: 28, objectFit: "contain" }} />
+            <LogoPlaceholder size={28} />
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: colors.textBright, lineHeight: 1 }}>{brand.productName}</div>
               <div style={{ fontSize: 11, fontWeight: 700, color: colors.textFaint, marginTop: 3 }}>{brand.tagline}</div>
@@ -338,6 +359,24 @@ function SignIn() {
     setBusy(false);
   };
 
+  const signInWithGitHub = async () => {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: { redirectTo: window.location.origin },
+    });
+    if (err) {
+      setError(
+        err.message.includes("Unsupported provider")
+          ? "GitHub login is not enabled in Supabase yet. Enable the GitHub provider, then try again."
+          : err.message
+      );
+      setBusy(false);
+    }
+  };
+
   return (
     <main
       style={{
@@ -349,7 +388,9 @@ function SignIn() {
       }}
     >
       <div style={{ width: "100%", maxWidth: 380, textAlign: "center" }}>
-        <img src="/logo-symbol.svg" alt="" style={{ width: 76, height: 62, objectFit: "contain", marginBottom: 12 }} />
+        <div style={{ width: 76, height: 62, display: "grid", placeItems: "center", margin: "0 auto 12px" }}>
+          <LogoPlaceholder size={42} />
+        </div>
         <h1 style={{ margin: "0 0 8px", fontSize: 20, fontWeight: 700, color: colors.textBright }}>
           {brand.productName}
         </h1>
@@ -358,6 +399,34 @@ function SignIn() {
         </p>
 
         <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <button
+            type="button"
+            onClick={signInWithGitHub}
+            disabled={busy}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "11px 14px",
+              background: colors.surface,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 10,
+              color: colors.textBright,
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: busy ? "wait" : "pointer",
+              opacity: busy ? 0.6 : 1,
+            }}
+          >
+            <BrandIcon name="code" color={colors.accentBright} size={15} />
+            Continue with GitHub
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, color: colors.textFaint, fontSize: 11, fontWeight: 700 }}>
+            <span style={{ flex: 1, height: 1, background: colors.border }} />
+            or
+            <span style={{ flex: 1, height: 1, background: colors.border }} />
+          </div>
           <input
             type="email"
             required
@@ -418,4 +487,8 @@ function SignIn() {
       </div>
     </main>
   );
+}
+
+function LogoPlaceholder({ size }) {
+  return <BrandIcon name="spark" color={colors.accentBright} size={size} />;
 }

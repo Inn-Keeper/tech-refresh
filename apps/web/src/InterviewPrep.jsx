@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
+import { buildGithubTechCategory, githubLanguagesToPrepTechs, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { DIFFICULTIES, difficultyByKey } from "@tech-refresh/core/difficulty";
@@ -40,6 +41,14 @@ export default function InterviewPrep() {
   const queryClient = useQueryClient();
   const { scores, record, addXp } = useScores();
   const { data: accuracy = [] } = useQuery({ queryKey: ["accuracy-timeline"], queryFn: api.getAccuracyTimeline });
+  const { data: profile = null } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
+  const githubUsername = githubUsernameFromUrl(profile?.githubUrl);
+  const { data: githubTechs = [], error: githubError, isFetching: githubLoading } = useQuery({
+    queryKey: ["github-techs", githubUsername],
+    queryFn: () => fetchGithubTechSignals(githubUsername, allTechs),
+    enabled: !!githubUsername,
+    staleTime: 1000 * 60 * 15,
+  });
 
   useEffect(() => {
     const current = rankForXp(scores.xp);
@@ -56,6 +65,8 @@ export default function InterviewPrep() {
   const allItems = categories.flatMap((c) =>
     c.items.map((item) => ({ ...item, category: c.name, color: c.color, emoji: c.emoji }))
   );
+  const githubCategory = buildGithubTechCategory(allItems, githubTechs, { color: colors.accentBright });
+  const displayCategories = githubCategory ? [githubCategory, ...categories] : categories;
 
   const filtered = search.trim()
     ? allItems.filter(
@@ -65,9 +76,9 @@ export default function InterviewPrep() {
       )
     : null;
 
-  const displayCategory = categories[activeCategory];
+  const displayCategory = displayCategories[activeCategory] ?? displayCategories[0];
   const summary = summarizeScores(scores);
-  const visibleItems = filtered ?? displayCategory.items.map((item) => ({ ...item, color: displayCategory.color, emoji: displayCategory.emoji }));
+  const visibleItems = filtered ?? displayCategory.items.map((item) => ({ ...item, color: item.color ?? displayCategory.color, emoji: displayCategory.emoji }));
   const activeTitle = filtered ? "Search results" : displayCategory.name;
 
   const getState = (key) =>
@@ -154,7 +165,7 @@ export default function InterviewPrep() {
     setDrillLoading(true);
     setDrillError(null);
     try {
-      const weakest = selectDrillTechs(categories, scores.answers, { techCount: 5 });
+      const weakest = selectDrillTechs(displayCategories, scores.answers, { techCount: 5 });
       let questions = await fetchTierQuestions(difficulty, weakest);
       if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
       if (questions.length === 0) {
@@ -218,7 +229,13 @@ export default function InterviewPrep() {
         <PrepLeftRail
           activeCategory={activeCategory}
           allItems={allItems}
-          categories={categories}
+          categories={displayCategories}
+          githubStatus={{
+            hasUrl: !!githubUsername,
+            loading: githubLoading,
+            error: githubError,
+            count: githubCategory?.items.length ?? 0,
+          }}
           scores={scores}
           search={search}
           setSearch={setSearch}
@@ -311,6 +328,27 @@ export default function InterviewPrep() {
   );
 }
 
+async function fetchGithubTechSignals(username, knownTechs) {
+  const reposResponse = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=30&sort=pushed`);
+  if (!reposResponse.ok) throw new Error("Couldn't load GitHub repositories.");
+  const repos = await reposResponse.json();
+  const languageTotals = {};
+  const candidates = repos.filter((repo) => !repo.fork && repo.languages_url).slice(0, 12);
+
+  await Promise.all(
+    candidates.map(async (repo) => {
+      const response = await fetch(repo.languages_url);
+      if (!response.ok) return;
+      const languages = await response.json();
+      for (const [language, bytes] of Object.entries(languages)) {
+        languageTotals[language] = (languageTotals[language] ?? 0) + Number(bytes || 0);
+      }
+    })
+  );
+
+  return githubLanguagesToPrepTechs(languageTotals, knownTechs);
+}
+
 function summarizeScores(scores) {
   const entries = Object.entries(scores.answers);
   const totals = entries.reduce(
@@ -335,7 +373,7 @@ function categoryAnswered(cat, scores) {
   return cat.items.filter((item) => scores.answers[item.tech]?.correct || scores.answers[item.tech]?.wrong).length;
 }
 
-function PrepLeftRail({ activeCategory, allItems, categories, scores, search, setSearch, onCategory }) {
+function PrepLeftRail({ activeCategory, allItems, categories, githubStatus, scores, search, setSearch, onCategory }) {
   return (
     <>
       <WorkspacePanel>
@@ -405,6 +443,18 @@ function PrepLeftRail({ activeCategory, allItems, categories, scores, search, se
           })}
         </div>
       </WorkspacePanel>
+
+      {githubStatus?.hasUrl && (
+        <WorkspacePanel tone="sunken" style={{ color: colors.textFaint, fontSize: 11.5, lineHeight: 1.5 }}>
+          {githubStatus.loading
+            ? "Reading public GitHub repo languages..."
+            : githubStatus.error
+              ? "GitHub tech sync could not load. Saved profile URL is still intact."
+              : githubStatus.count
+                ? `${githubStatus.count} profile techs matched from public GitHub repos.`
+                : "No matching prep techs found from public GitHub repos yet."}
+        </WorkspacePanel>
+      )}
     </>
   );
 }

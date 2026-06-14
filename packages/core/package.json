@@ -12,6 +12,7 @@
     "./contacts": "./src/contacts.js",
     "./prepData": "./src/prepData.js",
     "./techLinks": "./src/techLinks.js",
+    "./githubTechs": "./src/githubTechs.js",
     "./arch": "./src/arch.js",
     "./gamification": "./src/gamification.js",
     "./funnel": "./src/funnel.js",

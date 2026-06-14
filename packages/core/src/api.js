@@ -416,28 +416,32 @@ export function createApi(supabase) {
     return { xp: 0, answers: {} };
   }
 
-  const profileToUi = (row, authUser = null) => ({
-    id: row?.user_id ?? authUser?.id ?? "",
-    displayName:
-      row?.display_name ??
-      authUser?.user_metadata?.display_name ??
-      authUser?.user_metadata?.full_name ??
-      authUser?.user_metadata?.name ??
-      "",
-    email: authUser?.email ?? row?.email ?? "",
-    avatarUrl: row?.avatar_url ?? authUser?.user_metadata?.avatar_url ?? "",
-    headline: row?.headline ?? "",
-    targetRole: row?.target_role ?? "",
-    location: row?.location ?? "",
-    portfolioUrl: row?.portfolio_url ?? "",
-    githubUrl: row?.github_url ?? "",
-    linkedinUrl: row?.linkedin_url ?? "",
-    timezone: row?.timezone ?? "",
-    onboardingCompleted: row?.onboarding_completed ?? false,
-    xp: row?.xp ?? 0,
-    createdAt: row?.created_at ?? null,
-    updatedAt: row?.updated_at ?? null,
-  });
+  const profileToUi = (row, authUser = null) => {
+    const metadata = authUser?.user_metadata ?? {};
+    const githubUsername = metadata.user_name ?? metadata.preferred_username ?? "";
+    return {
+      id: row?.user_id ?? authUser?.id ?? "",
+      displayName:
+        row?.display_name ??
+        metadata.display_name ??
+        metadata.full_name ??
+        metadata.name ??
+        "",
+      email: authUser?.email ?? row?.email ?? "",
+      avatarUrl: row?.avatar_url ?? metadata.avatar_url ?? "",
+      headline: row?.headline ?? "",
+      targetRole: row?.target_role ?? "",
+      location: row?.location ?? "",
+      portfolioUrl: row?.portfolio_url ?? "",
+      githubUrl: row?.github_url ?? (githubUsername ? `https://github.com/${githubUsername}` : ""),
+      linkedinUrl: row?.linkedin_url ?? "",
+      timezone: row?.timezone ?? "",
+      onboardingCompleted: row?.onboarding_completed ?? false,
+      xp: row?.xp ?? 0,
+      createdAt: row?.created_at ?? null,
+      updatedAt: row?.updated_at ?? null,
+    };
+  };
 
   const profileToDb = (profile) => {
     const row = {};

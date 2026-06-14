@@ -148,7 +148,7 @@ describe("createApi", () => {
   it("falls back to auth metadata when the profile row is missing", async () => {
     const { client } = fakeSupabase(
       { profiles: [] },
-      { id: "user-1", email: "auth@example.com", user_metadata: { full_name: "Auth Name" } }
+      { id: "user-1", email: "auth@example.com", user_metadata: { full_name: "Auth Name", user_name: "ada" } }
     );
     const api = createApi(client);
 
@@ -156,6 +156,7 @@ describe("createApi", () => {
       id: "user-1",
       displayName: "Auth Name",
       email: "auth@example.com",
+      githubUrl: "https://github.com/ada",
       xp: 0,
       onboardingCompleted: false,
     });
