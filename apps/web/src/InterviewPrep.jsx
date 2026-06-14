@@ -16,6 +16,8 @@ import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayo
 import styles from "./InterviewPrep.module.css";
 
 const DRILL_SIZE = 10;
+const CARD_QUIZ_SIZE = 3; // questions shown per card quiz — a random subset of the tier's pool, so repeats feel fresh
+const CARD_POOL_LIMIT = 50; // fetch the whole tier pool for a tech, then sample from it
 
 // Map every tech to its category color so a fetched question can be themed.
 const colorByTech = Object.fromEntries(
@@ -30,6 +32,7 @@ export default function InterviewPrep() {
   const [drill, setDrill] = useState(null);
   // Global difficulty, chosen in the right rail — drives both the quiz cards and drills.
   const [level, setLevel] = useState("mid");
+  const [pendingLevel, setPendingLevel] = useState(null);
   const [drillLoading, setDrillLoading] = useState(false);
   const [drillError, setDrillError] = useState(null);
   const [celebration, setCelebration] = useState(null);
@@ -75,14 +78,16 @@ export default function InterviewPrep() {
   const fetchCardQuestions = async (tech) => {
     try {
       const rows = await queryClient.fetchQuery({
-        queryKey: ["questions", level, [tech]],
-        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: 5 }),
+        queryKey: ["questions", "v2", level, [tech]],
+        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: CARD_POOL_LIMIT }),
       });
       if (rows.length) {
-        return shuffle(rows).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
+        // Random subset of the tier's pool each open, so re-quizzing a card feels fresh.
+        return shuffle(rows).slice(0, CARD_QUIZ_SIZE).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
       }
-    } catch {
-      // fall through to the static prep questions below
+      console.warn(`No ${level} questions in the DB for "${tech}" — falling back to static prep questions (these don't vary by level). Run the questions seed.`);
+    } catch (err) {
+      console.error(`Failed to load ${level} questions for "${tech}"; using static prep questions.`, err);
     }
     return null;
   };
@@ -141,7 +146,7 @@ export default function InterviewPrep() {
   // still yields a drill.
   const fetchTierQuestions = (difficulty, techs) =>
     queryClient.fetchQuery({
-      queryKey: ["questions", difficulty, techs],
+      queryKey: ["questions", "v2", difficulty, techs],
       queryFn: () => api.getQuestions({ techs, difficulty, limit: DRILL_SIZE * 3 }),
     });
 
@@ -165,6 +170,20 @@ export default function InterviewPrep() {
     } finally {
       setDrillLoading(false);
     }
+  };
+
+  const applyLevel = (key) => {
+    setLevel(key);
+    setCardState({}); // reset cards to front; the new tier loads on next open
+    setPendingLevel(null);
+  };
+
+  // Switch tier instantly, but confirm first if a quiz is mid-flight (would be discarded).
+  const requestLevel = (key) => {
+    if (key === level) return;
+    const quizOpen = Object.values(cardState).some((s) => s?.phase === "quiz");
+    if (quizOpen) setPendingLevel(key);
+    else applyLevel(key);
   };
 
   const answerDrill = (optionIndex) => {
@@ -217,7 +236,7 @@ export default function InterviewPrep() {
           drillLoading={drillLoading}
           drillError={drillError}
           level={level}
-          onLevel={setLevel}
+          onLevel={requestLevel}
           onDrill={() => startDrill(level)}
           scores={scores}
           summary={summary}
@@ -268,6 +287,16 @@ export default function InterviewPrep() {
             );
           })}
         </div>
+      )}
+
+      {pendingLevel && (
+        <ConfirmDialog
+          title="Switch difficulty?"
+          message={`You have a quiz in progress. Switching to ${difficultyByKey(pendingLevel)?.label ?? pendingLevel} resets your open card.`}
+          confirmLabel="Switch & reload"
+          onConfirm={() => applyLevel(pendingLevel)}
+          onCancel={() => setPendingLevel(null)}
+        />
       )}
 
       {celebration && (
@@ -505,7 +534,7 @@ function Card({ index = 0, item, level, stat, state, onFlip, onBack, onAnswer, o
       ) : (
         <div className={`${styles.cardInner}${flipped ? ` ${styles.isBack}` : ""}`}>
           <div className={styles.cardFace}>
-            <FrontFace item={item} stat={stat} onFlip={onFlip} />
+            <FrontFace item={item} level={level} stat={stat} onFlip={onFlip} />
           </div>
           <div className={`${styles.cardFace} ${styles.backFace}`}>
             <BackFace item={item} onBack={onBack} onQuiz={onFlip} />
@@ -516,9 +545,10 @@ function Card({ index = 0, item, level, stat, state, onFlip, onBack, onAnswer, o
   );
 }
 
-function FrontFace({ item, stat, onFlip }) {
+function FrontFace({ item, level, stat, onFlip }) {
   const attempts = stat ? stat.correct + stat.wrong : 0;
   const accuracy = attempts ? Math.round((stat.correct / attempts) * 100) : null;
+  const tier = difficultyByKey(level);
 
   return (
     <div
@@ -536,13 +566,20 @@ function FrontFace({ item, stat, onFlip }) {
       }}
     >
       <div>
-        <div style={{
-          display: "inline-block", padding: "3px 10px",
-          background: `${item.color}20`, borderRadius: 999,
-          color: item.color, fontSize: 11, fontWeight: 700,
-          letterSpacing: "0.04em", marginBottom: 9,
-        }}>
-          {item.tech}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 9 }}>
+          <div style={{
+            display: "inline-block", padding: "3px 10px",
+            background: `${item.color}20`, borderRadius: 999,
+            color: item.color, fontSize: 11, fontWeight: 700,
+            letterSpacing: "0.04em",
+          }}>
+            {item.tech}
+          </div>
+          {tier && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, padding: "2px 8px", borderRadius: 999, background: `${tier.color}1A`, border: `1px solid ${tier.color}55`, color: tier.color, fontSize: 10, fontWeight: 800, whiteSpace: "nowrap" }}>
+              {tier.emoji} {tier.label}
+            </span>
+          )}
         </div>
         <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.55, color: colors.text }}>
           {item.oneliner}
@@ -867,7 +904,38 @@ function RankingList({ icon, title, items, color }) {
   );
 }
 
-// Sassy tier selector shown before a drill — mirrors the mobile DifficultyPicker.
+// Lightweight confirmation modal (scrim + centered card).
+function ConfirmDialog({ title, message, confirmLabel, onConfirm, onCancel }) {
+  return (
+    <div
+      onClick={onCancel}
+      style={{ position: "fixed", inset: 0, background: tints.modalScrim, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50, padding: 20 }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "min(100%, 380px)", background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 20 }}
+      >
+        <h2 style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 850, color: colors.textBright }}>{title}</h2>
+        <p style={{ margin: "0 0 18px", fontSize: 13, lineHeight: 1.5, color: colors.textDim }}>{message}</p>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <button
+            onClick={onCancel}
+            style={{ padding: "8px 16px", background: "transparent", border: `1px solid ${colors.border}`, borderRadius: 8, color: colors.textDim, fontSize: 13, fontWeight: 700, cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{ padding: "8px 16px", background: colors.accent, border: "none", borderRadius: 8, color: colors.onAccent, fontSize: 13, fontWeight: 800, cursor: "pointer" }}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Sidebar difficulty picker. Sets the global level that drives both the quiz
 // cards and the drill, so the whole screen runs at one tier.
 function LevelSelector({ level, onLevel }) {

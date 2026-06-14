@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { FlatList, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Alert, FlatList, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
@@ -22,6 +22,8 @@ import { categoryIconName } from "@/components/BrandIcon";
 type Celebration = { title: string; subtitle: string; accent?: string };
 
 const DRILL_SIZE = 10;
+const CARD_QUIZ_SIZE = 3; // questions shown per card quiz — a random subset of the tier's pool, so repeats feel fresh
+const CARD_POOL_LIMIT = 50; // fetch the whole tier pool for a tech, then sample from it
 
 // Map every tech to its category color, so a fetched question can be themed.
 const colorByTech: Record<string, string> = Object.fromEntries(
@@ -36,6 +38,7 @@ export default function PrepScreen() {
   const [drill, setDrill] = useState<Drill | null>(null);
   // Global difficulty — drives both the quiz cards and the drill.
   const [level, setLevel] = useState("mid");
+  const [openQuizCount, setOpenQuizCount] = useState(0);
   const [drillLoading, setDrillLoading] = useState(false);
   const [drillError, setDrillError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
@@ -63,7 +66,7 @@ export default function PrepScreen() {
   // partially-seeded tier still yields a drill.
   const fetchTierQuestions = (difficulty: string, techs: string[]) =>
     queryClient.fetchQuery({
-      queryKey: ["questions", difficulty, techs],
+      queryKey: ["questions", "v2", difficulty, techs],
       queryFn: () => api.getQuestions({ techs, difficulty, limit: DRILL_SIZE * 3 }),
     });
 
@@ -98,16 +101,40 @@ export default function PrepScreen() {
   const loadCardQuiz = async (tech: string) => {
     try {
       const rows = await queryClient.fetchQuery({
-        queryKey: ["questions", level, [tech]],
-        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: 5 }),
+        queryKey: ["questions", "v2", level, [tech]],
+        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: CARD_POOL_LIMIT }),
       });
       if (rows.length) {
-        return shuffle(rows).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
+        // Random subset of the tier's pool each open, so re-quizzing a card feels fresh.
+        return shuffle(rows).slice(0, CARD_QUIZ_SIZE).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
       }
-    } catch {
-      // fall back to the static prep questions
+      console.warn(`No ${level} questions in the DB for "${tech}" — falling back to static prep questions (these don't vary by level). Run the questions seed.`);
+    } catch (err) {
+      console.error(`Failed to load ${level} questions for "${tech}"; using static prep questions.`, err);
     }
     return null;
+  };
+
+  // FlipCards report when their quiz opens/closes so we know whether to confirm.
+  const setQuizActive = useCallback((active: boolean) => {
+    setOpenQuizCount((c) => Math.max(0, c + (active ? 1 : -1)));
+  }, []);
+
+  // Switch tier instantly, but confirm first if a quiz is mid-flight (would be discarded).
+  const requestLevel = (key: string) => {
+    if (key === level) return;
+    if (openQuizCount > 0) {
+      Alert.alert(
+        "Switch difficulty?",
+        `You have a quiz in progress. Switching to ${difficultyByKey(key)?.label ?? key} resets your open card${openQuizCount > 1 ? "s" : ""}.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Switch & reload", style: "destructive", onPress: () => setLevel(key) },
+        ]
+      );
+    } else {
+      setLevel(key);
+    }
   };
 
   const answerDrill = (i: number) => {
@@ -153,12 +180,13 @@ export default function PrepScreen() {
       )}
       <FlatList
         data={drill ? [] : category.items.map((item) => ({ ...item, color: category.color }))}
-        keyExtractor={(item) => `${activeCategory}-${item.tech}`}
+        // Including level remounts cards on a tier change, resetting any open quiz to the new tier.
+        keyExtractor={(item) => `${activeCategory}-${level}-${item.tech}`}
         contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}
         ListHeaderComponent={
           <View style={{ gap: 14 }}>
             <StatsBar scores={scores} onDrill={() => startDrill(level)} drillActive={!!drill || drillLoading} />
-            {!drill && <DifficultyPicker level={level} onLevel={setLevel} />}
+            {!drill && <DifficultyPicker level={level} onLevel={requestLevel} />}
             {drillError && !drill && (
               <Text style={{ fontSize: 11, color: colors.warning, paddingHorizontal: 2 }}>{drillError}</Text>
             )}
@@ -169,7 +197,7 @@ export default function PrepScreen() {
         }
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(Math.min(index * 60, 360)).springify().damping(18)}>
-            <FlipCard item={item} level={level} stat={scores.answers[item.tech]} record={record} addXp={addXp} loadQuiz={loadCardQuiz} />
+            <FlipCard item={item} level={level} stat={scores.answers[item.tech]} record={record} addXp={addXp} loadQuiz={loadCardQuiz} onQuizActiveChange={setQuizActive} />
           </Animated.View>
         )}
       />

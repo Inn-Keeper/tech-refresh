@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
 import Animated, {
   interpolate,
@@ -7,6 +7,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
+import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { colors } from "@/theme";
 import { QuizView } from "./QuizView";
@@ -30,16 +31,25 @@ type Props = {
   // Loads tiered questions for this tech; returns shuffled questions or null to
   // fall back to the static prep questions.
   loadQuiz: (tech: string) => Promise<Item["quiz"] | null>;
+  // Reports when this card's quiz opens/closes, so the screen can confirm tier changes.
+  onQuizActiveChange?: (active: boolean) => void;
 };
 
 const SPRING = { damping: 16, stiffness: 140 };
 
 // 3D card flip on the UI thread: front face 0→180°, back face -180→0.
-export function FlipCard({ item, level, stat, record, addXp, loadQuiz }: Props) {
+export function FlipCard({ item, level, stat, record, addXp, loadQuiz, onQuizActiveChange }: Props) {
   const rotation = useSharedValue(0);
   const [phase, setPhase] = useState<"front" | "back" | "quiz">("front");
   const [quizLoading, setQuizLoading] = useState(false);
   const [quiz, setQuiz] = useState<{ questions: Item["quiz"]; index: number; answered: number | null; runCorrect: number } | null>(null);
+
+  // Signal active while the quiz is open; the cleanup also fires on unmount (e.g. tier remount).
+  useEffect(() => {
+    if (phase !== "quiz") return;
+    onQuizActiveChange?.(true);
+    return () => onQuizActiveChange?.(false);
+  }, [phase, onQuizActiveChange]);
 
   const frontStyle = useAnimatedStyle(() => ({
     transform: [{ perspective: 1200 }, { rotateY: `${rotation.value}deg` }],
@@ -92,6 +102,7 @@ export function FlipCard({ item, level, stat, record, addXp, loadQuiz }: Props) 
 
   const attempts = stat ? stat.correct + stat.wrong : 0;
   const accuracy = attempts ? Math.round(((stat?.correct ?? 0) / attempts) * 100) : null;
+  const tier = difficultyByKey(level);
 
   if (phase === "quiz" && quiz) {
     return (
@@ -136,19 +147,25 @@ export function FlipCard({ item, level, stat, record, addXp, loadQuiz }: Props) 
           }}
         >
           <View>
-            <View
-              style={{
-                alignSelf: "flex-start",
-                paddingHorizontal: 10,
-                paddingVertical: 3,
-                backgroundColor: `${item.color}20`,
-                borderRadius: 20,
-                marginBottom: 10,
-              }}
-            >
-              <Text style={{ color: item.color, fontSize: 11, fontWeight: "700", letterSpacing: 0.4 }}>
-                {item.tech}
-              </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 10 }}>
+              <View
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 3,
+                  backgroundColor: `${item.color}20`,
+                  borderRadius: 20,
+                }}
+              >
+                <Text style={{ color: item.color, fontSize: 11, fontWeight: "700", letterSpacing: 0.4 }}>
+                  {item.tech}
+                </Text>
+              </View>
+              {tier && (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: `${tier.color}1A`, borderWidth: 1, borderColor: `${tier.color}55` }}>
+                  <Text style={{ fontSize: 10 }}>{tier.emoji}</Text>
+                  <Text style={{ fontSize: 9.5, fontWeight: "800", color: tier.color }}>{tier.label}</Text>
+                </View>
+              )}
             </View>
             <Text style={{ fontSize: 14, lineHeight: 21, color: colors.text }}>{item.oneliner}</Text>
           </View>
