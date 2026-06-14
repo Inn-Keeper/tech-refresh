@@ -13,16 +13,16 @@
     "category": "Languages",
     "difficulty": "easy",
     "prompt": "How do you annotate a variable as a number?",
-    "options": ["let count: number", "let count = number", "let count<number>", "number count"],
+    "options": ["let x: number", "let x = number", "let number x", "let x:: number"],
     "correct": 0,
-    "explanation": "Type annotations follow the identifier after a colon: `let count: number`."
+    "explanation": "Type annotations use `name: type`, so `let x: number`."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "easy",
     "prompt": "What symbol marks an interface property as optional?",
-    "options": ["?", "!", "*", "~"],
+    "options": ["?", "!", "*", "&"],
     "correct": 0,
     "explanation": "A trailing `?` (e.g. `name?: string`) makes the property optional."
   },
@@ -31,18 +31,243 @@
     "category": "Languages",
     "difficulty": "easy",
     "prompt": "Which type represents true/false values?",
-    "options": ["boolean", "bit", "bool", "binary"],
+    "options": ["boolean", "bool", "Boolean[]", "truthy"],
     "correct": 0,
-    "explanation": "TypeScript's primitive for true/false is `boolean` (lowercase)."
+    "explanation": "The primitive type is `boolean` (lowercase)."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "easy",
     "prompt": "What does the `any` type do?",
-    "options": ["Opts a value out of type checking entirely", "Restricts a value to primitives", "Forces a runtime type check", "Makes a value read-only"],
+    "options": ["Opts a value out of type checking", "Forces strict checks", "Makes the value readonly", "Converts the value to a string"],
     "correct": 0,
-    "explanation": "`any` disables type checking for that value — convenient but it forfeits safety."
+    "explanation": "`any` disables type checking for that value, allowing any operation."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What is the standard file extension for a TypeScript file?",
+    "options": [".ts", ".tsj", ".tsc", ".typescript"],
+    "correct": 0,
+    "explanation": "TypeScript files use `.ts` (or `.tsx` when they contain JSX)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which command compiles TypeScript to JavaScript?",
+    "options": ["tsc", "node --ts", "tscompile", "ts build"],
+    "correct": 0,
+    "explanation": "`tsc` is the TypeScript compiler CLI."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you type an array of strings?",
+    "options": ["string[]", "array<string>", "[string]", "strings"],
+    "correct": 0,
+    "explanation": "`string[]` (or the generic `Array<string>`) types an array of strings."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which type means a function returns no value?",
+    "options": ["void", "null", "empty", "none"],
+    "correct": 0,
+    "explanation": "`void` is the return type for a function that doesn't return a usable value."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you write a union of string or number?",
+    "options": ["string | number", "string & number", "string, number", "union<string, number>"],
+    "correct": 0,
+    "explanation": "The `|` operator forms a union type."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does the file `tsconfig.json` do?",
+    "options": ["Configures the TypeScript compiler", "Lists npm dependencies", "Defines application routes", "Stores environment variables"],
+    "correct": 0,
+    "explanation": "`tsconfig.json` holds compiler options and the project's file scope."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you type a tuple of a string then a number?",
+    "options": ["[string, number]", "{string, number}", "(string, number)", "string|number"],
+    "correct": 0,
+    "explanation": "Tuples use bracket syntax with fixed positions: `[string, number]`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword defines a reusable named type alias?",
+    "options": ["type", "alias", "typedef", "define"],
+    "correct": 0,
+    "explanation": "`type Name = ...` creates a type alias."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword declares an interface?",
+    "options": ["interface", "struct", "shape", "contract"],
+    "correct": 0,
+    "explanation": "`interface Name { ... }` declares an interface."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you assert a value to a type?",
+    "options": ["value as Type", "value is Type", "cast(value)", "value to Type"],
+    "correct": 0,
+    "explanation": "The `as` operator performs a type assertion: `value as Type`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What is the primitive type name for text?",
+    "options": ["string", "String", "str", "text"],
+    "correct": 0,
+    "explanation": "Use the lowercase primitive `string`, not the `String` object type."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you make a function parameter optional?",
+    "options": ["param?: type", "param!: type", "?param: type", "param*: type"],
+    "correct": 0,
+    "explanation": "A trailing `?` after the parameter name makes it optional."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which annotation types a callback that returns nothing?",
+    "options": ["() => void", "() => null", "void()", "function void"],
+    "correct": 0,
+    "explanation": "`() => void` is a function type taking no args and returning nothing usable."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you give a parameter a default value?",
+    "options": ["function f(x = 5)", "function f(x := 5)", "function f(x default 5)", "function f(x: 5)"],
+    "correct": 0,
+    "explanation": "Defaults use `=` in the parameter list: `function f(x = 5)`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which comment suppresses the type error on the next line?",
+    "options": ["// @ts-ignore", "// ignore-type", "// @ts-skip", "/* notype */"],
+    "correct": 0,
+    "explanation": "`// @ts-ignore` suppresses errors on the following line (prefer `@ts-expect-error`)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How many numeric types does TypeScript have for whole vs decimal numbers?",
+    "options": ["One — everything is `number`", "Two — `int` and `float`", "Three — `int`, `float`, `double`", "Four — including `long`"],
+    "correct": 0,
+    "explanation": "TypeScript has a single `number` type for all numeric values."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which is the generic form of an array of numbers?",
+    "options": ["Array<number>", "List<number>", "number{}", "Arr(number)"],
+    "correct": 0,
+    "explanation": "`Array<number>` is equivalent to `number[]`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you type a variable that may be a number or undefined?",
+    "options": ["number | undefined", "number?", "number!", "undefined(number)"],
+    "correct": 0,
+    "explanation": "Use a union: `number | undefined`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which keyword declares an enumeration?",
+    "options": ["enum", "enums", "const group", "set"],
+    "correct": 0,
+    "explanation": "`enum Name { A, B }` declares an enum."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Which compiler flag turns on all strict checks at once?",
+    "options": ["strict", "allStrict", "pedantic", "strictMode"],
+    "correct": 0,
+    "explanation": "`\"strict\": true` enables the whole family of strict options."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you import only a type from a module?",
+    "options": ["import type { X } from './m'", "import only { X } from './m'", "import { type:X } from './m'", "typeof import './m'"],
+    "correct": 0,
+    "explanation": "`import type { X }` imports a type and is elided from the JS output."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does a literal type like `\"left\"` describe?",
+    "options": ["A value that must equal that exact string", "Any string", "A string of length 4", "A char primitive"],
+    "correct": 0,
+    "explanation": "A string literal type restricts a value to exactly that string."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "How do you annotate an inline object with a string `name`?",
+    "options": ["{ name: string }", "{ name = string }", "(name: string)", "[name: string]"],
+    "correct": 0,
+    "explanation": "Object type literals use `{ key: type }`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "What does `strictNullChecks` do when enabled?",
+    "options": ["Makes null/undefined not assignable to other types by default", "Removes all nulls at runtime", "Throws on any null access at runtime", "Converts null to undefined"],
+    "correct": 0,
+    "explanation": "With it on, `null`/`undefined` are only assignable to themselves (or via a union)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "easy",
+    "prompt": "Where does a function's return type annotation go?",
+    "options": ["After the parameter list: `(): number`", "Before the function name", "Inside the function body", "In a separate .d.ts file only"],
+    "correct": 0,
+    "explanation": "The return type follows the parameter list, e.g. `function f(): number`."
   },
   {
     "tech": "TypeScript",
@@ -51,43 +276,259 @@
     "prompt": "What does `keyof T` evaluate to?",
     "options": ["A union of T's property names", "An array of T's values", "The number of properties in T", "A copy of T with optional keys"],
     "correct": 0,
-    "explanation": "`keyof T` produces the union of T's keys as string/number literal types."
+    "explanation": "`keyof T` produces the union of T's known property keys."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "mid",
     "prompt": "What is the key difference between `unknown` and `any`?",
-    "options": ["unknown requires a type check before use; any bypasses checking entirely", "any is only for primitives; unknown also works with objects", "unknown throws at runtime when misused; any fails silently", "any is deprecated; unknown replaces it"],
+    "options": ["`unknown` must be narrowed before use", "`unknown` is faster at runtime", "`unknown` allows any operation", "They are identical"],
     "correct": 0,
-    "explanation": "`unknown` is the type-safe counterpart of `any`: you must narrow it before using it."
+    "explanation": "`unknown` is type-safe: you must narrow it before operating on it, unlike `any`."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "mid",
     "prompt": "What does the `readonly` modifier do on a property?",
-    "options": ["Prevents reassignment of the property after initialization", "Makes the property optional", "Hides the property from JSON output", "Freezes the entire object at runtime"],
+    "options": ["Prevents reassignment after initialization", "Deep-freezes the object", "Makes the property private", "Removes it from the type"],
     "correct": 0,
-    "explanation": "`readonly` is a compile-time check that blocks reassignment; it has no runtime effect."
+    "explanation": "`readonly` blocks reassignment of that property (shallow, compile-time only)."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "mid",
     "prompt": "Which capability is unique to `interface` (not `type`)?",
-    "options": ["Declaration merging across multiple declarations", "Aliasing a union type", "Aliasing a primitive like string", "Using mapped types"],
+    "options": ["Declaration merging", "Union types", "Mapped types", "Conditional types"],
     "correct": 0,
-    "explanation": "Interfaces with the same name merge their members; type aliases cannot be reopened."
+    "explanation": "Interfaces with the same name merge; type aliases cannot."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "mid",
     "prompt": "What does `as const` do to an object literal?",
-    "options": ["Infers the narrowest literal types and makes it deeply readonly", "Converts it to a runtime constant", "Removes optional properties", "Casts it to any"],
+    "options": ["Makes it deeply readonly with literal types", "Clones it", "Converts it to JSON", "Marks it for tree-shaking"],
     "correct": 0,
-    "explanation": "`as const` narrows values to literals and marks every property readonly."
+    "explanation": "`as const` narrows to literal types and makes the structure deeply readonly."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the utility type `Partial<T>` produce?",
+    "options": ["T with all properties optional", "T with all properties required", "T with all properties readonly", "A subset of T's keys"],
+    "correct": 0,
+    "explanation": "`Partial<T>` maps every property of T to optional."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `Pick<T, K>` do?",
+    "options": ["Builds a type with only the keys K from T", "Removes keys K from T", "Makes K optional", "Renames K in T"],
+    "correct": 0,
+    "explanation": "`Pick<T, K>` selects the subset of properties named in K."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `Omit<T, K>` do?",
+    "options": ["Builds T without the keys K", "Keeps only K from T", "Makes K readonly", "Throws if K is missing"],
+    "correct": 0,
+    "explanation": "`Omit<T, K>` removes the named keys from T."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `Record<K, V>` describe?",
+    "options": ["An object with keys K and values V", "A database record", "A readonly tuple", "A union of K and V"],
+    "correct": 0,
+    "explanation": "`Record<K, V>` types an object whose keys are K and values are V."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is a discriminated union?",
+    "options": ["A union whose members share a literal tag property", "A union of only primitives", "An intersection of objects", "A union with no overlap checks"],
+    "correct": 0,
+    "explanation": "A shared literal field (the discriminant) lets TypeScript narrow which member you have."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does a user-defined type guard return type look like?",
+    "options": ["arg is Type", "arg as Type", "typeof arg", "Type<arg>"],
+    "correct": 0,
+    "explanation": "A predicate `arg is Type` tells the compiler the narrowing the function performs."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the non-null assertion `x!` tell the compiler?",
+    "options": ["That x is not null/undefined here", "To throw if x is null", "To default x to 0", "To make x optional"],
+    "correct": 0,
+    "explanation": "`!` asserts the value is non-null at that point (no runtime check is added)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `typeof someVariable` produce in a type position?",
+    "options": ["The static type of that variable", "A runtime string like 'object'", "A new class", "The variable's value"],
+    "correct": 0,
+    "explanation": "In type positions, `typeof x` yields x's inferred static type."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does an index signature `{ [key: string]: number }` allow?",
+    "options": ["Arbitrary string keys mapping to numbers", "Exactly one key named 'key'", "Only numeric keys", "A readonly object"],
+    "correct": 0,
+    "explanation": "Index signatures permit any key of the given type with values of the given type."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the `never` type represent?",
+    "options": ["A value that can never occur", "Any value", "Null only", "An empty object"],
+    "correct": 0,
+    "explanation": "`never` is the type of values that never happen, e.g. a function that always throws."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does generic constraint `T extends object` enforce?",
+    "options": ["T must be assignable to object", "T equals object exactly", "T becomes optional", "T is widened to any"],
+    "correct": 0,
+    "explanation": "`extends` in a generic constrains the allowed type arguments."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `ReturnType<typeof fn>` give you?",
+    "options": ["The return type of fn", "The parameters of fn", "Whether fn is async", "fn's this type"],
+    "correct": 0,
+    "explanation": "`ReturnType<F>` extracts the return type of a function type."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `Required<T>` do?",
+    "options": ["Makes all properties of T required", "Makes them optional", "Removes readonly", "Picks required keys only"],
+    "correct": 0,
+    "explanation": "`Required<T>` strips `?` from every property."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "Why prefer `enum`'s alternative — a union of string literals — in many cases?",
+    "options": ["No runtime code is emitted and values stay literal", "It runs faster than every other construct", "It supports inheritance", "It auto-generates docs"],
+    "correct": 0,
+    "explanation": "String-literal unions are erased at compile time and integrate cleanly with narrowing."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does optional chaining `a?.b` evaluate to when `a` is null?",
+    "options": ["undefined", "null", "An error is thrown", "false"],
+    "correct": 0,
+    "explanation": "Optional chaining short-circuits to `undefined` when the left side is null/undefined."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the nullish coalescing operator `a ?? b` return?",
+    "options": ["b only when a is null or undefined", "b when a is falsy", "Always a", "Always b"],
+    "correct": 0,
+    "explanation": "`??` falls back to b only for null/undefined, unlike `||` which triggers on any falsy value."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `Exclude<T, U>` do?",
+    "options": ["Removes from T the members assignable to U", "Keeps only members of T in U", "Intersects T and U", "Adds U to T"],
+    "correct": 0,
+    "explanation": "`Exclude<T, U>` filters out union members of T that extend U."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `Extract<T, U>` do?",
+    "options": ["Keeps members of T assignable to U", "Removes members of T in U", "Makes T optional", "Unions T and U"],
+    "correct": 0,
+    "explanation": "`Extract<T, U>` keeps only the union members of T that extend U."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is structural typing?",
+    "options": ["Compatibility is based on shape, not declared name", "Types must share a base class", "Only identical names are compatible", "Types are checked at runtime"],
+    "correct": 0,
+    "explanation": "TypeScript compares the structure of types, so matching shapes are compatible."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does declaring `function f(x: string): string; function f(x: number): number;` create?",
+    "options": ["Overload signatures for one implementation", "Two separate functions", "A generic function", "A runtime type switch"],
+    "correct": 0,
+    "explanation": "These are overload signatures sitting above a single implementation."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does `NonNullable<T>` produce?",
+    "options": ["T without null and undefined", "T with everything optional", "A boolean", "T widened to any"],
+    "correct": 0,
+    "explanation": "`NonNullable<T>` removes `null` and `undefined` from T."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the `in` operator narrow on an object union?",
+    "options": ["Which member has the named property", "The array length", "The prototype chain depth", "Nothing — it's runtime only"],
+    "correct": 0,
+    "explanation": "`'prop' in obj` narrows the union to members that declare that property."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What is the difference between `type` and `interface` for extension?",
+    "options": ["interface uses `extends`, type uses intersections (`&`)", "Only type can extend", "Only interface can be generic", "Neither can be extended"],
+    "correct": 0,
+    "explanation": "Interfaces extend with `extends`; type aliases compose with `&`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does a generic default like `<T = string>` provide?",
+    "options": ["A fallback type when none is supplied", "A required argument", "A runtime default value", "Type widening"],
+    "correct": 0,
+    "explanation": "Generic defaults supply the type argument when the caller omits it."
   },
   {
     "tech": "TypeScript",
@@ -96,43 +537,259 @@
     "prompt": "What is `infer` used for in a conditional type?",
     "options": ["Capturing a type from within the type being matched", "Forcing a value to a specific type", "Declaring a generic default", "Widening a literal to its base type"],
     "correct": 0,
-    "explanation": "`infer R` introduces a type variable inside a conditional type, e.g. `T extends Array<infer R> ? R : never`."
+    "explanation": "`infer` introduces a type variable inferred from the matched position."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "high",
     "prompt": "What does the `satisfies` operator do?",
-    "options": ["Checks a value matches a type without widening its inferred type", "Asserts a value is a type at runtime", "Casts a value, bypassing checks", "Makes a type's properties optional"],
+    "options": ["Checks a value matches a type without widening it", "Casts the value to the type", "Asserts non-null", "Creates a branded type"],
     "correct": 0,
-    "explanation": "`satisfies` validates against a type while preserving the more specific inferred type of the value."
+    "explanation": "`satisfies` validates against a type while preserving the value's narrower inferred type."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "high",
     "prompt": "What does a mapped type `{ [K in keyof T]: ... }` do?",
-    "options": ["Builds a new type by transforming each property of T", "Iterates T's values at runtime", "Returns the keys of T as an array", "Removes all properties from T"],
+    "options": ["Transforms each property of T into a new type", "Picks one key from T", "Removes keys from T", "Unions T's values"],
     "correct": 0,
-    "explanation": "Mapped types project over each key of T to construct a new type (the basis of Partial, Readonly, etc.)."
+    "explanation": "Mapped types iterate keys of T to build a transformed type."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "high",
     "prompt": "In `T extends U ? X : Y`, what is being tested?",
-    "options": ["Whether T is assignable to U", "Whether T and U are identical", "Whether T inherits a class U", "Whether U is a subtype of T"],
+    "options": ["Whether T is assignable to U", "Whether T equals U by name", "Whether T is a subclass of U", "Whether T is truthy"],
     "correct": 0,
-    "explanation": "Conditional types branch on assignability — is T assignable to U."
+    "explanation": "Conditional types check assignability of T to U."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "high",
     "prompt": "Why narrow `unknown` input rather than typing it `any`?",
-    "options": ["unknown keeps type safety by forcing a check before use", "unknown is faster at runtime", "any cannot be assigned to objects", "unknown auto-casts to the right type"],
+    "options": ["`unknown` preserves type safety until you prove the shape", "`unknown` is faster", "`any` is deprecated", "`unknown` auto-validates at runtime"],
     "correct": 0,
-    "explanation": "`unknown` preserves safety: the compiler blocks use until you narrow, while `any` silently allows anything."
+    "explanation": "`unknown` forces explicit checks, keeping safety; `any` discards it."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does a key remapping clause `as` in a mapped type enable?",
+    "options": ["Renaming or filtering keys during the mapping", "Casting the value", "Asserting non-null", "Adding index signatures"],
+    "correct": 0,
+    "explanation": "`{ [K in keyof T as NewKey]: ... }` lets you rename or drop keys (drop via `never`)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is a template literal type?",
+    "options": ["A type built from string interpolation of other types", "A tagged template at runtime", "A multiline string type", "A regex type"],
+    "correct": 0,
+    "explanation": "Template literal types like `` `on${Capitalize<E>}` `` compose string types."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does the `-?` modifier do in a mapped type?",
+    "options": ["Removes optionality from properties", "Adds optionality", "Removes readonly", "Negates the key"],
+    "correct": 0,
+    "explanation": "`-?` strips the optional modifier (as `Required<T>` does)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Why does `Parameters<T>` use a tuple type?",
+    "options": ["To preserve order and labels of the function's parameters", "Because tuples are faster", "To allow rest spreads only", "To erase types"],
+    "correct": 0,
+    "explanation": "`Parameters<T>` returns a tuple representing the ordered parameter types."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `as const` plus indexed access (`typeof arr[number]`) give you?",
+    "options": ["A union of the array's literal element types", "The array length", "A readonly tuple", "The first element's type"],
+    "correct": 0,
+    "explanation": "Indexing a const array by `number` yields the union of its element literals."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is the purpose of branded (nominal) types in TypeScript?",
+    "options": ["Simulate nominal typing to prevent mixing structurally-identical types", "Speed up compilation", "Enable inheritance", "Add runtime tags automatically"],
+    "correct": 0,
+    "explanation": "An intersection with a unique brand prevents accidental assignment between same-shaped types."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Why can excess property checks fire on object literals but not on variables?",
+    "options": ["Fresh literals get strict excess-property checking", "Variables are always `any`", "Literals are readonly", "Variables skip type checks"],
+    "correct": 0,
+    "explanation": "TypeScript flags excess properties on fresh object literals; assigning via a variable bypasses it."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `Awaited<T>` resolve?",
+    "options": ["The value type a Promise (possibly nested) resolves to", "Whether T is a promise", "The rejection type", "The async function's parameters"],
+    "correct": 0,
+    "explanation": "`Awaited<T>` recursively unwraps Promise types to the resolved value."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does function parameter bivariance affect?",
+    "options": ["How method parameter types are checked for compatibility", "Return type inference", "Generic defaults", "Enum values"],
+    "correct": 0,
+    "explanation": "Method parameters are checked bivariantly (a known unsoundness), unlike `strictFunctionTypes` function properties."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `const x = obj as unknown as Target` accomplish?",
+    "options": ["A double assertion to bypass an incompatible direct cast", "A runtime conversion", "A deep clone", "A null check"],
+    "correct": 0,
+    "explanation": "Routing through `unknown` allows an assertion the compiler would otherwise reject (use sparingly)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does a generic function's return-type inference rely on?",
+    "options": ["Inferring type arguments from the call's arguments", "The variable it's assigned to only", "Runtime reflection", "The tsconfig target"],
+    "correct": 0,
+    "explanation": "TypeScript infers generic type parameters from the supplied arguments."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Why does `keyof any` resolve to `string | number | symbol`?",
+    "options": ["Those are the valid JavaScript property key types", "It's a compiler bug", "Because arrays use numbers", "To support enums"],
+    "correct": 0,
+    "explanation": "Object keys in JS can be strings, numbers, or symbols."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `InstanceType<typeof Class>` give you?",
+    "options": ["The instance type a constructor produces", "The static side of the class", "The constructor parameters", "The class name"],
+    "correct": 0,
+    "explanation": "`InstanceType<C>` extracts the instance type from a constructor type."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How does control-flow analysis narrow inside a `switch (x.kind)`?",
+    "options": ["Each case narrows the discriminated union to that member", "It widens to any", "It checks at runtime only", "It requires casts in every branch"],
+    "correct": 0,
+    "explanation": "Switching on the discriminant narrows the union per case."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does adding a `never` default branch with `assertNever(x)` enforce?",
+    "options": ["Exhaustiveness — a compile error if a case is unhandled", "A runtime crash always", "Faster switches", "Removal of the union"],
+    "correct": 0,
+    "explanation": "Assigning the remaining value to `never` fails to compile if a union member is unhandled."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does the `unique symbol` type enable?",
+    "options": ["A nominal, distinct symbol type usable as a key", "A global symbol registry", "Faster symbols", "Runtime uniqueness checks"],
+    "correct": 0,
+    "explanation": "`unique symbol` gives each symbol a distinct type, useful for branded keys."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Why is `Function` discouraged as a type?",
+    "options": ["It accepts any callable and returns `any`, losing safety", "It is deprecated", "It can't be called", "It only allows arrow functions"],
+    "correct": 0,
+    "explanation": "`Function` is too loose; prefer a specific call signature like `(x: number) => void`."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `as const` do to a function's tuple return for inference?",
+    "options": ["Preserves element positions/literals so callers can destructure typed values", "Makes it mutable", "Removes the types", "Boxes it in a Promise"],
+    "correct": 0,
+    "explanation": "Returning `[a, b] as const` keeps a precise readonly tuple for the caller."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What is the effect of `strictFunctionTypes`?",
+    "options": ["Function-type parameters are checked contravariantly", "All functions become async", "Parameters become optional", "Return types are ignored"],
+    "correct": 0,
+    "explanation": "It enables sound contravariant checking for function-typed properties."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does a conditional type with a naked type parameter trigger over a union?",
+    "options": ["Distribution across each union member", "A compile error", "Collapse to never", "Widening to any"],
+    "correct": 0,
+    "explanation": "A naked type parameter distributes the conditional over each member of a union."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "How do you prevent a conditional type from distributing over a union?",
+    "options": ["Wrap the parameter in a tuple: `[T] extends [U]`", "Use `as const`", "Add `readonly`", "Use `infer`"],
+    "correct": 0,
+    "explanation": "Wrapping both sides in single-element tuples stops distribution."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does `Parameters` plus a rest tuple enable in a wrapper function?",
+    "options": ["Forwarding arguments with their exact types via `...args: Parameters<F>`", "Runtime argument validation", "Memoization", "Currying only"],
+    "correct": 0,
+    "explanation": "Spreading a `Parameters<F>` tuple lets a wrapper preserve the original signature."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "Why might `as` assertions hide real bugs?",
+    "options": ["They tell the compiler to trust you, skipping the check", "They run extra validation", "They are removed in strict mode", "They only work on primitives"],
+    "correct": 0,
+    "explanation": "Assertions override the checker, so an incorrect one silently passes."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does the `@ts-expect-error` comment add over `@ts-ignore`?",
+    "options": ["It errors if the next line has no error", "It disables the whole file", "It suppresses runtime errors", "Nothing — they are identical"],
+    "correct": 0,
+    "explanation": "`@ts-expect-error` flags stale suppressions by erroring when the expected error disappears."
   },
   {
     "tech": "TypeScript",
@@ -141,43 +798,259 @@
     "prompt": "How do distributive conditional types behave over a union?",
     "options": ["The condition is applied to each member of the union separately", "The union is treated as a single opaque type", "Only the first member is tested", "Distribution requires an explicit decorator"],
     "correct": 0,
-    "explanation": "A naked type parameter in a conditional distributes over unions; wrapping in a tuple `[T] extends [U]` disables it."
+    "explanation": "A naked type parameter distributes the conditional across each union member."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "ultra",
     "prompt": "What does a `const` type parameter `<const T>` (TS 5.0) do?",
-    "options": ["Infers the narrowest literal type for the argument", "Makes the function pure", "Freezes the argument at runtime", "Requires the argument to be a constant"],
+    "options": ["Infers the most literal type for the argument", "Freezes the value at runtime", "Forces T to be a constant enum", "Disables inference"],
     "correct": 0,
-    "explanation": "A `const` type parameter infers literal types as if the caller wrote `as const`."
+    "explanation": "`const` type parameters infer literal types as if the caller wrote `as const`."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "ultra",
     "prompt": "Which constructs support declaration merging?",
-    "options": ["Interfaces, namespaces, and enums", "Type aliases only", "Classes and type aliases", "Every type construct"],
+    "options": ["interfaces, namespaces, and enums", "type aliases", "arrow functions", "const objects"],
     "correct": 0,
-    "explanation": "Interfaces, namespaces, and enums can merge; type aliases cannot be redeclared."
+    "explanation": "Interfaces, namespaces, and enums (among others) merge across declarations."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "ultra",
     "prompt": "What is a variadic tuple type?",
-    "options": ["A tuple that includes a spread of another array/tuple type", "A tuple whose length is fixed at four", "A union of tuple types", "A tuple that can hold only one type"],
+    "options": ["A tuple using `...` to spread another tuple/array type", "A tuple of unknown length only", "A union of tuples", "A readonly array"],
     "correct": 0,
-    "explanation": "Variadic tuples use `...T` to compose tuples of arbitrary length, e.g. `[string, ...number[]]`."
+    "explanation": "Variadic tuples splice spreads like `[string, ...T, number]`."
   },
   {
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "ultra",
     "prompt": "What commonly triggers \"Type instantiation is excessively deep and possibly infinite\"?",
-    "options": ["A recursive conditional/mapped type exceeding the depth limit", "Too many properties on an interface", "Using any in a generic", "Importing a circular module"],
+    "options": ["Recursive conditional/mapped types without a base case", "Too many union members", "Large enums", "Importing many files"],
     "correct": 0,
-    "explanation": "Deeply recursive type-level computation hits TypeScript's instantiation depth guard."
+    "explanation": "Unbounded recursive type instantiation exceeds the compiler's depth limit."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How can you parse a path string into a typed tuple of segments?",
+    "options": ["A recursive template literal type with `infer`", "A runtime split mapped to types", "`keyof` over the string", "It's impossible in the type system"],
+    "correct": 0,
+    "explanation": "Recursive template literal types with `infer` can split strings at the type level."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Why does `0 extends 1 & string ? ... ` style trickery detect `any`?",
+    "options": ["`any` makes both branches of a conditional type resolve, unlike other types", "`any` throws at compile time", "It checks the runtime value", "It only works on never"],
+    "correct": 0,
+    "explanation": "Because `any` is assignable both ways, a conditional yields a union of both branches — a known `IsAny` trick."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does higher-kinded-type emulation in TS typically rely on?",
+    "options": ["Interface-based 'type lambda' lookups since TS lacks native HKTs", "Native `kind` keyword", "Decorators", "Generic defaults"],
+    "correct": 0,
+    "explanation": "TS has no native HKTs; libraries emulate them via interface registries indexed by a URI."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is the effect of `--exactOptionalPropertyTypes`?",
+    "options": ["Distinguishes a missing property from one explicitly set to undefined", "Removes all optional properties", "Makes optionals required", "Adds runtime checks"],
+    "correct": 0,
+    "explanation": "With it on, `{ a?: string }` no longer accepts `{ a: undefined }` unless undefined is in the type."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Why can large unions in mapped/conditional types cause exponential blowups?",
+    "options": ["Distribution multiplies combinations across members", "The GC pauses", "Strings are interned", "Enums expand at runtime"],
+    "correct": 0,
+    "explanation": "Distributive operations over big unions can combinatorially explode instantiations."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does `infer` with a constraint (`infer R extends string`) enable (TS 4.7+)?",
+    "options": ["Constraining and narrowing the inferred type inline", "Runtime validation", "Default generics", "Recursion limits"],
+    "correct": 0,
+    "explanation": "Constrained `infer` narrows the captured type within the conditional."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How does TypeScript model function overload resolution for a union argument?",
+    "options": ["It does not distribute overloads; it picks the first matching signature", "It distributes like conditional types", "It merges all overloads", "It always uses the last overload"],
+    "correct": 0,
+    "explanation": "Overload resolution selects the first compatible signature and does not distribute over unions."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is the purpose of a 'phantom' type parameter?",
+    "options": ["Carry compile-time information without a runtime field", "Speed up generics", "Enable reflection", "Force inheritance"],
+    "correct": 0,
+    "explanation": "Phantom type params encode info (like units) in the type without affecting runtime data."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Why does widening occur when you assign a literal to a mutable variable?",
+    "options": ["TypeScript widens to the base type for mutability", "To save memory", "Because of `any`", "Literals are illegal in variables"],
+    "correct": 0,
+    "explanation": "A mutable `let x = 'a'` widens to `string`; `const` or `as const` keeps the literal."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does the `NoInfer<T>` utility (TS 5.4) do?",
+    "options": ["Blocks a type parameter from being inferred from that position", "Disables all inference", "Forces literal inference", "Throws on inference"],
+    "correct": 0,
+    "explanation": "`NoInfer<T>` excludes a position from candidate inference, steering which argument drives T."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How can you type a deeply readonly version of a nested object?",
+    "options": ["A recursive mapped type applying readonly to each level", "The `readonly` keyword alone", "`Object.freeze` in the type", "`as const` on the type alias"],
+    "correct": 0,
+    "explanation": "A recursive `DeepReadonly` mapped type applies `readonly` through nested structures."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Why might two structurally-identical generic classes still be incompatible?",
+    "options": ["A private/protected member ties identity to the declaring class", "Generics are nominal", "Classes never match", "Methods are bivariant"],
+    "correct": 0,
+    "explanation": "Private/protected members make a class compare nominally, breaking pure structural matching."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does a recursive type with a tuple accumulator commonly implement?",
+    "options": ["Type-level operations like length counting or building ranges", "Faster runtime loops", "Async iteration", "JSON parsing at runtime"],
+    "correct": 0,
+    "explanation": "Accumulating into a tuple is a standard pattern for type-level arithmetic/recursion."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is the practical risk of overusing complex conditional types in a library's public API?",
+    "options": ["Slow type-checking and cryptic errors for consumers", "Larger runtime bundles", "Memory leaks at runtime", "Breaking tree-shaking"],
+    "correct": 0,
+    "explanation": "Heavy type-level machinery hurts editor performance and produces hard-to-read errors."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How does `this` typing with polymorphic `this` help builder APIs?",
+    "options": ["Methods return the concrete subclass type for chaining", "It removes `this` entirely", "It forces static methods", "It disables inheritance"],
+    "correct": 0,
+    "explanation": "Polymorphic `this` lets chained methods return the subclass type, preserving fluent APIs."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does module augmentation let you do?",
+    "options": ["Add declarations to an existing module's types", "Rewrite a module at runtime", "Delete exports", "Bundle modules"],
+    "correct": 0,
+    "explanation": "`declare module '...'` augmentation merges new members into existing module typings."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Why is `Object.keys(obj)` typed as `string[]` rather than `(keyof T)[]`?",
+    "options": ["Objects may have extra keys at runtime, so it's intentionally unsound to narrow", "It's a compiler bug", "keyof is too slow", "Keys are always symbols"],
+    "correct": 0,
+    "explanation": "Structural typing allows extra properties at runtime, so a `keyof` return would be unsound."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does the `using` declaration (TS 5.2) enable?",
+    "options": ["Deterministic resource disposal via Symbol.dispose", "Importing modules lazily", "Type-only imports", "Auto-memoization"],
+    "correct": 0,
+    "explanation": "`using` ties a disposable resource's cleanup to scope exit (explicit resource management)."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How can template literal types validate a string format like an email at compile time (roughly)?",
+    "options": ["Pattern via `` `${string}@${string}.${string}` `` constraints", "Regex types", "Runtime guards only", "They cannot represent any pattern"],
+    "correct": 0,
+    "explanation": "Template literal types can approximate formats with interpolated `string` segments."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Why can deeply recursive mapped types hit editor performance cliffs?",
+    "options": ["Each access re-instantiates the type, ballooning work", "They allocate runtime memory", "They block the event loop", "They disable caching"],
+    "correct": 0,
+    "explanation": "Recursive instantiation isn't always cached cheaply, so large structures slow the checker."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What does covariance of arrays cause that tuples/readonly arrays mitigate?",
+    "options": ["Unsound writes through a widened array reference", "Slower iteration", "Loss of length", "Extra allocations"],
+    "correct": 0,
+    "explanation": "Array covariance permits unsound assignments; `readonly` arrays forbid the unsafe writes."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "How does conditional-type `infer` in multiple positions resolve?",
+    "options": ["Co-positions intersect, contra-positions union the inferred type", "It always unions", "It always intersects", "It errors"],
+    "correct": 0,
+    "explanation": "Multiple `infer` sites combine by variance: covariant union, contravariant intersection."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What is the role of `// @ts-expect-error` in type-level tests?",
+    "options": ["Assert that an invalid usage is correctly rejected", "Speed up tests", "Mock modules", "Ignore runtime errors"],
+    "correct": 0,
+    "explanation": "It documents and verifies that a given expression *should* fail type-checking."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "Why prefer `satisfies` over a type annotation for a config object with literal keys?",
+    "options": ["It validates the shape while keeping precise literal inference", "It runs validation at runtime", "It freezes the object", "It removes excess keys"],
+    "correct": 0,
+    "explanation": "`satisfies` checks conformance without widening, so keys/values stay literal."
   },
   {
     "tech": "JavaScript",
@@ -1078,5 +1951,32 @@
     "options": ["map is an ordered balanced tree (O(log n)); unordered_map is a hash table (avg O(1))", "Both are hash tables", "unordered_map keeps keys sorted", "map has O(1) lookup"],
     "correct": 0,
     "explanation": "map keeps keys sorted via a balanced BST; unordered_map hashes keys for average constant-time access, unordered."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "mid",
+    "prompt": "What does the `&` operator create between two object types?",
+    "options": ["An intersection type with members of both", "A union of the two", "A tuple of the two", "A conditional type"],
+    "correct": 0,
+    "explanation": "Intersection types (`A & B`) require all members of both types."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "high",
+    "prompt": "What does an optional tuple element like `[string, number?]` allow?",
+    "options": ["The trailing element may be omitted", "Both elements become optional", "It widens to an array", "It throws at compile time"],
+    "correct": 0,
+    "explanation": "Optional tuple members permit shorter tuples while keeping positions typed."
+  },
+  {
+    "tech": "TypeScript",
+    "category": "Languages",
+    "difficulty": "ultra",
+    "prompt": "What do the variance annotations `in` / `out` on type parameters (TS 4.7) do?",
+    "options": ["Explicitly declare a parameter contravariant or covariant", "Set runtime data direction", "Import or export types", "Make the parameter optional"],
+    "correct": 0,
+    "explanation": "`in`/`out` let you annotate (and have the compiler verify) a type parameter's variance."
   }
 ]
