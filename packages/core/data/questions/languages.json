@@ -849,10 +849,10 @@
     "tech": "TypeScript",
     "category": "Languages",
     "difficulty": "ultra",
-    "prompt": "Why does `0 extends 1 & string ? ... ` style trickery detect `any`?",
-    "options": ["`any` makes both branches of a conditional type resolve, unlike other types", "`any` throws at compile time", "It checks the runtime value", "It only works on never"],
+    "prompt": "What is unusual about `any` on the checked side of a conditional type, e.g. `any extends string ? 1 : 2`?",
+    "options": ["It resolves to both branches as a union (here `1 | 2`)", "It resolves to the true branch only", "It is a compile error", "It resolves to `never`"],
     "correct": 0,
-    "explanation": "Because `any` is assignable both ways, a conditional yields a union of both branches — a known `IsAny` trick."
+    "explanation": "When the checked type is `any`, a conditional type evaluates to the union of both branches — the basis of `IsAny` tricks."
   },
   {
     "tech": "TypeScript",
@@ -1030,7 +1030,7 @@
     "category": "Languages",
     "difficulty": "ultra",
     "prompt": "How does conditional-type `infer` in multiple positions resolve?",
-    "options": ["Co-positions intersect, contra-positions union the inferred type", "It always unions", "It always intersects", "It errors"],
+    "options": ["Covariant positions union, contravariant positions intersect the inferred type", "It always unions", "It always intersects", "It errors"],
     "correct": 0,
     "explanation": "Multiple `infer` sites combine by variance: covariant union, contravariant intersection."
   },
