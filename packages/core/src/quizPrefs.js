@@ -1,10 +1,11 @@
 export const QUIZ_SIZE_STORAGE_KEY = "grip.quizSize";
-export const QUIZ_SIZE_MIN = 3;
+export const QUIZ_SIZE_MIN = 1;
 export const QUIZ_SIZE_DEFAULT_MAX = 20;
 export const DEFAULT_QUIZ_SIZE = null;
 
 /** @type {{ label: string, value: number | null }[]} */
 export const QUIZ_SIZE_OPTIONS = [
+  { label: "1", value: 1 },
   { label: "3", value: 3 },
   { label: "5", value: 5 },
   { label: "10", value: 10 },
@@ -32,14 +33,13 @@ export function serializeQuizSize(value) {
 
 /**
  * @param {string | number | null | undefined} value
- * @param {number | null | undefined} [poolSize]
  * @returns {number | null}
  */
-export function normalizeQuizSize(value, poolSize = null) {
+export function normalizeQuizSize(value) {
   if (value === null || value === undefined) return DEFAULT_QUIZ_SIZE;
   const n = typeof value === "number" ? value : parseInt(String(value), 10);
   if (!Number.isFinite(n) || n < QUIZ_SIZE_MIN) return DEFAULT_QUIZ_SIZE;
-  return typeof poolSize === "number" && n >= poolSize ? DEFAULT_QUIZ_SIZE : n;
+  return n;
 }
 
 /**
@@ -66,6 +66,6 @@ export function effectiveQuizSize(quizSize, poolSize) {
  * @returns {number}
  */
 export function questionCapForPool(quizSize, poolSize) {
-  const normalized = normalizeQuizSize(quizSize, poolSize);
-  return normalized === null ? poolSize : normalized;
+  const normalized = normalizeQuizSize(quizSize);
+  return normalized === null ? poolSize : Math.min(normalized, poolSize);
 }

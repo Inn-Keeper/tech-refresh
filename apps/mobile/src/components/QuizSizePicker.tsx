@@ -10,6 +10,13 @@ type Props = {
 };
 
 export function QuizSizePicker({ quizSize, poolSize, onQuizSize }: Props) {
+  const detail =
+    poolSize === null
+      ? "Open a card to count."
+      : quizSize === null
+        ? `All = ${poolSize} on last card`
+        : `Last card: ${poolSize} found`;
+
   return (
     <View
       style={{
@@ -27,18 +34,18 @@ export function QuizSizePicker({ quizSize, poolSize, onQuizSize }: Props) {
           <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textDim, letterSpacing: 0.6 }}>QUESTIONS</Text>
         </View>
         <Text style={{ flex: 1, textAlign: "right", fontSize: 10.5, color: colors.textFaint }} numberOfLines={1}>
-          {poolSize !== null ? `${poolSize} available at this level` : "Open a card to detect pool size."}
+          {detail}
         </Text>
       </View>
 
       <View style={{ flexDirection: "row", gap: 6 }}>
         {QUIZ_SIZE_OPTIONS.map((option) => {
           const active = quizSize === option.value;
-          const disabled = typeof option.value === "number" && poolSize !== null && option.value >= poolSize;
+          const disabled = typeof option.value === "number" && poolSize !== null && option.value > poolSize;
           return (
             <TouchableOpacity
               key={option.label}
-              onPress={() => onQuizSize(normalizeQuizSize(option.value, poolSize))}
+              onPress={() => onQuizSize(normalizeQuizSize(option.value))}
               accessibilityState={{ selected: active, disabled }}
               style={{
                 flex: 1,

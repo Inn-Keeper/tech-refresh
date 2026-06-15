@@ -9,13 +9,19 @@ export function QuizSizeSelector({ quizSize, poolSize, onQuizSize }: { quizSize:
   // detects the real pool size, the user's chosen cap should not become the max.
   const max = quizSizeMax(poolSize);
   const effective = effectiveQuizSize(quizSize, poolSize);
+  const subtitle =
+    poolSize === null
+      ? "Open a card to count its question pool."
+      : isAll
+        ? `All = ${poolSize} questions for the last opened card.`
+        : `Last opened card has ${poolSize} questions.`;
 
   return (
     <WorkspacePanel>
       <WorkspaceTitle
         icon={<BrandIcon name="layers" color={colors.accentBright} size={17} />}
         title="Questions per card"
-        subtitle={poolSize !== null ? `${poolSize} available at this level` : "Open a card to detect pool size."}
+        subtitle={subtitle}
       />
       <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -46,7 +52,7 @@ export function QuizSizeSelector({ quizSize, poolSize, onQuizSize }: { quizSize:
           value={effective}
           onChange={(e) => {
             const v = parseInt(e.target.value, 10);
-            onQuizSize(normalizeQuizSize(v, max));
+            onQuizSize(normalizeQuizSize(v));
           }}
           style={{ width: "100%", accentColor: colors.accent }}
         />

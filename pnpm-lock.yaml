@@ -172,9 +172,12 @@ importers:
       '@babel/preset-env':
         specifier: ^7.29.7
         version: 7.29.7(@babel/core@7.29.7)
+      babel-jest:
+        specifier: 29.7.0
+        version: 29.7.0(@babel/core@7.29.7)
       jest:
-        specifier: ^30.4.2
-        version: 30.4.2(@types/node@25.9.3)
+        specifier: 29.7.0
+        version: 29.7.0(@types/node@25.9.3)
 
 packages:
 
