@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
+import { friendlyAuthError } from "@tech-refresh/core/auth";
 import * as api from "./api.js";
 import { supabase } from "./supabase.js";
 import { poeVisibleByDefault, setPoeAssistantVisible } from "./poeAssistant.js";
@@ -125,13 +126,7 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
       });
       if (error) {
         window.localStorage.removeItem(GITHUB_LINK_PENDING_KEY);
-        if (error.message.includes("Unsupported provider")) {
-          throw new Error("GitHub login is not enabled in Supabase yet. Enable the GitHub provider, then try again.");
-        }
-        if (error.message.includes("Manual linking")) {
-          throw new Error("Identity linking is disabled in Supabase Auth. Enable manual linking, then try again.");
-        }
-        throw error;
+        throw new Error(friendlyAuthError(error.message));
       }
       if (data?.url) window.location.assign(data.url);
     },
@@ -143,7 +138,9 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
   });
 
   const githubUrl = profile?.githubUrl || githubUrlFromIdentity(githubIdentity) || githubUrlFromMetadata(authUser?.user_metadata) || githubViewerUrl || githubPublicUrl;
-  const githubConnected = linkedInThisSession || authProviders.includes("github") || !!githubIdentity || !!githubUrl;
+  // "Connected" means a real GitHub OAuth identity is linked — not merely that a
+  // githubUrl exists, since that can be a hand-typed/saved profile field.
+  const githubConnected = linkedInThisSession || authProviders.includes("github") || !!githubIdentity;
 
   useEffect(() => {
     if (!profile) return;

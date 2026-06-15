@@ -172,5 +172,7 @@ export function evaluate(scenario, nodes, edges) {
     if (w.when({ hasNode, hasEdge })) warnings.push(w.text);
   }
 
-  return { checks, earned, totalPts, score: Math.round((earned / totalPts) * 100), cost, maint, warnings };
+  // A scenario with no scorable checks would divide by zero; treat it as 0%.
+  const score = totalPts > 0 ? Math.round((earned / totalPts) * 100) : 0;
+  return { checks, earned, totalPts, score, cost, maint, warnings };
 }

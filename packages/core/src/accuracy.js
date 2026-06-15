@@ -12,23 +12,22 @@ const dayKey = (value) => {
  * @param {Array<{ correct: boolean, createdAt?: string, created_at?: string }>} events
  */
 export function buildAccuracyTimeline(events = []) {
-  const sorted = [...events]
-    .filter((event) => event.createdAt || event.created_at)
-    .sort((a, b) => new Date(a.createdAt ?? a.created_at).getTime() - new Date(b.createdAt ?? b.created_at).getTime());
+  const sorted = events
+    // Keep only events with a parseable timestamp — a bad value would otherwise
+    // produce a "NaN-NaN-NaN" bucket and poison the sort.
+    .map((event) => ({ event, time: new Date(event.createdAt ?? event.created_at).getTime() }))
+    .filter(({ time }) => !Number.isNaN(time))
+    .sort((a, b) => a.time - b.time);
 
   let correct = 0;
   let total = 0;
   const byDay = new Map();
 
-  for (const event of sorted) {
+  for (const { event, time } of sorted) {
     total += 1;
     if (event.correct) correct += 1;
-    byDay.set(dayKey(event.createdAt ?? event.created_at), {
-      date: dayKey(event.createdAt ?? event.created_at),
-      accuracy: correct / total,
-      correct,
-      total,
-    });
+    const key = dayKey(time);
+    byDay.set(key, { date: key, accuracy: correct / total, correct, total });
   }
 
   return [...byDay.values()];

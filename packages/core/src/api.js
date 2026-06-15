@@ -3,6 +3,12 @@
 import { buildAccuracyTimeline } from "./accuracy.js";
 import { CORRECT_XP } from "./gamification.js";
 import { difficultyByKey } from "./difficulty.js";
+import { shuffle } from "./quiz.js";
+
+// Upper bound on how many candidate questions we pull for a techs+difficulty
+// fetch before randomizing. Selection happens client-side (see getQuestions),
+// so this only needs to comfortably exceed a tier's pool across a few techs.
+const QUESTION_FETCH_CAP = 500;
 
 /**
  * @typedef {object} Retro
@@ -97,7 +103,9 @@ export const dateToDb = (ddmmyyyy) => {
 };
 
 const fail = (error) => {
-  throw new Error(error.message);
+  // Preserve the original Supabase error (code, details, hint) as `cause` so
+  // the surfaced message isn't the only thing left for debugging.
+  throw new Error(error.message, { cause: error });
 };
 
 /**
@@ -363,6 +371,12 @@ export function createApi(supabase) {
 
   /**
    * Fetches tiered quiz questions for the given techs at one difficulty.
+   *
+   * `limit` is the number of questions to return, not a DB truncation: we pull
+   * the whole candidate pool (capped at QUESTION_FETCH_CAP), shuffle it, then
+   * slice. Ordering the query alone would hand back the same first N rows every
+   * call and could starve some of the requested techs; randomizing client-side
+   * keeps drills varied and spread across all techs.
    * @param {{ techs: string[], difficulty: string, limit?: number }} args
    * @returns {Promise<{ id: string, tech: string, category: string, difficulty: string, prompt: string, options: string[], correct: number, explanation: string | null }[]>}
    */
@@ -373,13 +387,16 @@ export function createApi(supabase) {
       .select("id, tech, category, difficulty, prompt, options, correct, explanation")
       .in("tech", techs)
       .eq("difficulty", difficulty)
-      .limit(limit);
+      .limit(QUESTION_FETCH_CAP);
     if (error) fail(error);
-    return data;
+    return shuffle(data).slice(0, limit);
   }
 
   // `difficulty` is optional: tiered drills pass a tier (scaled XP), while the
   // flip cards omit it and fall back to the flat CORRECT_XP reward.
+  // Not atomic: the answer row is written before XP is awarded. If addXp throws
+  // we surface it, but the event is already recorded — a manual retry would
+  // double-count the answer. Acceptable until both move into a single RPC.
   async function recordAnswer(tech, correct, source = "card", difficulty = null) {
     const { error } = await supabase
       .from("answer_events")

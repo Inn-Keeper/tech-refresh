@@ -5,11 +5,18 @@ import { t } from "@tech-refresh/core/i18n";
 import * as api from "./api.js";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import { BrandIcon, nodeIconName } from "./BrandIcon.jsx";
+import { Combobox } from "./Combobox.jsx";
 
 const NODE_W = 132;
 const NODE_H = 54;
 
 const CUSTOM_CATEGORY = "My scenarios";
+
+// Evaluation verdict bands (score %) and maintenance-load bands (sum of node maint).
+const SHIP_SCORE = 80;
+const REVIEW_SCORE = 50;
+const MAINT_LEAN_MAX = 8;
+const MAINT_MODERATE_MAX = 14;
 
 const CATEGORY_ICONS = {
   Commerce: "cost",
@@ -50,6 +57,14 @@ export default function ArchBoard() {
     ...SCENARIOS,
     ...customScenarios.map((s) => ({ ...s, category: CUSTOM_CATEGORY, custom: true })),
   ];
+  const scenarioOptions = [...SCENARIO_CATEGORIES, CUSTOM_CATEGORY]
+    .map((category) => ({
+      label: category,
+      options: allScenarios
+        .filter((s) => s.category === category)
+        .map((s) => ({ value: s.id, label: s.name })),
+    }))
+    .filter((group) => group.options.length > 0);
   const scenario = allScenarios.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
   const nodeById = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
@@ -275,29 +290,13 @@ export default function ArchBoard() {
       {/* Scenario picker */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
         <BrandIcon name={CATEGORY_ICONS[scenario.category] ?? "board"} color={colors.accentBright} size={16} />
-        <select
+        <Combobox
           value={scenario.id}
-          onChange={(e) => switchScenario(e.target.value)}
-          style={{
-            flex: 1, minWidth: 260, padding: "9px 12px",
-            background: colors.bgDeep, border: `1px solid ${colors.border}`, borderRadius: 8,
-            color: colors.text, fontSize: 13, fontWeight: 600, outline: "none",
-          }}
-        >
-          {[...SCENARIO_CATEGORIES, CUSTOM_CATEGORY].map((category) => {
-            const group = allScenarios.filter((s) => s.category === category);
-            if (group.length === 0) return null;
-            return (
-              <optgroup key={category} label={category}>
-                {group.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </optgroup>
-            );
-          })}
-        </select>
+          options={scenarioOptions}
+          onChange={switchScenario}
+          style={{ flex: 1, minWidth: 260 }}
+          triggerStyle={{ padding: "9px 12px", fontWeight: 600 }}
+        />
         <span style={{ fontSize: 11, color: colors.textFaint, fontWeight: 600 }}>
           {allScenarios.length} scenarios
         </span>
@@ -400,11 +399,15 @@ export default function ArchBoard() {
       </div>
 
 
-      {(saveBoardMutation.error || boardsError) && (
+      {(saveBoardMutation.error || deleteBoardMutation.error || deleteScenarioMutation.error || boardsError) && (
         <p style={{ margin: "0 0 10px", fontSize: 12, color: colors.dangerBright }}>
           {saveBoardMutation.error
             ? `${t("board.saveFailedTitle")}: ${saveBoardMutation.error.message}`
-            : t("board.boardsError", { message: boardsError.message })}
+            : deleteBoardMutation.error
+              ? `Delete failed: ${deleteBoardMutation.error.message}`
+              : deleteScenarioMutation.error
+                ? `Delete failed: ${deleteScenarioMutation.error.message}`
+                : t("board.boardsError", { message: boardsError.message })}
         </p>
       )}
 
@@ -631,17 +634,17 @@ export default function ArchBoard() {
           }}
         >
           <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 14, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 28, fontWeight: 700, color: result.score >= 80 ? colors.success : result.score >= 50 ? colors.warning : colors.danger }}>
+            <span style={{ fontSize: 28, fontWeight: 700, color: result.score >= SHIP_SCORE ? colors.success : result.score >= REVIEW_SCORE ? colors.warning : colors.danger }}>
               {result.score}%
             </span>
             <span style={{ fontSize: 14, fontWeight: 600, color: colors.textBright }}>
-              {result.score >= 80 ? t("board.verdictShip") : result.score >= 50 ? t("board.verdictReview") : t("board.verdictWhiteboard")}
+              {result.score >= SHIP_SCORE ? t("board.verdictShip") : result.score >= REVIEW_SCORE ? t("board.verdictReview") : t("board.verdictWhiteboard")}
             </span>
             <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: colors.textDim }}>
               <BrandIcon name="cost" color={colors.textDim} size={14} />
               {result.cost}/{scenario.budget} ·
               <BrandIcon name="maintenance" color={colors.textDim} size={14} />
-              maint {result.maint} ({result.maint <= 8 ? "lean" : result.maint <= 14 ? "moderate" : "heavy"})
+              maint {result.maint} ({result.maint <= MAINT_LEAN_MAX ? "lean" : result.maint <= MAINT_MODERATE_MAX ? "moderate" : "heavy"})
             </span>
           </div>
 
@@ -703,6 +706,7 @@ function ScenarioForm({ onSave, onCancel, saving, error }) {
     setRequiredNodes((prev) => (prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type]));
   const setEdgeAt = (index, side, value) =>
     setRequiredEdges((prev) => prev.map((e, i) => (i === index ? { ...e, [side]: value } : e)));
+  const nodeTypeOptions = NODE_TYPES.map((spec) => ({ value: spec.type, label: spec.label, color: TYPE_COLORS[spec.type] }));
 
   const canSave = name.trim() && (requiredNodes.length > 0 || requiredEdges.length > 0);
 
@@ -778,17 +782,9 @@ function ScenarioForm({ onSave, onCancel, saving, error }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {requiredEdges.map((e, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <select style={inputStyle} value={e.from} onChange={(ev) => setEdgeAt(i, "from", ev.target.value)}>
-                {NODE_TYPES.map((spec) => (
-                  <option key={spec.type} value={spec.type}>{spec.label}</option>
-                ))}
-              </select>
+              <Combobox value={e.from} options={nodeTypeOptions} onChange={(value) => setEdgeAt(i, "from", value)} style={{ flex: 1 }} />
               <BrandIcon name="arrowRight" color={colors.textFaint} size={12} />
-              <select style={inputStyle} value={e.to} onChange={(ev) => setEdgeAt(i, "to", ev.target.value)}>
-                {NODE_TYPES.map((spec) => (
-                  <option key={spec.type} value={spec.type}>{spec.label}</option>
-                ))}
-              </select>
+              <Combobox value={e.to} options={nodeTypeOptions} onChange={(value) => setEdgeAt(i, "to", value)} style={{ flex: 1 }} />
               <button
                 onClick={() => setRequiredEdges((prev) => prev.filter((_, j) => j !== i))}
                 title="Remove connection"

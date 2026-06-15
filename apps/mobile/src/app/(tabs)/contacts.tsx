@@ -2,13 +2,14 @@ import { useState } from "react";
 import { Alert, FlatList, Linking, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
+import { ROLE_POSITIONS, STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { t } from "@tech-refresh/core/i18n";
 import { api } from "@/lib/api";
 import { colors, tints } from "@/theme";
 import { BrandIcon } from "@/components/BrandIcon";
 import { Badge, Button, Field, HeaderAction, MiniButton, Pill, Screen, ScreenHeader, Section, inputStyle, multilineStyle } from "@/components/ui";
+import { Combobox } from "@/components/Combobox";
 import { DateField } from "@/components/DateField";
 import type { Contact } from "@tech-refresh/core/api";
 
@@ -449,7 +450,13 @@ function ContactForm({ initial, onSave, onCancel }: ContactFormProps) {
         </View>
       </Field>
       <Field label="Role / Position">
-        <TextInput style={inputStyle} value={form.role} onChangeText={set("role")} />
+        <Combobox
+          searchable
+          value={form.role}
+          onChange={set("role")}
+          placeholder="Start typing a role..."
+          options={ROLE_POSITIONS.map((role: string) => ({ value: role, label: role }))}
+        />
       </Field>
       <Field label="Link">
         <TextInput

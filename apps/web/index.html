@@ -19,6 +19,15 @@
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
       body { background: #14171F; } /* keep in sync with tokens.colors.bg */
+
+      /* Scrollbars — matched to the dark theme on both axes. Hex values mirror
+         tokens.colors (border / textFaint / bg); keep them in sync. */
+      html { scrollbar-width: thin; scrollbar-color: #353C4D transparent; } /* Firefox: thumb, track */
+      ::-webkit-scrollbar { width: 10px; height: 10px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #353C4D; border-radius: 999px; border: 2px solid #14171F; }
+      ::-webkit-scrollbar-thumb:hover { background: #6B7690; }
+      ::-webkit-scrollbar-corner { background: transparent; }
     </style>
   </head>
   <body>

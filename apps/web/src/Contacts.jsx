@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
+import { ROLE_POSITIONS, STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { FunnelDashboard } from "./FunnelDashboard.jsx";
 import * as api from "./api.js";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "./BrandIcon.jsx";
+import { Combobox } from "./Combobox.jsx";
 import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
 
 const EMPTY_FORM = {
@@ -578,19 +579,21 @@ function ContactForm({ initial, onSave, onCancel }) {
         <Field label="Name *">
           <input style={inputStyle} value={form.name} onChange={set("name")} autoFocus />
         </Field>
-        <Field label="Status">
-          <select style={inputStyle} value={form.status} onChange={set("status")}>
-            {STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <Combobox
+          label="Status"
+          value={form.status}
+          options={STATUSES.map((status) => ({ value: status, label: status, color: STATUS_STYLES[status].color }))}
+          onChange={(status) => setForm((f) => ({ ...f, status }))}
+        />
       </div>
-      <Field label="Role / Position">
-        <input style={inputStyle} value={form.role} onChange={set("role")} />
-      </Field>
+      <Combobox
+        label="Role / Position"
+        searchable
+        value={form.role}
+        onChange={(role) => setForm((f) => ({ ...f, role }))}
+        placeholder="Start typing a role..."
+        options={ROLE_POSITIONS.map((role) => ({ value: role, label: role }))}
+      />
       <Field label="Link">
         <input style={inputStyle} value={form.link} onChange={set("link")} placeholder="https://…" />
       </Field>
@@ -666,14 +669,22 @@ function Field({ label, children }) {
   );
 }
 
-// Native browser date picker bound to the app's DD-MM-YYYY format.
 function DateInput({ value, onChange }) {
   return (
     <input
-      type="date"
-      style={{ ...inputStyle, colorScheme: "dark" }}
-      value={api.dateToDb(value) ?? ""}
-      onChange={(e) => onChange(api.dateToUi(e.target.value))}
+      style={inputStyle}
+      value={value}
+      inputMode="numeric"
+      maxLength={10}
+      onChange={(e) => onChange(formatDateEntry(e.target.value))}
+      placeholder="DD-MM-YYYY"
     />
   );
+}
+
+function formatDateEntry(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
+  return `${digits.slice(0, 2)}-${digits.slice(2, 4)}-${digits.slice(4)}`;
 }

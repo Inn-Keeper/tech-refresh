@@ -6,7 +6,8 @@ import { t } from "@tech-refresh/core/i18n";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
-import { colors, font, radius, space } from "@/theme";
+import { linkGitHubIdentity } from "@/lib/oauth";
+import { colors, font, radius, space, tints } from "@/theme";
 import { Button, Field, HeaderAction, Screen, ScreenHeader, inputStyle } from "@/components/ui";
 
 type ProfileForm = Record<string, string>;
@@ -15,9 +16,40 @@ export default function ProfileScreen() {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ProfileForm>(EMPTY_PROFILE_FORM);
   const { data: profile = null, error: loadError } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
+  const { data: identities = [], error: identitiesError } = useQuery({
+    queryKey: ["auth-identities"],
+    queryFn: async () => {
+      const { data, error } = await supabase.auth.getUserIdentities();
+      if (error) throw error;
+      return data.identities ?? [];
+    },
+  });
+  const githubIdentityUrl = githubUrlFromIdentities(identities);
+  const displayGithubUrl = profile?.githubUrl || githubIdentityUrl;
+  // "Connected" means a real GitHub OAuth identity is linked — not merely that a
+  // githubUrl exists, since that can be a hand-typed/saved profile field.
+  const githubConnected = identities.some((identity) => identity.provider === "github");
   const saveMutation = useMutation({
     mutationFn: api.updateProfile,
     onSuccess: (saved) => queryClient.setQueryData(["profile"], saved),
+  });
+  const linkGitHubMutation = useMutation({
+    mutationFn: linkGitHubIdentity,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["auth-identities"] });
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+    },
+  });
+  const githubPrepMutation = useMutation({
+    mutationFn: (useGithubTechsForPrep: boolean) =>
+      api.updateProfile({
+        useGithubTechsForPrep,
+        ...(useGithubTechsForPrep && displayGithubUrl && !profile?.githubUrl ? { githubUrl: displayGithubUrl } : {}),
+      }),
+    onSuccess: (saved) => {
+      queryClient.setQueryData(["profile"], saved);
+      queryClient.invalidateQueries({ queryKey: ["github-techs"] });
+    },
   });
   const resetMutation = useMutation({
     mutationFn: api.resetScores,
@@ -30,8 +62,10 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (!profile) return;
-    setForm(profileToForm(profile));
-  }, [profile]);
+    const next = profileToForm(profile) as ProfileForm;
+    if (!next.githubUrl && displayGithubUrl) next.githubUrl = displayGithubUrl;
+    setForm(next);
+  }, [profile, displayGithubUrl]);
 
   const set = (key: string) => (value: string) => setForm((current) => ({ ...current, [key]: value }));
   const rank = rankForXp(profile?.xp ?? 0);
@@ -43,7 +77,7 @@ export default function ProfileScreen() {
       { text: "Reset", style: "destructive", onPress: () => resetMutation.mutate() },
     ]);
   };
-  const error = loadError || saveMutation.error || resetMutation.error;
+  const error = loadError || identitiesError || saveMutation.error || linkGitHubMutation.error || githubPrepMutation.error || resetMutation.error;
 
   return (
     <Screen>
@@ -122,6 +156,52 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: space.lg, gap: space.md }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md }}>
+            <Text style={{ color: colors.textBright, fontSize: font.size.title, fontWeight: "800" }}>GitHub</Text>
+            <ConnectionBadge connected={githubConnected} />
+          </View>
+          <Text style={{ color: colors.textFaint, fontSize: font.size.small, lineHeight: 18 }}>
+            {githubConnected
+              ? "GitHub is linked to this protected workspace."
+              : "Link GitHub while signed in to keep this same protected workspace."}
+          </Text>
+          {!!displayGithubUrl && (
+            <Text style={{ color: colors.accentBright, fontSize: font.size.small }} numberOfLines={1}>
+              {displayGithubUrl}
+            </Text>
+          )}
+          <TouchableOpacity
+            onPress={() => linkGitHubMutation.mutate()}
+            disabled={githubConnected || linkGitHubMutation.isPending || !profile}
+            style={{
+              borderWidth: 1,
+              borderColor: githubConnected ? colors.success : colors.border,
+              borderRadius: radius.sm,
+              paddingVertical: space.sm,
+              alignItems: "center",
+              opacity: linkGitHubMutation.isPending || !profile ? 0.5 : 1,
+            }}
+          >
+            <Text style={{ color: githubConnected ? colors.successBright : colors.textBright, fontSize: font.size.body, fontWeight: "800" }}>
+              {githubConnected ? "GitHub connected" : linkGitHubMutation.isPending ? "Opening GitHub..." : "Connect GitHub"}
+            </Text>
+          </TouchableOpacity>
+          <View style={{ borderTopWidth: 1, borderTopColor: colors.border, paddingTop: space.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: colors.text, fontSize: font.size.body, fontWeight: "800" }}>Use for prep recommendations</Text>
+              <Text style={{ color: colors.textFaint, fontSize: font.size.small, lineHeight: 18, marginTop: 2 }}>
+                Show the From GitHub techs category on Interview Prep.
+              </Text>
+            </View>
+            <Switch
+              checked={!!profile?.useGithubTechsForPrep}
+              disabled={!githubConnected || !displayGithubUrl || githubPrepMutation.isPending}
+              onChange={(checked) => githubPrepMutation.mutate(checked)}
+            />
+          </View>
+        </View>
+
+        <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: space.lg, gap: space.md }}>
           <Field label="Email">
             <TextInput editable={false} value={profile?.email ?? ""} style={[inputStyle, { color: colors.textDim }]} />
           </Field>
@@ -152,5 +232,68 @@ export default function ProfileScreen() {
         </View>
       </ScrollView>
     </Screen>
+  );
+}
+
+function githubUrlFromIdentities(identities: { provider?: string; identity_data?: Record<string, unknown> }[]) {
+  const github = identities.find((identity) => identity.provider === "github");
+  const data = github?.identity_data ?? {};
+  const username = [data.user_name, data.preferred_username, data.login].find(
+    (value): value is string => typeof value === "string" && value.trim().length > 0
+  );
+  return username ? `https://github.com/${username}` : "";
+}
+
+function ConnectionBadge({ connected }: { connected: boolean }) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        borderRadius: radius.pill,
+        backgroundColor: connected ? tints.successSoft : colors.surfaceHi,
+        borderWidth: 1,
+        borderColor: connected ? colors.success : colors.border,
+      }}
+    >
+      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: connected ? colors.successBright : colors.textFaint }} />
+      <Text style={{ color: connected ? colors.successBright : colors.textFaint, fontSize: font.size.label, fontWeight: "800" }}>
+        {connected ? "Linked" : "Optional"}
+      </Text>
+    </View>
+  );
+}
+
+function Switch({ checked, disabled, onChange }: { checked: boolean; disabled: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <TouchableOpacity
+      accessibilityRole="switch"
+      accessibilityState={{ checked, disabled }}
+      onPress={() => onChange(!checked)}
+      disabled={disabled}
+      style={{
+        width: 48,
+        height: 28,
+        padding: 3,
+        borderRadius: radius.pill,
+        borderWidth: 1,
+        borderColor: checked ? colors.accent : colors.border,
+        backgroundColor: checked ? colors.accent : colors.bgDeep,
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      <View
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: checked ? colors.onAccent : colors.textFaint,
+          transform: [{ translateX: checked ? 20 : 0 }],
+        }}
+      />
+    </TouchableOpacity>
   );
 }

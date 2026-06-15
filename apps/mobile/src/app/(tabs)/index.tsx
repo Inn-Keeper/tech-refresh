@@ -3,6 +3,7 @@ import { Alert, FlatList, Text, View } from "react-native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
+import { buildGithubTechCategory, fetchGithubTechSignals, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
@@ -20,10 +21,19 @@ import { Screen, ScreenHeader, SegmentedPills } from "@/components/ui";
 import { categoryIconName } from "@/components/BrandIcon";
 
 type Celebration = { title: string; subtitle: string; accent?: string };
+type PrepItem = {
+  tech: string;
+  oneliner: string;
+  prep: string[];
+  quiz: { question: string; options: string[]; correct: number }[];
+  color?: string;
+};
+type PrepCategory = { name: string; emoji?: string; color: string; items: PrepItem[] };
 
 const DRILL_SIZE = 10;
 const CARD_QUIZ_SIZE = 3; // questions shown per card quiz — a random subset of the tier's pool, so repeats feel fresh
 const CARD_POOL_LIMIT = 50; // fetch the whole tier pool for a tech, then sample from it
+const GITHUB_TECHS_STALE_MS = 1000 * 60 * 15; // public GitHub repo languages rarely change mid-session
 
 // Map every tech to its category color, so a fetched question can be themed.
 const colorByTech: Record<string, string> = Object.fromEntries(
@@ -34,7 +44,9 @@ const colorByTech: Record<string, string> = Object.fromEntries(
 const allTechs: string[] = Object.keys(colorByTech);
 
 export default function PrepScreen() {
-  const [activeCategory, setActiveCategory] = useState(0);
+  // Track the selected category by name, not list index: the "From GitHub techs"
+  // category is prepended once it loads, which would shift every index underneath it.
+  const [activeCategoryName, setActiveCategoryName] = useState<string>(categories[0].name);
   const [drill, setDrill] = useState<Drill | null>(null);
   // Global difficulty — drives both the quiz cards and the drill.
   const [level, setLevel] = useState("mid");
@@ -46,8 +58,22 @@ export default function PrepScreen() {
   const queryClient = useQueryClient();
   const { scores, record, addXp } = useScores();
   const { data: accuracy = [] } = useQuery({ queryKey: ["accuracy-timeline"], queryFn: api.getAccuracyTimeline });
+  const { data: profile = null } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
+  const githubPrepEnabled = !!profile?.useGithubTechsForPrep;
+  const githubUsername = githubPrepEnabled ? githubUsernameFromUrl(profile?.githubUrl) : "";
+  const { data: githubTechs = [] } = useQuery({
+    queryKey: ["github-techs", githubUsername],
+    queryFn: () => fetchGithubTechSignals(githubUsername, allTechs),
+    enabled: githubPrepEnabled && !!githubUsername,
+    staleTime: GITHUB_TECHS_STALE_MS,
+  });
 
-  const category = categories[activeCategory];
+  const allItems = categories.flatMap((c: { name: string; color: string; emoji: string; items: { tech: string }[] }) =>
+    c.items.map((item) => ({ ...item, category: c.name, color: c.color, emoji: c.emoji }))
+  );
+  const githubCategory = buildGithubTechCategory(allItems, githubTechs, { color: colors.accentBright });
+  const displayCategories = githubCategory ? [githubCategory, ...categories] : categories;
+  const category = (displayCategories.find((c: { name: string }) => c.name === activeCategoryName) ?? displayCategories[0]) as PrepCategory;
 
   useEffect(() => {
     const current = rankForXp(scores.xp);
@@ -74,7 +100,7 @@ export default function PrepScreen() {
     setDrillLoading(true);
     setDrillError(null);
     try {
-      const weakest = selectDrillTechs(categories, scores.answers, { techCount: 5 });
+      const weakest = selectDrillTechs(displayCategories, scores.answers, { techCount: 5 });
       let questions = await fetchTierQuestions(difficulty, weakest);
       if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
       if (questions.length === 0) {
@@ -167,21 +193,21 @@ export default function PrepScreen() {
       {!drill && (
         <ScreenHeader title={t("tabs.prep")} subtitle="Flashcards, adaptive drills, and XP momentum.">
           <SegmentedPills
-            options={categories.map((cat: { name: string; color: string }, i: number) => ({
-              key: i,
+            options={displayCategories.map((cat: { name: string; color: string }) => ({
+              key: cat.name,
               label: cat.name,
               icon: categoryIconName(cat.name),
               color: cat.color,
             }))}
-            activeKey={activeCategory}
-            onChange={(key) => setActiveCategory(Number(key))}
+            activeKey={activeCategoryName}
+            onChange={(key) => setActiveCategoryName(String(key))}
           />
         </ScreenHeader>
       )}
       <FlatList
-        data={drill ? [] : category.items.map((item) => ({ ...item, color: category.color }))}
+        data={drill ? [] : category.items.map((item: PrepItem) => ({ ...item, color: item.color ?? category.color }))}
         // Including level remounts cards on a tier change, resetting any open quiz to the new tier.
-        keyExtractor={(item) => `${activeCategory}-${level}-${item.tech}`}
+        keyExtractor={(item) => `${activeCategoryName}-${level}-${item.tech}`}
         contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}
         ListHeaderComponent={
           <View style={{ gap: 14 }}>

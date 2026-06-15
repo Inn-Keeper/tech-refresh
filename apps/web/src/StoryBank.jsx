@@ -4,6 +4,7 @@ import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/sto
 import * as api from "./api.js";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "./BrandIcon.jsx";
+import { Combobox } from "./Combobox.jsx";
 import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
 
 const EMPTY_FORM = {
@@ -321,13 +322,16 @@ function StoryForm({ initial, onSave, onCancel }) {
             autoFocus
           />
         </Field>
-        <Field label="Competency">
-          <select style={inputStyle} value={form.competency} onChange={set("competency")}>
-            {COMPETENCIES.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </Field>
+        <Combobox
+          label="Competency"
+          value={form.competency}
+          options={COMPETENCIES.map((competency) => ({
+            value: competency,
+            label: competency,
+            color: COMPETENCY_COLORS[competency],
+          }))}
+          onChange={(competency) => setForm((f) => ({ ...f, competency }))}
+        />
       </div>
       <Field label="Situation — context, stakes, who was involved">
         <textarea style={textareaStyle} value={form.situation} onChange={set("situation")} />

@@ -1,6 +1,16 @@
 // Quiz mechanics shared by web and mobile.
 
-export const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
+// Fisher-Yates: a uniform shuffle. (A `sort(() => Math.random() - 0.5)`
+// comparator is non-uniform and engine-dependent, which would bias where the
+// correct answer lands across many questions.)
+export const shuffle = (arr) => {
+  const copy = [...arr];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
 
 export function shuffleOptions(question) {
   const indexed = question.options.map((opt, i) => ({ opt, isCorrect: i === question.correct }));

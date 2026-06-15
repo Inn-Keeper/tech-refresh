@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
-import { buildGithubTechCategory, githubLanguagesToPrepTechs, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
+import { buildGithubTechCategory, fetchGithubTechSignals, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { RANKS, CORRECT_XP, PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { DIFFICULTIES, difficultyByKey } from "@tech-refresh/core/difficulty";
@@ -20,6 +20,8 @@ import styles from "./InterviewPrep.module.css";
 const DRILL_SIZE = 10;
 const CARD_QUIZ_SIZE = 3; // questions shown per card quiz — a random subset of the tier's pool, so repeats feel fresh
 const CARD_POOL_LIMIT = 50; // fetch the whole tier pool for a tech, then sample from it
+const ACCURACY_GOOD_PCT = 70; // at/above this, accuracy reads as "strong" (success color)
+const GITHUB_TECHS_STALE_MS = 1000 * 60 * 15; // public GitHub repo languages rarely change mid-session
 
 // Map every tech to its category color so a fetched question can be themed.
 const colorByTech = Object.fromEntries(
@@ -28,7 +30,9 @@ const colorByTech = Object.fromEntries(
 const allTechs = Object.keys(colorByTech);
 
 export default function InterviewPrep() {
-  const [activeCategory, setActiveCategory] = useState(0);
+  // Track the selected category by name, not list index: the "From GitHub techs"
+  // category is prepended once it loads, which would shift every index underneath it.
+  const [activeCategoryName, setActiveCategoryName] = useState(categories[0].name);
   const [cardState, setCardState] = useState({});
   const [search, setSearch] = useState("");
   const [drill, setDrill] = useState(null);
@@ -50,7 +54,7 @@ export default function InterviewPrep() {
     queryKey: ["github-techs", githubUsername],
     queryFn: () => fetchGithubTechSignals(githubUsername, allTechs),
     enabled: githubPrepEnabled && !!githubUsername,
-    staleTime: 1000 * 60 * 15,
+    staleTime: GITHUB_TECHS_STALE_MS,
   });
 
   useEffect(() => {
@@ -80,7 +84,7 @@ export default function InterviewPrep() {
       )
     : null;
 
-  const displayCategory = displayCategories[activeCategory] ?? displayCategories[0];
+  const displayCategory = displayCategories.find((c) => c.name === activeCategoryName) ?? displayCategories[0];
   const summary = summarizeScores(scores);
   const visibleItems = filtered ?? displayCategory.items.map((item) => ({ ...item, color: item.color ?? displayCategory.color, emoji: displayCategory.emoji }));
   const activeTitle = filtered ? "Search results" : displayCategory.name;
@@ -234,7 +238,7 @@ export default function InterviewPrep() {
       mainLabel="Interview prep"
       left={
         <PrepLeftRail
-          activeCategory={activeCategory}
+          activeCategoryName={activeCategoryName}
           allItems={allItems}
           categories={displayCategories}
           githubStatus={{
@@ -247,8 +251,8 @@ export default function InterviewPrep() {
           scores={scores}
           search={search}
           setSearch={setSearch}
-          onCategory={(index) => {
-            setActiveCategory(index);
+          onCategory={(name) => {
+            setActiveCategoryName(name);
             setSearch("");
             setCardState({});
           }}
@@ -295,7 +299,7 @@ export default function InterviewPrep() {
           className={styles.cardGrid}
         >
           {visibleItems.map((item, index) => {
-            const key = filtered ? `search-${item.tech}` : `${activeCategory}-${item.tech}`;
+            const key = filtered ? `search-${item.tech}` : `${activeCategoryName}-${item.tech}`;
             return (
               <Card
                 key={key}
@@ -337,27 +341,6 @@ export default function InterviewPrep() {
   );
 }
 
-async function fetchGithubTechSignals(username, knownTechs) {
-  const reposResponse = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=30&sort=pushed`);
-  if (!reposResponse.ok) throw new Error("Couldn't load GitHub repositories.");
-  const repos = await reposResponse.json();
-  const languageTotals = {};
-  const candidates = repos.filter((repo) => !repo.fork && repo.languages_url).slice(0, 12);
-
-  await Promise.all(
-    candidates.map(async (repo) => {
-      const response = await fetch(repo.languages_url);
-      if (!response.ok) return;
-      const languages = await response.json();
-      for (const [language, bytes] of Object.entries(languages)) {
-        languageTotals[language] = (languageTotals[language] ?? 0) + Number(bytes || 0);
-      }
-    })
-  );
-
-  return githubLanguagesToPrepTechs(languageTotals, knownTechs);
-}
-
 function summarizeScores(scores) {
   const entries = Object.entries(scores.answers);
   const totals = entries.reduce(
@@ -382,7 +365,7 @@ function categoryAnswered(cat, scores) {
   return cat.items.filter((item) => scores.answers[item.tech]?.correct || scores.answers[item.tech]?.wrong).length;
 }
 
-function PrepLeftRail({ activeCategory, allItems, categories, githubStatus, scores, search, setSearch, onCategory }) {
+function PrepLeftRail({ activeCategoryName, allItems, categories, githubStatus, scores, search, setSearch, onCategory }) {
   return (
     <>
       <WorkspacePanel>
@@ -416,14 +399,14 @@ function PrepLeftRail({ activeCategory, allItems, categories, githubStatus, scor
 
       <WorkspacePanel style={{ padding: 8 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {categories.map((cat, index) => {
-            const active = activeCategory === index && !search.trim();
+          {categories.map((cat) => {
+            const active = activeCategoryName === cat.name && !search.trim();
             const answered = categoryAnswered(cat, scores);
             const pct = Math.round((answered / cat.items.length) * 100);
             return (
               <button
                 key={cat.name}
-                onClick={() => onCategory(index)}
+                onClick={() => onCategory(cat.name)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -486,7 +469,7 @@ function PrepRightRail({ accuracy, drillActive, drillLoading, drillError, level,
           title={rank.name}
           subtitle={`${scores.xp} XP earned`}
           right={
-            <span style={{ color: summary.accuracy !== null && summary.accuracy >= 70 ? colors.successBright : colors.warningBright, fontSize: 12, fontWeight: 850 }}>
+            <span style={{ color: summary.accuracy !== null && summary.accuracy >= ACCURACY_GOOD_PCT ? colors.successBright : colors.warningBright, fontSize: 12, fontWeight: 850 }}>
               {summary.accuracy === null ? "--" : `${summary.accuracy}%`}
             </span>
           }
@@ -645,7 +628,7 @@ function FrontFace({ item, level, stat, onFlip }) {
         </p>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 10.5, color: colors.textFaint, marginTop: 12 }}>
-        <span style={{ color: accuracy === null ? colors.textFaint : accuracy >= 70 ? colors.success : colors.warning }}>
+        <span style={{ color: accuracy === null ? colors.textFaint : accuracy >= ACCURACY_GOOD_PCT ? colors.success : colors.warning }}>
           {accuracy === null ? "" : `✓ ${accuracy}% · ${attempts} answered`}
         </span>
         <span style={{ whiteSpace: "nowrap" }}>prep notes</span>
@@ -829,136 +812,6 @@ function QuizFace({ item, level, link, question, questionNumber, total, answered
           </button>
         </div>
       )}
-    </div>
-  );
-}
-
-function StatsBar({ scores, onDrill, drillActive }) {
-  const [showRanking, setShowRanking] = useState(false);
-
-  const entries = Object.entries(scores.answers);
-  const totals = entries.reduce(
-    (acc, [, s]) => ({ correct: acc.correct + s.correct, wrong: acc.wrong + s.wrong }),
-    { correct: 0, wrong: 0 }
-  );
-  const attempts = totals.correct + totals.wrong;
-  const accuracy = attempts ? Math.round((totals.correct / attempts) * 100) : null;
-
-  const rank = rankForXp(scores.xp);
-  const next = RANKS[RANKS.indexOf(rank) + 1];
-  const progress = next ? Math.round(((scores.xp - rank.min) / (next.min - rank.min)) * 100) : 100;
-
-  const ranked = entries
-    .filter(([, s]) => s.correct + s.wrong >= 2)
-    .map(([tech, s]) => ({
-      tech,
-      acc: Math.round((s.correct / (s.correct + s.wrong)) * 100),
-      n: s.correct + s.wrong,
-    }))
-    .sort((a, b) => b.acc - a.acc || b.n - a.n);
-
-  return (
-    <div
-      style={{
-        marginBottom: 20,
-        padding: "14px 16px",
-        background: colors.well,
-        border: `1px solid ${colors.border}`,
-        borderRadius: 12,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 14, fontWeight: 700, color: colors.textBright }}>
-          <BrandIcon name="rank" color={colors.accentBright} size={16} />
-          {rank.name}
-        </span>
-        <span style={{ fontSize: 12, color: colors.textDim, fontWeight: 600 }}>{scores.xp} XP</span>
-        <div style={{ flex: 1, minWidth: 120, height: 6, background: colors.surfaceHi, borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ width: `${progress}%`, height: "100%", background: colors.accent, borderRadius: 3, transition: "width 0.3s" }} />
-        </div>
-        {next && (
-          <span style={{ fontSize: 11, color: colors.textFaint }}>
-            {next.min - scores.xp} XP to {next.name}
-          </span>
-        )}
-        {accuracy !== null && (
-          <span style={{ fontSize: 12, color: accuracy >= 70 ? colors.success : colors.warning, fontWeight: 600 }}>
-            {accuracy}% accuracy · {attempts} answered
-          </span>
-        )}
-        <button
-          onClick={onDrill}
-          disabled={drillActive}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 5,
-            padding: "5px 12px",
-            background: tints.accentSoft,
-            border: `1px solid ${colors.accent}60`,
-            borderRadius: 8,
-            color: colors.accentBright,
-            fontSize: 11,
-            fontWeight: 600,
-            cursor: drillActive ? "default" : "pointer",
-            opacity: drillActive ? 0.5 : 1,
-          }}
-        >
-          <BrandIcon name="drill" color={colors.accentBright} size={13} />
-          Drill weakest
-        </button>
-        {ranked.length > 0 && (
-          <button
-            onClick={() => setShowRanking((v) => !v)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "5px 12px",
-              background: "transparent",
-              border: `1px solid ${colors.border}`,
-              borderRadius: 8,
-              color: colors.textDim,
-              fontSize: 11,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Ranking
-            <BrandIcon name={showRanking ? "arrowUp" : "arrowDown"} color={colors.textDim} size={11} />
-          </button>
-        )}
-      </div>
-
-      <div style={{ fontSize: 10.5, color: colors.textFaint, marginTop: 8 }}>
-        +{CORRECT_XP} XP per correct answer · +{PERFECT_QUIZ_BONUS} XP for a perfect quiz
-      </div>
-
-      {showRanking && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 14 }}>
-          <RankingList icon="arrowUp" title="Strongest" items={ranked.slice(0, 5)} color={colors.success} />
-          <RankingList icon="arrowDown" title="Needs work" items={[...ranked].reverse().slice(0, 5)} color={colors.warning} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RankingList({ icon, title, items, color }) {
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
-        <BrandIcon name={icon} color={color} size={12} />
-        {title}
-      </div>
-      <ol style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
-        {items.map((r) => (
-          <li key={r.tech} style={{ fontSize: 12, color: colors.text }}>
-            {r.tech} <span style={{ color, fontWeight: 600 }}>{r.acc}%</span>{" "}
-            <span style={{ color: colors.textFaint }}>({r.n})</span>
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

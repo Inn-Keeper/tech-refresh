@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { t } from "@tech-refresh/core/i18n";
+import { friendlyAuthError } from "@tech-refresh/core/auth";
 import { supabase } from "./supabase.js";
 import InterviewPrep from "./InterviewPrep.jsx";
 import Contacts from "./Contacts.jsx";
@@ -398,11 +399,7 @@ function SignIn() {
       options: { redirectTo: window.location.origin },
     });
     if (err) {
-      setError(
-        err.message.includes("Unsupported provider")
-          ? "GitHub login is not enabled in Supabase yet. Enable the GitHub provider, then try again."
-          : err.message
-      );
+      setError(friendlyAuthError(err.message));
       setBusy(false);
     }
   };
