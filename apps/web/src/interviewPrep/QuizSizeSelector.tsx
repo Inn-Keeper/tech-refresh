@@ -10,10 +10,9 @@ const QUIZ_SIZE_DEFAULT_MAX = 20;
 
 export function QuizSizeSelector({ quizSize, poolSize, onQuizSize }: { quizSize: number | null; poolSize: number | null; onQuizSize: (v: number | null) => void }) {
   const isAll = quizSize === null;
-  // Slider ceiling: the known pool size, or the stored cap if larger (so the
-  // thumb isn't pegged at max when the user picked a cap bigger than the current
-  // pool), or the default placeholder when no card has been opened yet.
-  const max = Math.max(poolSize ?? QUIZ_SIZE_DEFAULT_MAX, quizSize ?? QUIZ_SIZE_MIN);
+  // Slider ceiling is availability, not the selected preference. Once a card
+  // detects the real pool size, the user's chosen cap should not become the max.
+  const max = Math.max(poolSize ?? QUIZ_SIZE_DEFAULT_MAX, QUIZ_SIZE_MIN);
   const effective = isAll ? max : Math.min(quizSize, max);
 
   return (

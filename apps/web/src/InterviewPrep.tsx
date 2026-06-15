@@ -120,7 +120,7 @@ export default function InterviewPrep() {
   const fetchCardQuestions = async (tech: string): Promise<QuizQuestion[] | null> => {
     try {
       const rows = await queryClient.fetchQuery({
-        queryKey: ["questions", "v2", level, [tech]],
+        queryKey: ["questions", "v2", "card-pool", level, tech, CARD_POOL_LIMIT],
         queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: CARD_POOL_LIMIT }),
       });
       if (rows.length) {

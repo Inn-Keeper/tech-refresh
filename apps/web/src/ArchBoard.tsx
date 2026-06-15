@@ -1,43 +1,17 @@
 import React, { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { NODE_TYPES, TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, buildCustomChecks, evaluate } from "@tech-refresh/core/arch";
+import { TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
 import * as api from "./api";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import { BrandIcon, nodeIconName } from "./BrandIcon";
 import { Combobox } from "./Combobox";
-
-type BoardNode = { id: string; type: string; x: number; y: number };
-type BoardEdge = { id: string; from: string; to: string };
-type ConnectDrag = { from: string; x: number; y: number; moved: boolean };
-type DragRef = { id: string; dx: number; dy: number; moved: boolean };
-// Augmented scenario type: the base Scenario from core plus optional UI-only fields.
-type AugmentedScenario = { id: string; name: string; brief: string; budget: number; checks: object[]; warnings?: object[]; category?: string; custom?: boolean };
-
-const NODE_W = 132;
-const NODE_H = 54;
-
-const CUSTOM_CATEGORY = "My scenarios";
-
-// Evaluation verdict bands (score %) and maintenance-load bands (sum of node maint).
-const SHIP_SCORE = 80;
-const REVIEW_SCORE = 50;
-const MAINT_LEAN_MAX = 8;
-const MAINT_MODERATE_MAX = 14;
-
-const CATEGORY_ICONS: Record<string, string> = {
-  Commerce: "cost",
-  Fintech: "payment",
-  Social: "contact",
-  Realtime: "spark",
-  "Content & Media": "cloud",
-  "Data & Analytics": "accuracy",
-  Infrastructure: "gateway",
-  "Mobility & Logistics": "globe",
-  Gaming: "drill",
-  "B2B SaaS": "service",
-  [CUSTOM_CATEGORY]: "board",
-};
+import { CATEGORY_ICONS, CUSTOM_CATEGORY, NODE_H, NODE_W } from "./archBoard/constants";
+import { EvalResults } from "./archBoard/EvalResults";
+import { NodePalette } from "./archBoard/NodePalette";
+import { SavedBoards } from "./archBoard/SavedBoards";
+import { ScenarioForm } from "./archBoard/ScenarioForm";
+import type { AugmentedScenario, BoardEdge, BoardNode, ConnectDrag, DragRef, SavedBoard } from "./archBoard/types";
 
 export default function ArchBoard() {
   const [scenarioId, setScenarioId] = useState<string>((SCENARIOS[0] as AugmentedScenario).id);
@@ -128,7 +102,7 @@ export default function ArchBoard() {
     setConnectFrom(null);
   };
 
-  const loadBoard = (board: { id?: string; title: string; scenarioId: string; nodes: BoardNode[]; edges: BoardEdge[] }) => {
+  const loadBoard = (board: SavedBoard) => {
     if (!allScenarios.some((item) => item.id === board.scenarioId)) {
       window.alert(t("board.unknownScenarioMessage", { scenarioId: board.scenarioId }));
       return;
@@ -419,70 +393,17 @@ export default function ArchBoard() {
       )}
 
       {savedOpen && (
-        <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 12 }}>
-          {savedBoards.length === 0 ? (
-            <p style={{ margin: 0, fontSize: 12, color: colors.textFaint }}>{t("board.savedEmpty")}</p>
-          ) : (
-            savedBoards.map((board) => {
-              const boardScenario = allScenarios.find((item) => item.id === board.scenarioId);
-              const active = board.id === activeBoardId;
-              return (
-                <div
-                  key={board.id}
-                  style={{
-                    minWidth: 220, padding: "10px 12px", background: colors.well,
-                    border: `1px solid ${active ? colors.accent : colors.border}`, borderRadius: 10,
-                    display: "flex", flexDirection: "column", gap: 6,
-                  }}
-                >
-                  <span style={{ fontSize: 12, fontWeight: 700, color: colors.textBright, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                    {board.title}
-                  </span>
-                  <span style={{ fontSize: 10.5, color: colors.textFaint }}>
-                    {t("board.boardMeta", { scenario: boardScenario?.name ?? board.scenarioId, nodes: board.nodes.length, edges: board.edges.length })}
-                  </span>
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                    <button
-                      onClick={() => loadBoard(board)}
-                      style={{ padding: "3px 10px", background: "transparent", border: `1px solid ${colors.accent}60`, borderRadius: 6, color: colors.accentBright, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-                    >
-                      {t("common.load")}
-                    </button>
-                    <button
-                      onClick={() => board.id && window.confirm(t("board.deleteMessage", { title: board.title })) && deleteBoardMutation.mutate(board.id)}
-                      style={{ padding: "3px 10px", background: "transparent", border: `1px solid ${colors.danger}50`, borderRadius: 6, color: colors.dangerBright, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
-                    >
-                      {t("common.delete")}
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <SavedBoards
+          activeBoardId={activeBoardId}
+          allScenarios={allScenarios}
+          boards={savedBoards}
+          onDelete={(id) => deleteBoardMutation.mutate(id)}
+          onLoad={loadBoard}
+        />
       )}
 
       <div style={{ display: "flex", gap: 14, alignItems: "stretch", flexWrap: "wrap" }}>
-        {/* Palette */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 6, width: 170 }}>
-          {NODE_TYPES.map((t) => (
-            <button
-              key={t.type}
-              onClick={() => addNode(t.type)}
-              style={{
-                display: "flex", alignItems: "center", gap: 8, padding: "8px 10px",
-                background: colors.surface, border: `1px solid ${TYPE_COLORS[t.type]}40`,
-                borderRadius: 8, color: colors.text, fontSize: 12, fontWeight: 600,
-                cursor: "pointer", textAlign: "left",
-              }}
-              title={`cost ${t.cost} · maint ${t.maint}`}
-            >
-              <BrandIcon name={nodeIconName(t.type)} color={TYPE_COLORS[t.type]} size={16} />
-              <span style={{ flex: 1 }}>{t.label}</span>
-              <span style={{ color: colors.textFaint, fontSize: 10 }}>{"$".repeat(t.cost) || "free"}</span>
-            </button>
-          ))}
-        </div>
+        <NodePalette onAddNode={addNode} />
 
         {/* Canvas */}
         <div
@@ -634,215 +555,7 @@ export default function ArchBoard() {
         </div>
       </div>
 
-      {/* Evaluation results */}
-      {result && (
-        <div
-          style={{
-            marginTop: 16, padding: "18px 20px", background: colors.well,
-            border: `1px solid ${colors.border}`, borderRadius: 14,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 14, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 28, fontWeight: 700, color: result.score >= SHIP_SCORE ? colors.success : result.score >= REVIEW_SCORE ? colors.warning : colors.danger }}>
-              {result.score}%
-            </span>
-            <span style={{ fontSize: 14, fontWeight: 600, color: colors.textBright }}>
-              {result.score >= SHIP_SCORE ? t("board.verdictShip") : result.score >= REVIEW_SCORE ? t("board.verdictReview") : t("board.verdictWhiteboard")}
-            </span>
-            <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: colors.textDim }}>
-              <BrandIcon name="cost" color={colors.textDim} size={14} />
-              {result.cost}/{scenario.budget} ·
-              <BrandIcon name="maintenance" color={colors.textDim} size={14} />
-              maint {result.maint} ({result.maint <= MAINT_LEAN_MAX ? "lean" : result.maint <= MAINT_MODERATE_MAX ? "moderate" : "heavy"})
-            </span>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 18 }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
-                DESIGN CHECKS
-              </div>
-              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
-                {result.checks.map((c) => (
-                  <li key={c.label} style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 12.5, lineHeight: 1.5, color: c.passed ? colors.successBright : colors.dangerBright }}>
-                    <BrandIcon name={c.passed ? "check" : "error"} color={c.passed ? colors.successBright : colors.dangerBright} size={14} />
-                    <span style={{ flex: 1 }}>
-                      {c.label} <span style={{ color: colors.textFaint }}>({c.points} pts)</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {result.warnings.length > 0 && (
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
-                  MEETING NOTES
-                </div>
-                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
-                  {result.warnings.map((w) => (
-                    <li key={w} style={{ display: "flex", alignItems: "flex-start", gap: 7, fontSize: 12.5, lineHeight: 1.5, color: colors.warningBright }}>
-                      <BrandIcon name="warning" color={colors.warningBright} size={14} />
-                      <span style={{ flex: 1 }}>{w}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {result && <EvalResults result={result} scenario={scenario} />}
     </main>
-  );
-}
-
-// Authoring form for custom scenarios: requirements are picked from the
-// palette and compiled into evaluator checks via buildCustomChecks.
-type ScenarioFormProps = { onSave: (form: object) => void; onCancel: () => void; saving: boolean; error: Error | null };
-function ScenarioForm({ onSave, onCancel, saving, error }: ScenarioFormProps) {
-  const [name, setName] = useState("");
-  const [brief, setBrief] = useState("");
-  const [budget, setBudget] = useState(12);
-  const [requiredNodes, setRequiredNodes] = useState<string[]>([]);
-  const [requiredEdges, setRequiredEdges] = useState<{ from: string; to: string }[]>([]);
-
-  const inputStyle: React.CSSProperties = {
-    boxSizing: "border-box", padding: "8px 10px",
-    background: colors.bgDeep, border: `1px solid ${colors.border}`, borderRadius: 8,
-    color: colors.text, fontSize: 13, outline: "none", fontFamily: "inherit",
-  };
-  const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" };
-
-  const toggleNode = (type: string) =>
-    setRequiredNodes((prev) => (prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type]));
-  const setEdgeAt = (index: number, side: string, value: string) =>
-    setRequiredEdges((prev) => prev.map((e, i) => (i === index ? { ...e, [side]: value } : e)));
-  const nodeTypeOptions = NODE_TYPES.map((spec) => ({ value: spec.type, label: spec.label, color: TYPE_COLORS[spec.type] }));
-
-  const canSave = name.trim() && (requiredNodes.length > 0 || requiredEdges.length > 0);
-
-  const save = () =>
-    onSave({
-      name: name.trim(),
-      brief: brief.trim(),
-      budget,
-      checks: buildCustomChecks(requiredNodes, requiredEdges),
-    });
-
-  return (
-    <div
-      style={{
-        marginBottom: 14, padding: "16px 18px", background: colors.surface,
-        border: `1px solid ${colors.accent}60`, borderRadius: 12,
-        display: "flex", flexDirection: "column", gap: 12,
-      }}
-    >
-      <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={labelStyle}>Name *</span>
-          <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ticketing webhook storm" autoFocus />
-        </label>
-        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          <span style={labelStyle}>Budget (sum of component costs)</span>
-          <input
-            style={inputStyle}
-            type="number"
-            min={4}
-            max={30}
-            value={budget}
-            onChange={(e) => setBudget(Math.max(4, Math.min(30, Number(e.target.value) || 4)))}
-          />
-        </label>
-      </div>
-      <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <span style={labelStyle}>Brief — the problem statement you'd get in the interview</span>
-        <textarea
-          style={{ ...inputStyle, minHeight: 52, resize: "vertical" as const, lineHeight: 1.5 }}
-          value={brief}
-          onChange={(e) => setBrief(e.target.value)}
-        />
-      </label>
-
-      <div>
-        <div style={{ ...labelStyle, marginBottom: 6 }}>Required components — each is a scored check</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {NODE_TYPES.map((spec) => {
-            const active = requiredNodes.includes(spec.type);
-            return (
-              <button
-                key={spec.type}
-                onClick={() => toggleNode(spec.type)}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  padding: "5px 10px", borderRadius: 16, cursor: "pointer",
-                  border: `1px solid ${active ? TYPE_COLORS[spec.type] : colors.border}`,
-                  background: active ? `${TYPE_COLORS[spec.type]}25` : "transparent",
-                  color: active ? colors.text : colors.textDim, fontSize: 11, fontWeight: 600,
-                }}
-              >
-                <BrandIcon name={nodeIconName(spec.type)} color={TYPE_COLORS[spec.type]} size={12} />
-                {spec.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <div>
-        <div style={{ ...labelStyle, marginBottom: 6 }}>Required connections — scored when the edge exists</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {requiredEdges.map((e, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Combobox value={e.from} options={nodeTypeOptions} onChange={(value) => setEdgeAt(i, "from", value)} style={{ flex: 1 }} />
-              <BrandIcon name="arrowRight" color={colors.textFaint} size={12} />
-              <Combobox value={e.to} options={nodeTypeOptions} onChange={(value) => setEdgeAt(i, "to", value)} style={{ flex: 1 }} />
-              <button
-                onClick={() => setRequiredEdges((prev) => prev.filter((_, j) => j !== i))}
-                title="Remove connection"
-                style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", padding: 4 }}
-              >
-                <BrandIcon name="close" color={colors.textFaint} size={11} />
-              </button>
-            </div>
-          ))}
-          <button
-            onClick={() => setRequiredEdges((prev) => [...prev, { from: "client", to: "service" }])}
-            style={{
-              alignSelf: "flex-start", padding: "5px 12px", background: "transparent",
-              border: `1px solid ${colors.border}`, borderRadius: 8,
-              color: colors.textDim, fontSize: 11, fontWeight: 600, cursor: "pointer",
-            }}
-          >
-            Add connection
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <p style={{ margin: 0, fontSize: 12, color: colors.dangerBright }}>Save failed: {error.message}</p>
-      )}
-
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button
-          onClick={onCancel}
-          style={{
-            padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
-            borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
-          }}
-        >
-          {t("common.cancel")}
-        </button>
-        <button
-          onClick={save}
-          disabled={!canSave || saving}
-          style={{
-            padding: "7px 16px", background: colors.accent, border: "none", borderRadius: 8,
-            color: colors.onAccent, fontSize: 12, fontWeight: 600,
-            cursor: canSave && !saving ? "pointer" : "not-allowed", opacity: canSave && !saving ? 1 : 0.5,
-          }}
-        >
-          {saving ? t("common.saving") : "Save scenario"}
-        </button>
-      </div>
-    </div>
   );
 }

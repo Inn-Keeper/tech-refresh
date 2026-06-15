@@ -1,0 +1,106 @@
+import React from "react";
+import { STATUSES, STATUS_STYLES } from "@tech-refresh/core/contacts";
+import { colors } from "@tech-refresh/core/tokens";
+import { BrandIcon } from "../BrandIcon";
+import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
+import type { Contact } from "./types";
+
+export function ContactsLeftRail({
+  canAdd,
+  contacts,
+  dueCount,
+  onAdd,
+}: {
+  canAdd: boolean;
+  contacts: Contact[];
+  dueCount: number;
+  onAdd: () => void;
+}) {
+  const counts = Object.fromEntries(
+    STATUSES.map((status) => [status, contacts.filter((c) => c.status === status).length])
+  );
+
+  return (
+    <>
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="contact" color={colors.accentBright} size={17} />}
+          title="Pipeline"
+          subtitle={`${contacts.length} people tracked. Keep the list ordered by urgency.`}
+        />
+        {canAdd && (
+          <button
+            onClick={onAdd}
+            style={{
+              width: "100%",
+              marginTop: 14,
+              padding: "9px 12px",
+              background: colors.accent,
+              border: "none",
+              borderRadius: 8,
+              color: colors.onAccent,
+              fontSize: 12,
+              fontWeight: 850,
+              cursor: "pointer",
+            }}
+          >
+            Add contact
+          </button>
+        )}
+      </WorkspacePanel>
+
+      <WorkspacePanel style={{ padding: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {STATUSES.map((status) => {
+            const style = STATUS_STYLES[status] ?? { color: "", bg: "" };
+            return (
+              <div
+                key={status}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 10px",
+                  borderRadius: 7,
+                  background: counts[status] ? `${style.color}14` : "transparent",
+                }}
+              >
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 4,
+                    background: counts[status] ? style.color : colors.border,
+                  }}
+                />
+                <span
+                  style={{
+                    flex: 1,
+                    color: counts[status] ? colors.text : colors.textFaint,
+                    fontSize: 12.5,
+                    fontWeight: 750,
+                  }}
+                >
+                  {status}
+                </span>
+                <span style={{ color: counts[status] ? style.color : colors.textFaint, fontSize: 12, fontWeight: 850 }}>
+                  {counts[status]}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </WorkspacePanel>
+
+      {dueCount > 0 && (
+        <WorkspacePanel tone="sunken" style={{ borderColor: `${colors.danger}70` }}>
+          <WorkspaceTitle
+            icon={<BrandIcon name="warning" color={colors.dangerBright} size={17} />}
+            title={`${dueCount} follow-up${dueCount > 1 ? "s" : ""} due`}
+            subtitle="These lose momentum when they slip."
+          />
+        </WorkspacePanel>
+      )}
+    </>
+  );
+}
