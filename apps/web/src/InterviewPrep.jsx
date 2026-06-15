@@ -14,6 +14,7 @@ import { CelebrationOverlay } from "./CelebrationOverlay.jsx";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon, categoryIconName } from "./BrandIcon.jsx";
 import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
+import { PoeAssistant } from "./PoeAssistant.jsx";
 import styles from "./InterviewPrep.module.css";
 
 const DRILL_SIZE = 10;
@@ -37,6 +38,7 @@ export default function InterviewPrep() {
   const [drillLoading, setDrillLoading] = useState(false);
   const [drillError, setDrillError] = useState(null);
   const [celebration, setCelebration] = useState(null);
+  const [poeCue, setPoeCue] = useState(null);
   const previousRank = useRef(null);
   const queryClient = useQueryClient();
   const { scores, record, addXp } = useScores();
@@ -59,6 +61,7 @@ export default function InterviewPrep() {
         subtitle: t("celebration.rankSubtitle", { xp: scores.xp }),
         accent: colors.accent,
       });
+      setPoeCue({ type: "levelUp", id: Date.now() });
     }
     previousRank.current = current;
   }, [scores.xp]);
@@ -128,6 +131,7 @@ export default function InterviewPrep() {
       ...prev,
       [key]: { ...s, answered: optionIndex, runCorrect: s.runCorrect + (isCorrect ? 1 : 0) },
     }));
+    setPoeCue({ type: isCorrect ? "correct" : "wrong", id: Date.now() });
     record(tech, isCorrect, "card", level);
   };
 
@@ -203,6 +207,7 @@ export default function InterviewPrep() {
     const cur = drill.questions[drill.index];
     const isCorrect = optionIndex === cur.q.correct;
     setDrill({ ...drill, answered: optionIndex, correctCount: drill.correctCount + (isCorrect ? 1 : 0) });
+    setPoeCue({ type: isCorrect ? "correct" : "wrong", id: Date.now() });
     record(cur.tech, isCorrect, "drill", drill.difficulty);
   };
 
@@ -216,6 +221,7 @@ export default function InterviewPrep() {
           subtitle: t("celebration.perfectSubtitle", { bonus: PERFECT_QUIZ_BONUS }),
           accent: colors.success,
         });
+        setPoeCue({ type: "levelUp", id: Date.now() });
       }
       setDrill({ ...drill, done: true });
     } else {
@@ -326,6 +332,7 @@ export default function InterviewPrep() {
           onDone={() => setCelebration(null)}
         />
       )}
+      <PoeAssistant cue={poeCue} />
     </WorkspaceLayout>
   );
 }

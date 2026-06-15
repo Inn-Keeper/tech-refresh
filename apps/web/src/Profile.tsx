@@ -5,6 +5,7 @@ import { colors, layout, tints } from "@tech-refresh/core/tokens";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
 import * as api from "./api.js";
 import { supabase } from "./supabase.js";
+import { poeVisibleByDefault, setPoeAssistantVisible } from "./poeAssistant.js";
 
 const inputStyle = {
   width: "100%",
@@ -31,6 +32,7 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
   const queryClient = useQueryClient();
   const [form, setForm] = useState(EMPTY_PROFILE_FORM);
   const [linkedInThisSession, setLinkedInThisSession] = useState(() => githubLinked || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1");
+  const [poeVisible, setPoeVisible] = useState(poeVisibleByDefault);
   const { data: profile = null, error: loadError, isLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: api.getUser,
@@ -172,6 +174,10 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
   const resetScores = () => {
     if (!window.confirm("Reset all XP and answer history? This cannot be undone.")) return;
     resetMutation.mutate();
+  };
+  const updatePoeVisibility = (checked: boolean) => {
+    setPoeVisible(checked);
+    setPoeAssistantVisible(checked);
   };
   const error = loadError || identitiesError || authUserError || githubViewerError || githubPublicError || saveMutation.error || saveGithubUrlMutation.error || githubPrepMutation.error || resetMutation.error || linkGitHubMutation.error;
   const completionItems = PROFILE_FIELDS.filter((field) => (form[field.key] ?? "").trim()).length;
@@ -358,6 +364,31 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
               disabled={!githubConnected || !form.githubUrl || githubPrepMutation.isPending}
               label="Use GitHub techs for prep recommendations"
               onChange={(checked) => githubPrepMutation.mutate(checked)}
+            />
+          </div>
+        </Panel>
+
+        <Panel>
+          <MetaLabel>Preferences</MetaLabel>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <span style={{ color: colors.text, fontSize: 12, lineHeight: 1.45 }}>
+              <span style={{ display: "block", color: colors.textBright, fontWeight: 800 }}>Poe assistant</span>
+              <span style={{ display: "block", marginTop: 3, color: colors.textFaint }}>
+                Show Poe on Interview Prep.
+              </span>
+            </span>
+            <Switch
+              checked={poeVisible}
+              disabled={false}
+              label="Show Poe assistant on Interview Prep"
+              onChange={updatePoeVisibility}
             />
           </div>
         </Panel>

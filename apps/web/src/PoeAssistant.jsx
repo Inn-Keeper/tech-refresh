@@ -1,0 +1,115 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { brand, colors } from "@tech-refresh/core/tokens";
+import {
+  POE_ASSISTANT_PREF_EVENT,
+  POE_ASSISTANT_VISIBLE_KEY,
+  poeLineFor,
+  poeVisibleByDefault,
+} from "./poeAssistant.js";
+import styles from "./PoeAssistant.module.css";
+
+const REACTION_MS = 3600;
+const SHINE_MS = 1400;
+const SHINE_MIN_MS = 9000;
+const SHINE_SPREAD_MS = 12000;
+
+const poseByMood = {
+  idle: "/mascot/poe-idle.png",
+  correct: "/mascot/poe-correct.png",
+  wrong: "/mascot/poe-wrong.png",
+  levelUp: "/mascot/poe-correct.png",
+  thinking: "/mascot/poe-thinking.png",
+};
+
+export function PoeAssistant({ cue }) {
+  const [visible, setVisible] = useState(poeVisibleByDefault);
+  const [mood, setMood] = useState("idle");
+  const [message, setMessage] = useState("");
+  const [messageKey, setMessageKey] = useState(0);
+  const [shining, setShining] = useState(false);
+  const resetTimer = useRef(null);
+  const shineTimer = useRef(null);
+  const shineEndTimer = useRef(null);
+
+  const showReaction = useCallback((type, seed = Date.now()) => {
+    const nextMood = poseByMood[type] ? type : "thinking";
+    if (resetTimer.current) window.clearTimeout(resetTimer.current);
+    setMood(nextMood);
+    setMessage(poeLineFor(nextMood, seed));
+    setMessageKey(seed);
+    resetTimer.current = window.setTimeout(() => {
+      setMood("idle");
+      setMessage("");
+    }, REACTION_MS);
+  }, []);
+
+  useEffect(() => {
+    const onPreference = (event) => setVisible(event.detail?.visible ?? poeVisibleByDefault());
+    const onStorage = (event) => {
+      if (event.key === POE_ASSISTANT_VISIBLE_KEY) setVisible(poeVisibleByDefault());
+    };
+    window.addEventListener(POE_ASSISTANT_PREF_EVENT, onPreference);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(POE_ASSISTANT_PREF_EVENT, onPreference);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  useEffect(() => () => {
+    if (resetTimer.current) window.clearTimeout(resetTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (shineTimer.current) window.clearTimeout(shineTimer.current);
+    if (shineEndTimer.current) window.clearTimeout(shineEndTimer.current);
+    setShining(false);
+    if (!visible || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
+
+    const scheduleShine = () => {
+      shineTimer.current = window.setTimeout(() => {
+        setShining(true);
+        shineEndTimer.current = window.setTimeout(() => {
+          setShining(false);
+          scheduleShine();
+        }, SHINE_MS);
+      }, SHINE_MIN_MS + Math.random() * SHINE_SPREAD_MS);
+    };
+
+    scheduleShine();
+    return () => {
+      if (shineTimer.current) window.clearTimeout(shineTimer.current);
+      if (shineEndTimer.current) window.clearTimeout(shineEndTimer.current);
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    if (!cue?.type) return;
+    showReaction(cue.type, cue.id ?? Date.now());
+  }, [cue, showReaction]);
+
+  const imageSrc = poseByMood[mood] ?? poseByMood.idle;
+  const accent = mood === "wrong" ? colors.warningBright : mood === "levelUp" ? colors.successBright : colors.accentBright;
+  const label = useMemo(() => `${brand.mascotName}, ${brand.productName}'s raven guide`, []);
+
+  if (!visible) return null;
+
+  return (
+    <aside className={`${styles.assistant} ${styles[mood]} ${shining ? styles.shine : ""}`} aria-label={label}>
+      {message && (
+        <div key={messageKey} className={styles.quote} style={{ "--poe-accent": accent }} aria-live="polite">
+          {message}
+        </div>
+      )}
+      <button
+        type="button"
+        className={styles.perch}
+        onClick={() => showReaction("thinking")}
+        aria-label={`Ask ${brand.mascotName} for a thought`}
+        title={`Ask ${brand.mascotName} for a thought`}
+      >
+        <img className={styles.image} src={imageSrc} alt="" draggable="false" />
+      </button>
+    </aside>
+  );
+}

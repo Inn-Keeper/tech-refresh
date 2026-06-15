@@ -1,0 +1,221 @@
+.assistant {
+  position: fixed;
+  left: clamp(14px, 2.2vw, 30px);
+  bottom: max(22px, env(safe-area-inset-bottom));
+  z-index: 22;
+  width: clamp(150px, 12vw, 180px);
+  pointer-events: none;
+}
+
+.perch {
+  position: relative;
+  width: 100%;
+  height: clamp(154px, 14vw, 190px);
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: end center;
+  pointer-events: auto;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.36));
+  animation: poeIdle 6.8s ease-in-out infinite;
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  user-select: none;
+}
+
+.quote {
+  position: absolute;
+  left: calc(100% - 12px);
+  bottom: 58%;
+  width: min(230px, calc(100vw - 210px));
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--poe-accent) 48%, #353c4d);
+  border-radius: 8px;
+  background: rgba(16, 19, 26, 0.96);
+  color: #e8ecf4;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.35;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.34);
+  animation: poeQuote 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.quote::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  bottom: 17px;
+  width: 12px;
+  height: 12px;
+  border-left: 1px solid color-mix(in srgb, var(--poe-accent) 48%, #353c4d);
+  border-bottom: 1px solid color-mix(in srgb, var(--poe-accent) 48%, #353c4d);
+  background: rgba(16, 19, 26, 0.96);
+  transform: rotate(45deg);
+}
+
+.correct .perch,
+.levelUp .perch {
+  animation: poeCelebrate 720ms cubic-bezier(0.16, 1, 0.3, 1), poeIdle 6.8s ease-in-out 720ms infinite;
+  filter: drop-shadow(0 18px 20px rgba(0, 0, 0, 0.38)) drop-shadow(0 0 16px rgba(45, 212, 191, 0.18));
+}
+
+.wrong .perch {
+  animation: poeNope 580ms cubic-bezier(0.2, 0.8, 0.2, 1), poeIdle 6.8s ease-in-out 580ms infinite;
+  filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.36)) drop-shadow(0 0 12px rgba(251, 191, 36, 0.1));
+}
+
+.thinking .perch {
+  animation: poeThink 900ms ease, poeIdle 6.8s ease-in-out 900ms infinite;
+}
+
+.shine .perch {
+  animation: poeOutlineShine 1400ms cubic-bezier(0.16, 1, 0.3, 1), poeIdle 6.8s ease-in-out 1400ms infinite;
+}
+
+.shine .image {
+  animation: poeImageShine 1400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 760px) {
+  .assistant {
+    width: 126px;
+    left: 10px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+
+  .perch {
+    height: 142px;
+  }
+
+  .quote {
+    left: 0;
+    right: auto;
+    bottom: calc(100% + 8px);
+    width: min(220px, calc(100vw - 20px));
+  }
+
+  .quote::before {
+    left: 24px;
+    bottom: -7px;
+    border: 0;
+    border-right: 1px solid color-mix(in srgb, var(--poe-accent) 48%, #353c4d);
+    border-bottom: 1px solid color-mix(in srgb, var(--poe-accent) 48%, #353c4d);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .perch,
+  .correct .perch,
+  .levelUp .perch,
+  .wrong .perch,
+  .thinking .perch,
+  .shine .perch,
+  .shine .image,
+  .quote {
+    animation: none;
+  }
+}
+
+@keyframes poeIdle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-3px) rotate(-0.35deg);
+  }
+}
+
+@keyframes poeCelebrate {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+
+  38% {
+    transform: translateY(-18px) rotate(-2deg) scale(1.04);
+  }
+
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes poeNope {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+
+  25% {
+    transform: translateX(-5px) rotate(-1.8deg);
+  }
+
+  60% {
+    transform: translateX(4px) rotate(1.4deg);
+  }
+}
+
+@keyframes poeThink {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+
+  45% {
+    filter: brightness(1.16);
+  }
+}
+
+@keyframes poeQuote {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes poeImageShine {
+  0%,
+  100% {
+    filter: brightness(1) saturate(1) contrast(1);
+  }
+
+  42% {
+    filter: brightness(1.06) saturate(1.04) contrast(1.015);
+  }
+}
+
+@keyframes poeOutlineShine {
+  0%,
+  100% {
+    filter: drop-shadow(0 16px 18px rgba(0, 0, 0, 0.36));
+  }
+
+  35% {
+    filter:
+      drop-shadow(0 16px 18px rgba(0, 0, 0, 0.36))
+      drop-shadow(0 0 1px rgba(255, 244, 204, 0.38))
+      drop-shadow(0 0 1px rgba(45, 212, 191, 0.12));
+  }
+
+  62% {
+    filter:
+      drop-shadow(0 16px 18px rgba(0, 0, 0, 0.36))
+      drop-shadow(0 0 1px rgba(255, 244, 204, 0.26))
+      drop-shadow(0 0 1px rgba(212, 165, 116, 0.08));
+  }
+}
