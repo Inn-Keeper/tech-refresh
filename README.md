@@ -38,17 +38,17 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 
 Captured from the web app at 1600×1000 using the local screenshot script.
 
-| Prep | Stories |
+| Prep | Poe — raven guide |
 | --- | --- |
-| ![Prep screen](docs/screenshots/web/01-prep.png) | ![Stories screen](docs/screenshots/web/02-stories.png) |
+| ![Prep screen](docs/screenshots/web/01-prep.png) | ![Poe assistant](docs/screenshots/web/01b-poe.png) |
 
-| Arch Board | Quest |
+| Stories | Arch Board |
 | --- | --- |
-| ![Arch Board screen](docs/screenshots/web/03-arch-board.png) | ![Quest screen](docs/screenshots/web/04-quest.png) |
+| ![Stories screen](docs/screenshots/web/02-stories.png) | ![Arch Board screen](docs/screenshots/web/03-arch-board.png) |
 
-| Profile |
-| --- |
-| ![Profile screen](docs/screenshots/web/05-profile.png) |
+| Quest | Profile |
+| --- | --- |
+| ![Quest screen](docs/screenshots/web/04-quest.png) | ![Profile screen](docs/screenshots/web/05-profile.png) |
 
 | Footer |
 | --- |
@@ -388,6 +388,6 @@ MIT (personal project, open sourced for learning).
 
 ---
 
-**Last updated:** June 12, 2026  
+**Last updated:** June 15, 2026  
 **Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked)  
 **Committed:** ✅ All phases 0–4 complete; 50+ tests; 100% coverage on quiz/scoring logic

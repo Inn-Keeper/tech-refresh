@@ -46,6 +46,7 @@ function createCdp(wsUrl) {
   const ws = new WebSocket(wsUrl);
   let id = 0;
   const pending = new Map();
+  const eventHandlers = new Map();
   ws.addEventListener("message", (event) => {
     const message = JSON.parse(event.data);
     if (message.id && pending.has(message.id)) {
@@ -53,6 +54,8 @@ function createCdp(wsUrl) {
       pending.delete(message.id);
       if (message.error) reject(new Error(message.error.message));
       else resolve(message.result);
+    } else if (message.method && eventHandlers.has(message.method)) {
+      eventHandlers.get(message.method)(message.params);
     }
   });
   return new Promise((resolve, reject) => {
@@ -62,6 +65,9 @@ function createCdp(wsUrl) {
           const callId = ++id;
           ws.send(JSON.stringify({ id: callId, method, params }));
           return new Promise((callResolve, callReject) => pending.set(callId, { resolve: callResolve, reject: callReject }));
+        },
+        onEvent(eventName, handler) {
+          eventHandlers.set(eventName, handler);
         },
         close: () => ws.close(),
       });
@@ -102,27 +108,34 @@ const env = parseEnv(await readFile(new URL("../apps/web/.env", import.meta.url)
 const projectRef = new URL(env.VITE_SUPABASE_URL).hostname.split(".")[0];
 const authKey = `sb-${projectRef}-auth-token`;
 const now = new Date().toISOString();
+const expiresAt = Math.floor(Date.now() / 1000) + 3600;
+const fakeUser = {
+  id: "00000000-0000-4000-8000-000000000001",
+  aud: "authenticated",
+  role: "authenticated",
+  email: "demo@grip.local",
+  email_confirmed_at: now,
+  confirmed_at: now,
+  app_metadata: { provider: "email", providers: ["email"] },
+  user_metadata: { display_name: "Demo User" },
+  identities: [],
+  created_at: now,
+  updated_at: now,
+  is_anonymous: false,
+};
 const fakeSession = {
   access_token: "screenshot-token",
   token_type: "bearer",
   expires_in: 3600,
-  expires_at: Math.floor(Date.now() / 1000) + 3600,
+  expires_at: expiresAt,
   refresh_token: "screenshot-refresh",
-  user: {
-    id: "00000000-0000-4000-8000-000000000001",
-    aud: "authenticated",
-    role: "authenticated",
-    email: "demo@grip.local",
-    email_confirmed_at: now,
-    confirmed_at: now,
-    app_metadata: { provider: "email", providers: ["email"] },
-    user_metadata: { display_name: "Demo User" },
-    identities: [],
-    created_at: now,
-    updated_at: now,
-    is_anonymous: false,
-  },
+  user: fakeUser,
 };
+
+// Supabase v2 validates the token on getSession() via a /user network call.
+// We intercept that request via CDP Fetch and return a mocked user response
+// so the app sees a valid session without any real credentials in this script.
+const supabaseHost = new URL(env.VITE_SUPABASE_URL).hostname;
 
 await mkdir(outDir, { recursive: true });
 
@@ -141,6 +154,27 @@ try {
   const cdp = await createCdp(wsUrl);
   await cdp.send("Page.enable");
   await cdp.send("Runtime.enable");
+  await cdp.send("Fetch.enable", {
+    patterns: [{ urlPattern: `https://${supabaseHost}/auth/v1/*`, requestStage: "Request" }],
+  });
+
+  // Handle intercepted Supabase auth requests — return mocked responses.
+  cdp.onEvent("Fetch.requestPaused", async (params) => {
+    const url = params.request.url;
+    let body;
+    if (url.includes("/auth/v1/token") || url.includes("/auth/v1/user")) {
+      body = JSON.stringify(fakeUser);
+    } else {
+      body = JSON.stringify({ message: "ok" });
+    }
+    await cdp.send("Fetch.fulfillRequest", {
+      requestId: params.requestId,
+      responseCode: 200,
+      responseHeaders: [{ name: "Content-Type", value: "application/json" }],
+      body: Buffer.from(body).toString("base64"),
+    });
+  });
+
   await cdp.send("Emulation.setDeviceMetricsOverride", {
     width: 1600,
     height: 1000,
@@ -148,6 +182,8 @@ try {
     mobile: false,
   });
 
+  // localStorage is origin-scoped, so we must be on the app's origin to set it.
+  // Navigate there first, wait for the document to be available, inject, then reload.
   await cdp.send("Page.navigate", { url: baseUrl });
   await waitForLoad(cdp);
   await cdp.send("Runtime.evaluate", {
@@ -157,6 +193,21 @@ try {
   await waitForLoad(cdp);
 
   await capture(cdp, "01-prep");
+
+  // Click Poe (the raven mascot button) to trigger a thought bubble, then capture.
+  await cdp.send("Runtime.evaluate", {
+    expression: `
+      (() => {
+        const btn = document.querySelector('[aria-label*="Ask"]') || document.querySelector('[title*="Ask"]');
+        if (btn) { btn.click(); return true; }
+        return false;
+      })()
+    `,
+    returnByValue: true,
+  });
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  await capture(cdp, "01b-poe");
+
   await clickTab(cdp, "Stories");
   await capture(cdp, "02-stories");
   await clickTab(cdp, "Arch Board");
