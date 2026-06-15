@@ -28,7 +28,7 @@ appId: host.exp.Exponent
     when:
       visible: "Sign in"
     commands:
-      - tapOn: "you@email.com"
+      - tapOn: "you@email.com" # matches the placeholder text of the email input
       - inputText: ${EMAIL}
       - tapOn: "password"
       - inputText: ${PASSWORD}
