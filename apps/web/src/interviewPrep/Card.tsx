@@ -3,10 +3,10 @@ import { techLinks } from "@tech-refresh/core/techLinks";
 import { CORRECT_XP } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
+import { BrandIcon } from "../components/BrandIcon";
 import { ACCURACY_GOOD_PCT, type CardState, type PrepItem, type QuizQuestion, type ScoreEntry } from "./types";
 import { DifficultyIcon } from "./DifficultyIcon";
-import styles from "../InterviewPrep.module.css";
+import styles from "./InterviewPrep.module.css";
 
 export function Card({ index = 0, item, level, stat, state, onFlip, onBack, onAnswer, onNext }: {
   index?: number;

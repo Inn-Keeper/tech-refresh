@@ -11,6 +11,7 @@ jest.mock("@/lib/api", () => ({
       { date: "2026-06-10", accuracy: 0.5, total: 2 },
       { date: "2026-06-11", accuracy: 0.75, total: 4 },
     ]),
+    getUser: jest.fn(async () => null),
     getQuestions: jest.fn(async () => [
       { id: "q1", tech: "TypeScript", category: "Languages", difficulty: "easy", prompt: "Sample?", options: ["a", "b", "c", "d"], correct: 0, explanation: null },
     ]),
@@ -31,6 +32,8 @@ describe("PrepScreen", () => {
     // The persistent difficulty selector is always visible.
     expect(view.getByText("DIFFICULTY")).toBeTruthy();
     expect(view.getByText("Overlord")).toBeTruthy();
+    expect(view.getByText("QUESTIONS")).toBeTruthy();
+    expect(view.getByText("All")).toBeTruthy();
 
     await waitFor(() => expect(api.getAccuracyTimeline).toHaveBeenCalled());
 

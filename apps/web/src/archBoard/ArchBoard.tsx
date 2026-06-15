@@ -2,16 +2,17 @@ import React, { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
-import * as api from "./api";
+import * as api from "../lib/api";
 import { colors, layout } from "@tech-refresh/core/tokens";
-import { BrandIcon, nodeIconName } from "./BrandIcon";
-import { Combobox } from "./Combobox";
-import { CATEGORY_ICONS, CUSTOM_CATEGORY, NODE_H, NODE_W } from "./archBoard/constants";
-import { EvalResults } from "./archBoard/EvalResults";
-import { NodePalette } from "./archBoard/NodePalette";
-import { SavedBoards } from "./archBoard/SavedBoards";
-import { ScenarioForm } from "./archBoard/ScenarioForm";
-import type { AugmentedScenario, BoardEdge, BoardNode, ConnectDrag, DragRef, SavedBoard } from "./archBoard/types";
+import { BrandIcon } from "../components/BrandIcon";
+import { nodeIconName } from "../components/brandIconNames";
+import { Combobox } from "../components/Combobox";
+import { CATEGORY_ICONS, CUSTOM_CATEGORY, NODE_H, NODE_W } from "./constants";
+import { EvalResults } from "./EvalResults";
+import { NodePalette } from "./NodePalette";
+import { SavedBoards } from "./SavedBoards";
+import { ScenarioForm } from "./ScenarioForm";
+import type { AugmentedScenario, BoardEdge, BoardNode, ConnectDrag, DragRef, SavedBoard } from "./types";
 
 export default function ArchBoard() {
   const [scenarioId, setScenarioId] = useState<string>((SCENARIOS[0] as AugmentedScenario).id);

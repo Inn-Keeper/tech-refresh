@@ -1,15 +1,15 @@
 import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import * as api from "./api";
-import { WorkspaceLayout } from "./WorkspaceLayout";
-import { PromptDrill } from "./storyBank/PromptDrill";
-import { StoryCard } from "./storyBank/StoryCard";
-import { StoryForm } from "./storyBank/StoryForm";
-import { StoryLeftRail } from "./storyBank/StoryLeftRail";
-import { StoryCoverage } from "./storyBank/StoryCoverage";
-import { EMPTY_FORM } from "./storyBank/types";
-import type { Story, StoryForm as StoryFormType } from "./storyBank/types";
+import * as api from "../lib/api";
+import { WorkspaceLayout } from "../components/WorkspaceLayout";
+import { PromptDrill } from "./PromptDrill";
+import { StoryCard } from "./StoryCard";
+import { StoryForm } from "./StoryForm";
+import { StoryLeftRail } from "./StoryLeftRail";
+import { StoryCoverage } from "./StoryCoverage";
+import { EMPTY_FORM } from "./types";
+import type { Story, StoryForm as StoryFormType } from "./types";
 
 export default function StoryBank() {
   const queryClient = useQueryClient();

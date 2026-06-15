@@ -7,6 +7,7 @@
     "./api": "./src/api.js",
     "./auth": "./src/auth.js",
     "./quiz": "./src/quiz.js",
+    "./quizPrefs": "./src/quizPrefs.js",
     "./difficulty": "./src/difficulty.js",
     "./questions": "./src/questions.js",
     "./stories": "./src/stories.js",

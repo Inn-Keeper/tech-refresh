@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { PROMPTS } from "@tech-refresh/core/stories";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
+import { BrandIcon } from "../components/BrandIcon";
 import { CompetencyBadge } from "./CompetencyBadge";
 import { StoryCard } from "./StoryCard";
 import type { Story } from "./types";

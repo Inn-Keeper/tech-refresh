@@ -7,12 +7,13 @@ import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
-import * as api from "./api";
+import { questionCapForPool } from "@tech-refresh/core/quizPrefs";
+import * as api from "../lib/api";
 import { useScores } from "./useScores";
-import { CelebrationOverlay } from "./CelebrationOverlay";
+import { CelebrationOverlay } from "../components/CelebrationOverlay";
 import { colors } from "@tech-refresh/core/tokens";
-import { WorkspaceLayout, WorkspacePanel } from "./WorkspaceLayout";
-import { PoeAssistant } from "./PoeAssistant";
+import { WorkspaceLayout, WorkspacePanel } from "../components/WorkspaceLayout";
+import { PoeAssistant } from "../components/poe/PoeAssistant";
 import { getQuizSize, setQuizSize } from "./quizPrefs";
 import styles from "./InterviewPrep.module.css";
 import type {
@@ -23,13 +24,13 @@ import type {
   PoeCue,
   PrepItem,
   QuizQuestion,
-} from "./interviewPrep/types";
-import { Card } from "./interviewPrep/Card";
-import { ConfirmDialog } from "./interviewPrep/ConfirmDialog";
-import { DrillSession } from "./interviewPrep/DrillSession";
-import { PrepLeftRail } from "./interviewPrep/PrepLeftRail";
-import { PrepRightRail } from "./interviewPrep/PrepRightRail";
-import { summarizeScores } from "./interviewPrep/summarizeScores";
+} from "./types";
+import { Card } from "./Card";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { DrillSession } from "./DrillSession";
+import { PrepLeftRail } from "./PrepLeftRail";
+import { PrepRightRail } from "./PrepRightRail";
+import { summarizeScores } from "./summarizeScores";
 
 const DRILL_SIZE = 10;
 const CARD_POOL_LIMIT = 500; // pull the whole tier pool for a tech; size is controlled by user pref
@@ -126,7 +127,7 @@ export default function InterviewPrep() {
       if (rows.length) {
         setPoolSize(rows.length);
         // quizSize is a user-set cap; if it meets or exceeds the real pool it means "all".
-        const cap = quizSize !== null && quizSize < rows.length ? quizSize : rows.length;
+        const cap = questionCapForPool(quizSize, rows.length);
         return shuffle(rows).slice(0, cap).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
       }
       console.warn(`No ${level} questions in the DB for "${tech}" — falling back to static prep questions (these don't vary by level). Run the questions seed.`);

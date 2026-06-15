@@ -1,6 +1,7 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import { DIFFICULTIES, difficultyByKey } from "@tech-refresh/core/difficulty";
 import { colors } from "@/theme";
+import { DifficultyIcon } from "@/components/DifficultyIcon";
 
 type Props = {
   level: string;
@@ -44,7 +45,7 @@ export function DifficultyPicker({ level, onLevel }: Props) {
                 borderColor: active ? d.color : colors.border,
               }}
             >
-              <Text style={{ fontSize: 17 }}>{d.emoji}</Text>
+              <DifficultyIcon tier={d} size={19} />
               <Text style={{ fontSize: 9.5, fontWeight: "700", color: active ? d.color : colors.textDim, marginTop: 2 }} numberOfLines={1}>
                 {d.label}
               </Text>

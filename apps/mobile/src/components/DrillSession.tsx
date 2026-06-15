@@ -4,6 +4,7 @@ import { CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification"
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { colors } from "@/theme";
 import { BrandIcon } from "@/components/BrandIcon";
+import { DifficultyIcon } from "./DifficultyIcon";
 import { QuizView } from "./QuizView";
 
 export type Drill = {
@@ -91,7 +92,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: Props) {
           <Text style={{ fontSize: 10, fontWeight: "700", color: cur.color, letterSpacing: 0.8 }}>DRILL</Text>
           {tier && (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 999, backgroundColor: `${tier.color}1A`, borderWidth: 1, borderColor: `${tier.color}60` }}>
-              <Text style={{ fontSize: 10 }}>{tier.emoji}</Text>
+              <DifficultyIcon tier={tier} size={11} />
               <Text style={{ fontSize: 9.5, fontWeight: "700", color: tier.color, letterSpacing: 0.3 }}>{tier.label.toUpperCase()}</Text>
             </View>
           )}

@@ -3,14 +3,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { STATUSES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import * as api from "./api";
-import { WorkspaceLayout } from "./WorkspaceLayout";
-import { ContactCard } from "./contacts/ContactCard";
-import { ContactForm } from "./contacts/ContactForm";
-import { ContactsLeftRail } from "./contacts/ContactsLeftRail";
-import { ContactsRightRail } from "./contacts/ContactsRightRail";
-import { EMPTY_FORM } from "./contacts/types";
-import type { Contact, Retro } from "./contacts/types";
+import * as api from "../lib/api";
+import { WorkspaceLayout } from "../components/WorkspaceLayout";
+import { ContactCard } from "./ContactCard";
+import { ContactForm } from "./ContactForm";
+import { ContactsLeftRail } from "./ContactsLeftRail";
+import { ContactsRightRail } from "./ContactsRightRail";
+import { EMPTY_FORM } from "./types";
+import type { Contact, Retro } from "./types";
 
 export default function Contacts() {
   const queryClient = useQueryClient();

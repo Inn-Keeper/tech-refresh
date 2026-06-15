@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ROLE_POSITIONS, STATUSES, STATUS_STYLES } from "@tech-refresh/core/contacts";
 import { colors } from "@tech-refresh/core/tokens";
-import { Combobox } from "../Combobox";
+import { Combobox } from "../components/Combobox";
 import { DateInput, Field } from "./shared";
 import type { Contact } from "./types";
 import { EMPTY_FORM, inputStyle } from "./types";

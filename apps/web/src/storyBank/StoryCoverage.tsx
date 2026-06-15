@@ -1,8 +1,8 @@
 import React from "react";
 import { COMPETENCIES, COMPETENCY_COLORS } from "@tech-refresh/core/stories";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
-import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
+import { BrandIcon } from "../components/BrandIcon";
+import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import type { Story } from "./types";
 
 export function StoryCoverage({ stories }: { stories: Story[] }) {

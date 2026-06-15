@@ -1,8 +1,8 @@
 import React from "react";
 import { STATUSES, STATUS_STYLES } from "@tech-refresh/core/contacts";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
-import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
+import { BrandIcon } from "../components/BrandIcon";
+import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import type { Contact } from "./types";
 
 export function ContactsLeftRail({

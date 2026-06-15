@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { STATUSES, STATUS_STYLES, isDue } from "@tech-refresh/core/contacts";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
+import { BrandIcon } from "../components/BrandIcon";
 import { ActionButton } from "./shared";
 import type { Contact, Retro } from "./types";
 import { EMPTY_RETRO, inputStyle, textareaStyle } from "./types";

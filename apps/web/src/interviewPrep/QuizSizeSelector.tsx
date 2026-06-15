@@ -1,19 +1,14 @@
+import { effectiveQuizSize, normalizeQuizSize, quizSizeMax, QUIZ_SIZE_MIN } from "@tech-refresh/core/quizPrefs";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
-import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
-
-const QUIZ_SIZE_MIN = 3;
-
-// Default upper bound shown before any card is opened. Wide enough to be useful;
-// the real pool size will clamp down on first fetch.
-const QUIZ_SIZE_DEFAULT_MAX = 20;
+import { BrandIcon } from "../components/BrandIcon";
+import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 
 export function QuizSizeSelector({ quizSize, poolSize, onQuizSize }: { quizSize: number | null; poolSize: number | null; onQuizSize: (v: number | null) => void }) {
   const isAll = quizSize === null;
   // Slider ceiling is availability, not the selected preference. Once a card
   // detects the real pool size, the user's chosen cap should not become the max.
-  const max = Math.max(poolSize ?? QUIZ_SIZE_DEFAULT_MAX, QUIZ_SIZE_MIN);
-  const effective = isAll ? max : Math.min(quizSize, max);
+  const max = quizSizeMax(poolSize);
+  const effective = effectiveQuizSize(quizSize, poolSize);
 
   return (
     <WorkspacePanel>
@@ -51,7 +46,7 @@ export function QuizSizeSelector({ quizSize, poolSize, onQuizSize }: { quizSize:
           value={effective}
           onChange={(e) => {
             const v = parseInt(e.target.value, 10);
-            onQuizSize(v >= max ? null : v);
+            onQuizSize(normalizeQuizSize(v, max));
           }}
           style={{ width: "100%", accentColor: colors.accent }}
         />

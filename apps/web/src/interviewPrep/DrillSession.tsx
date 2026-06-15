@@ -1,7 +1,7 @@
 import { CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
+import { BrandIcon } from "../components/BrandIcon";
 import type { DrillState } from "./types";
 import { DifficultyIcon } from "./DifficultyIcon";
 

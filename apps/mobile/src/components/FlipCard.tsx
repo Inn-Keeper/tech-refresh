@@ -10,6 +10,7 @@ import { PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { colors } from "@/theme";
+import { DifficultyIcon } from "./DifficultyIcon";
 import { QuizView } from "./QuizView";
 
 type Item = {
@@ -162,7 +163,7 @@ export function FlipCard({ item, level, stat, record, addXp, loadQuiz, onQuizAct
               </View>
               {tier && (
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: `${tier.color}1A`, borderWidth: 1, borderColor: `${tier.color}55` }}>
-                  <Text style={{ fontSize: 10 }}>{tier.emoji}</Text>
+                  <DifficultyIcon tier={tier} size={11} />
                   <Text style={{ fontSize: 9.5, fontWeight: "800", color: tier.color }}>{tier.label}</Text>
                 </View>
               )}

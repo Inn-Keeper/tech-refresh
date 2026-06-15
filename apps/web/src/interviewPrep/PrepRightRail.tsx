@@ -1,9 +1,9 @@
 import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
-import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
-import { AccuracyChart } from "../AccuracyChart";
+import { BrandIcon } from "../components/BrandIcon";
+import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
+import { AccuracyChart } from "./AccuracyChart";
 import { ACCURACY_GOOD_PCT, type AccuracyPoint, type Scores, type Summary } from "./types";
 import { DifficultyIcon } from "./DifficultyIcon";
 import { LevelSelector } from "./LevelSelector";

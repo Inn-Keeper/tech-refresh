@@ -1,0 +1,71 @@
+export const QUIZ_SIZE_STORAGE_KEY = "grip.quizSize";
+export const QUIZ_SIZE_MIN = 3;
+export const QUIZ_SIZE_DEFAULT_MAX = 20;
+export const DEFAULT_QUIZ_SIZE = null;
+
+/** @type {{ label: string, value: number | null }[]} */
+export const QUIZ_SIZE_OPTIONS = [
+  { label: "3", value: 3 },
+  { label: "5", value: 5 },
+  { label: "10", value: 10 },
+  { label: "All", value: null },
+];
+
+/**
+ * @param {string | number | null | undefined} raw
+ * @returns {number | null}
+ */
+export function parseQuizSize(raw) {
+  if (raw === null || raw === undefined || raw === "") return DEFAULT_QUIZ_SIZE;
+  const n = parseInt(String(raw), 10);
+  return Number.isFinite(n) && n >= QUIZ_SIZE_MIN ? n : DEFAULT_QUIZ_SIZE;
+}
+
+/**
+ * @param {string | number | null | undefined} value
+ * @returns {string | null}
+ */
+export function serializeQuizSize(value) {
+  const normalized = normalizeQuizSize(value);
+  return normalized === null ? null : String(normalized);
+}
+
+/**
+ * @param {string | number | null | undefined} value
+ * @param {number | null | undefined} [poolSize]
+ * @returns {number | null}
+ */
+export function normalizeQuizSize(value, poolSize = null) {
+  if (value === null || value === undefined) return DEFAULT_QUIZ_SIZE;
+  const n = typeof value === "number" ? value : parseInt(String(value), 10);
+  if (!Number.isFinite(n) || n < QUIZ_SIZE_MIN) return DEFAULT_QUIZ_SIZE;
+  return typeof poolSize === "number" && n >= poolSize ? DEFAULT_QUIZ_SIZE : n;
+}
+
+/**
+ * @param {number | null | undefined} poolSize
+ * @returns {number}
+ */
+export function quizSizeMax(poolSize) {
+  return Math.max(poolSize ?? QUIZ_SIZE_DEFAULT_MAX, QUIZ_SIZE_MIN);
+}
+
+/**
+ * @param {number | null} quizSize
+ * @param {number | null | undefined} poolSize
+ * @returns {number}
+ */
+export function effectiveQuizSize(quizSize, poolSize) {
+  const max = quizSizeMax(poolSize);
+  return quizSize === null ? max : Math.min(normalizeQuizSize(quizSize) ?? max, max);
+}
+
+/**
+ * @param {number | null} quizSize
+ * @param {number} poolSize
+ * @returns {number}
+ */
+export function questionCapForPool(quizSize, poolSize) {
+  const normalized = normalizeQuizSize(quizSize, poolSize);
+  return normalized === null ? poolSize : normalized;
+}

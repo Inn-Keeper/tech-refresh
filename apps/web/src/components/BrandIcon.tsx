@@ -59,40 +59,6 @@ const ICONS: Record<string, Piece[]> = {
   worker: [{ x: 5, y: 7, w: 14, h: 10, r: 5 }, { kind: "line", x: 12, y: 4, w: 0, h: 16 }, { kind: "line", x: 7, y: 12, w: 10, h: 0 }],
 };
 
-export const nodeIconName = (type: string): string => {
-  const map: Record<string, string> = {
-    client: "client",
-    cdn: "globe",
-    lb: "layers",
-    gateway: "gateway",
-    auth: "shield",
-    service: "service",
-    worker: "worker",
-    queue: "queue",
-    cache: "cache",
-    sql: "database",
-    nosql: "database",
-    psp: "payment",
-    monitor: "monitor",
-  };
-  return map[type] ?? "service";
-};
-
-export const categoryIconName = (name: string): string => {
-  const map: Record<string, string> = {
-    Languages: "code",
-    Frontend: "client",
-    Backend: "service",
-    Cloud: "cloud",
-    Data: "accuracy",
-    AI: "spark",
-    Testing: "test",
-    Mobile: "client",
-    Databases: "database",
-  };
-  return map[name] ?? "spark";
-};
-
 type BrandIconProps = { name: string; color?: string; size?: number; muted?: boolean };
 
 export function BrandIcon({ name, color = colors.textDim, size = 18, muted = false }: BrandIconProps) {

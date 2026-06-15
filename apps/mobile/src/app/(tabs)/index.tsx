@@ -7,13 +7,16 @@ import { buildGithubTechCategory, fetchGithubTechSignals, githubUsernameFromUrl 
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
+import { DEFAULT_QUIZ_SIZE, questionCapForPool } from "@tech-refresh/core/quizPrefs";
 import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { api } from "@/lib/api";
+import { getQuizSize, setQuizSize } from "@/lib/quizPrefs";
 import { useScores } from "@/lib/useScores";
 import { colors } from "@/theme";
 import { FlipCard } from "@/components/FlipCard";
 import { StatsBar } from "@/components/StatsBar";
 import { DifficultyPicker } from "@/components/DifficultyPicker";
+import { QuizSizePicker } from "@/components/QuizSizePicker";
 import { DrillSession, type Drill } from "@/components/DrillSession";
 import { AccuracyChart } from "@/components/AccuracyChart";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
@@ -31,7 +34,6 @@ type PrepItem = {
 type PrepCategory = { name: string; emoji?: string; color: string; items: PrepItem[] };
 
 const DRILL_SIZE = 10;
-const CARD_QUIZ_SIZE = 3; // questions shown per card quiz — a random subset of the tier's pool, so repeats feel fresh
 const CARD_POOL_LIMIT = 50; // fetch the whole tier pool for a tech, then sample from it
 const GITHUB_TECHS_STALE_MS = 1000 * 60 * 15; // public GitHub repo languages rarely change mid-session
 
@@ -51,6 +53,8 @@ export default function PrepScreen() {
   // Global difficulty — drives both the quiz cards and the drill.
   const [level, setLevel] = useState("mid");
   const [openQuizCount, setOpenQuizCount] = useState(0);
+  const [quizSize, setQuizSizeState] = useState<number | null>(DEFAULT_QUIZ_SIZE);
+  const [poolSize, setPoolSize] = useState<number | null>(null);
   const [drillLoading, setDrillLoading] = useState(false);
   const [drillError, setDrillError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
@@ -67,6 +71,15 @@ export default function PrepScreen() {
     enabled: githubPrepEnabled && !!githubUsername,
     staleTime: GITHUB_TECHS_STALE_MS,
   });
+
+  useEffect(() => {
+    getQuizSize().then(setQuizSizeState).catch(() => setQuizSizeState(DEFAULT_QUIZ_SIZE));
+  }, []);
+
+  const updateQuizSize = (value: number | null) => {
+    setQuizSizeState(value);
+    setQuizSize(value).catch(() => undefined);
+  };
 
   const allItems = categories.flatMap((c: { name: string; color: string; emoji: string; items: { tech: string }[] }) =>
     c.items.map((item) => ({ ...item, category: c.name, color: c.color, emoji: c.emoji }))
@@ -131,8 +144,10 @@ export default function PrepScreen() {
         queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: CARD_POOL_LIMIT }),
       });
       if (rows.length) {
+        setPoolSize(rows.length);
         // Random subset of the tier's pool each open, so re-quizzing a card feels fresh.
-        return shuffle(rows).slice(0, CARD_QUIZ_SIZE).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
+        const cap = questionCapForPool(quizSize, rows.length);
+        return shuffle(rows).slice(0, cap).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
       }
       console.warn(`No ${level} questions in the DB for "${tech}" — falling back to static prep questions (these don't vary by level). Run the questions seed.`);
     } catch (err) {
@@ -213,6 +228,7 @@ export default function PrepScreen() {
           <View style={{ gap: 14 }}>
             <StatsBar scores={scores} onDrill={() => startDrill(level)} drillActive={!!drill || drillLoading} />
             {!drill && <DifficultyPicker level={level} onLevel={requestLevel} />}
+            {!drill && <QuizSizePicker quizSize={quizSize} poolSize={poolSize} onQuizSize={updateQuizSize} />}
             {drillError && !drill && (
               <Text style={{ fontSize: 11, color: colors.warning, paddingHorizontal: 2 }}>{drillError}</Text>
             )}

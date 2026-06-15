@@ -1,6 +1,7 @@
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon, categoryIconName } from "../BrandIcon";
-import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
+import { BrandIcon } from "../components/BrandIcon";
+import { categoryIconName } from "../components/brandIconNames";
+import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import type { Category, GithubStatus, PrepItem, Scores } from "./types";
 
 function categoryAnswered(cat: Category, scores: Scores) {

@@ -4,18 +4,18 @@ import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
 import { friendlyAuthError } from "@tech-refresh/core/auth";
-import * as api from "./api";
-import { supabase } from "./supabase";
-import { poeVisibleByDefault, setPoeAssistantVisible } from "./poeAssistantUtils";
-import { ProfileAside } from "./profile/ProfileAside";
-import { ProfileFormSection } from "./profile/ProfileFormSection";
+import * as api from "../lib/api";
+import { supabase } from "../lib/supabase";
+import { poeVisibleByDefault, setPoeAssistantVisible } from "../components/poe/poeAssistantUtils";
+import { ProfileAside } from "./ProfileAside";
+import { ProfileFormSection } from "./ProfileFormSection";
 import {
   githubAccountIdFromIdentity,
   githubAccountIdFromMetadata,
   githubUrlFromIdentity,
   githubUrlFromMetadata,
-} from "./profile/githubUtils";
-import type { ProfileForm } from "./profile/types";
+} from "./githubUtils";
+import type { ProfileForm } from "./types";
 
 const GITHUB_LINK_PENDING_KEY = "grip.githubLinkPending";
 const GITHUB_LINKED_KEY = "grip.githubLinked";

@@ -1,8 +1,8 @@
 import React from "react";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
-import { FunnelDashboard } from "../FunnelDashboard";
-import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
+import { BrandIcon } from "../components/BrandIcon";
+import { FunnelDashboard } from "./FunnelDashboard";
+import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import type { Contact } from "./types";
 
 type FunnelSummary = Parameters<typeof FunnelDashboard>[0]["summary"];

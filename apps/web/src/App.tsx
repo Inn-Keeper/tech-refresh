@@ -2,14 +2,14 @@ import { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { t } from "@tech-refresh/core/i18n";
 import { friendlyAuthError } from "@tech-refresh/core/auth";
-import { supabase } from "./supabase";
-import InterviewPrep from "./InterviewPrep";
-import Contacts from "./Contacts";
-import ArchBoard from "./ArchBoard";
-import StoryBank from "./StoryBank";
-import Profile from "./Profile";
+import { supabase } from "./lib/supabase";
+import InterviewPrep from "./interviewPrep/InterviewPrep";
+import Contacts from "./contacts/Contacts";
+import ArchBoard from "./archBoard/ArchBoard";
+import StoryBank from "./storyBank/StoryBank";
+import Profile from "./profile/Profile";
 import { brand, colors, layout } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "./BrandIcon";
+import { BrandIcon } from "./components/BrandIcon";
 
 const pages = [
   { id: "prep", icon: "layers", label: t("tabs.prep") },
@@ -540,4 +540,3 @@ function SignIn() {
 function LogoPlaceholder({ size }: { size: number }) {
   return <BrandIcon name="spark" color={colors.accentBright} size={size} />;
 }
-

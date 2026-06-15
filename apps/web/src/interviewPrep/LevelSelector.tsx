@@ -1,7 +1,7 @@
 import { DIFFICULTIES } from "@tech-refresh/core/difficulty";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "../BrandIcon";
-import { WorkspacePanel, WorkspaceTitle } from "../WorkspaceLayout";
+import { BrandIcon } from "../components/BrandIcon";
+import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import { DifficultyIcon } from "./DifficultyIcon";
 
 // Sidebar difficulty picker. Sets the global level that drives both the quiz

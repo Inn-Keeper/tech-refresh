@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { COMPETENCIES, COMPETENCY_COLORS } from "@tech-refresh/core/stories";
 import { colors } from "@tech-refresh/core/tokens";
-import { Combobox } from "../Combobox";
+import { Combobox } from "../components/Combobox";
 import { inputStyle, textareaStyle } from "./styles";
 import { EMPTY_FORM } from "./types";
 import type { StoryForm as StoryFormType } from "./types";

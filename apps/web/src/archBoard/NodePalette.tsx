@@ -1,6 +1,7 @@
 import { NODE_TYPES, TYPE_COLORS } from "@tech-refresh/core/arch";
 import { colors } from "@tech-refresh/core/tokens";
-import { BrandIcon, nodeIconName } from "../BrandIcon";
+import { BrandIcon } from "../components/BrandIcon";
+import { nodeIconName } from "../components/brandIconNames";
 
 export function NodePalette({ onAddNode }: { onAddNode: (type: string) => void }) {
   return (
