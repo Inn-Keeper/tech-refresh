@@ -34,13 +34,13 @@ export function poeVisibleByDefault() {
   return window.localStorage.getItem(POE_ASSISTANT_VISIBLE_KEY) !== "0";
 }
 
-export function setPoeAssistantVisible(visible) {
+export function setPoeAssistantVisible(visible: boolean) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(POE_ASSISTANT_VISIBLE_KEY, visible ? "1" : "0");
   window.dispatchEvent(new CustomEvent(POE_ASSISTANT_PREF_EVENT, { detail: { visible } }));
 }
 
-export function poeLineFor(type, seed = 0) {
-  const lines = POE_PHRASES[type] ?? POE_PHRASES.idle;
-  return lines[Math.abs(seed) % lines.length];
+export function poeLineFor(type: string, seed = 0): string {
+  const lines = (POE_PHRASES as Record<string, string[]>)[type] ?? POE_PHRASES.idle;
+  return lines[Math.abs(seed) % lines.length] ?? "";
 }

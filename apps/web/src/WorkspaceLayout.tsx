@@ -1,7 +1,16 @@
+import type { CSSProperties, ReactNode } from "react";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import styles from "./WorkspaceLayout.module.css";
 
-export function WorkspaceLayout({ left, children, right, mainLabel = "Workspace", density = "normal" }) {
+type WorkspaceLayoutProps = {
+  left: ReactNode;
+  children: ReactNode;
+  right: ReactNode;
+  mainLabel?: string;
+  density?: "normal" | "compact";
+};
+
+export function WorkspaceLayout({ left, children, right, mainLabel = "Workspace", density = "normal" }: WorkspaceLayoutProps) {
   const compact = density === "compact";
 
   return (
@@ -18,7 +27,7 @@ export function WorkspaceLayout({ left, children, right, mainLabel = "Workspace"
         "--workspace-left-rail-max": `${layout.workspaceLeftRailMax}px`,
         "--workspace-right-rail-min": `${layout.workspaceRightRailMin}px`,
         "--workspace-right-rail-max": `${layout.workspaceRightRailMax}px`,
-      }}
+      } as CSSProperties}
     >
       <aside className={`${styles.rail} ${styles.leftRail}`}>
         {left}
@@ -33,7 +42,9 @@ export function WorkspaceLayout({ left, children, right, mainLabel = "Workspace"
   );
 }
 
-export function WorkspacePanel({ children, tone = "default", style }) {
+type WorkspacePanelProps = { children: ReactNode; tone?: "default" | "sunken"; style?: CSSProperties };
+
+export function WorkspacePanel({ children, tone = "default", style }: WorkspacePanelProps) {
   return (
     <div
       style={{
@@ -49,7 +60,9 @@ export function WorkspacePanel({ children, tone = "default", style }) {
   );
 }
 
-export function WorkspaceTitle({ icon, title, subtitle, right }) {
+type WorkspaceTitleProps = { icon: ReactNode; title: string; subtitle?: string; right?: ReactNode };
+
+export function WorkspaceTitle({ icon, title, subtitle, right }: WorkspaceTitleProps) {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
       {icon}

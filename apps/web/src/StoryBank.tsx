@@ -1,11 +1,14 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
-import * as api from "./api.js";
+import * as api from "./api";
+
+type Story = { id?: string; title: string; competency: string; situation: string; task: string; action: string; result: string };
+type StoryForm = Omit<Story, "id"> & { id?: string };
 import { colors, tints } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "./BrandIcon.jsx";
-import { Combobox } from "./Combobox.jsx";
-import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
+import { BrandIcon } from "./BrandIcon";
+import { Combobox } from "./Combobox";
+import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout";
 
 const EMPTY_FORM = {
   title: "",
@@ -16,7 +19,7 @@ const EMPTY_FORM = {
   result: "",
 };
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "8px 10px",
@@ -29,12 +32,12 @@ const inputStyle = {
   fontFamily: "inherit",
 };
 
-const textareaStyle = { ...inputStyle, minHeight: 64, resize: "vertical", lineHeight: 1.5 };
+const textareaStyle: React.CSSProperties = { ...inputStyle, minHeight: 64, resize: "vertical", lineHeight: 1.5 };
 
 export default function StoryBank() {
   const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState(null); // story id, "new", or null
-  const [mode, setMode] = useState("stories"); // "stories" | "drill"
+  const [editingId, setEditingId] = useState<string | null>(null); // story id, "new", or null
+  const [mode, setMode] = useState<"stories" | "drill">("stories");
 
   const { data: stories = null, error: loadError } = useQuery({
     queryKey: ["stories"],
@@ -52,13 +55,13 @@ export default function StoryBank() {
       ? `Save failed: ${mutationError.message}`
       : null;
 
-  const handleSave = (form) => {
+  const handleSave = (form: StoryForm) => {
     if (!form.title.trim()) return;
-    saveMutation.mutate({ ...form, id: editingId === "new" ? undefined : editingId });
+    saveMutation.mutate({ ...form, id: editingId === "new" ? undefined : editingId ?? undefined });
     setEditingId(null);
   };
 
-  const handleDelete = (s) => {
+  const handleDelete = (s: Story) => {
     if (window.confirm(`Delete "${s.title}"?`)) {
       deleteMutation.mutate(s.id);
     }
@@ -123,7 +126,7 @@ export default function StoryBank() {
               editingId === s.id ? (
                 <StoryForm key={s.id} initial={s} onSave={handleSave} onCancel={() => setEditingId(null)} />
               ) : (
-                <StoryCard key={s.id} story={s} onEdit={() => setEditingId(s.id)} onDelete={() => handleDelete(s)} />
+                <StoryCard key={s.id} story={s} onEdit={() => setEditingId(s.id ?? null)} onDelete={() => handleDelete(s)} />
               )
             )}
           </div>
@@ -133,7 +136,7 @@ export default function StoryBank() {
   );
 }
 
-function StoryLeftRail({ canAdd, mode, onAdd, setMode, stories }) {
+function StoryLeftRail({ canAdd, mode, onAdd, setMode, stories }: { canAdd: boolean; mode: string; onAdd: () => void; setMode: (m: "stories" | "drill") => void; stories: Story[] }) {
   return (
     <>
       <WorkspacePanel>
@@ -151,7 +154,7 @@ function StoryLeftRail({ canAdd, mode, onAdd, setMode, stories }) {
             return (
               <button
                 key={item.id}
-                onClick={() => setMode(item.id)}
+                onClick={() => setMode(item.id as "stories" | "drill")}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -204,9 +207,9 @@ function StoryLeftRail({ canAdd, mode, onAdd, setMode, stories }) {
   );
 }
 
-function StoryCoverage({ stories }) {
-  const counts = Object.fromEntries(COMPETENCIES.map((competency) => [competency, stories.filter((s) => s.competency === competency).length]));
-  const covered = COMPETENCIES.filter((competency) => counts[competency] > 0).length;
+function StoryCoverage({ stories }: { stories: Story[] }) {
+  const counts = Object.fromEntries(COMPETENCIES.map((competency) => [competency, stories.filter((s: Story) => s.competency === competency).length]));
+  const covered = COMPETENCIES.filter((competency) => (counts[competency] ?? 0) > 0).length;
 
   return (
     <WorkspacePanel>
@@ -231,7 +234,7 @@ function StoryCoverage({ stories }) {
   );
 }
 
-function CompetencyBadge({ competency }) {
+function CompetencyBadge({ competency }: { competency: string }) {
   const color = COMPETENCY_COLORS[competency] || colors.textFaint;
   return (
     <span
@@ -245,7 +248,7 @@ function CompetencyBadge({ competency }) {
   );
 }
 
-function StoryCard({ story: s, onEdit, onDelete, readOnly }) {
+function StoryCard({ story: s, onEdit, onDelete, readOnly }: { story: Story; onEdit?: () => void; onDelete?: () => void; readOnly?: boolean }) {
   const [expanded, setExpanded] = useState(false);
   const color = COMPETENCY_COLORS[s.competency] || colors.textFaint;
 
@@ -263,11 +266,11 @@ function StoryCard({ story: s, onEdit, onDelete, readOnly }) {
         >
           {s.title}
         </span>
-        <button onClick={() => setExpanded((v) => !v)} style={miniBtn(colors.textDim)}>
+        <button onClick={() => setExpanded((v) => !v)} style={miniBtn(colors.textDim ?? "")}>
           {expanded ? "Collapse" : "Expand"}
         </button>
-        {!readOnly && <button onClick={onEdit} style={miniBtn(colors.textDim)}>Edit</button>}
-        {!readOnly && <button onClick={onDelete} style={miniBtn(colors.danger)}>Delete</button>}
+        {!readOnly && <button onClick={onEdit} style={miniBtn(colors.textDim ?? "")}>Edit</button>}
+        {!readOnly && <button onClick={onDelete} style={miniBtn(colors.danger ?? "")}>Delete</button>}
       </div>
 
       {expanded && (
@@ -282,7 +285,7 @@ function StoryCard({ story: s, onEdit, onDelete, readOnly }) {
   );
 }
 
-function StarSection({ label, text }) {
+function StarSection({ label, text }: { label: string; text: string }) {
   if (!text) return null;
   return (
     <div>
@@ -294,16 +297,16 @@ function StarSection({ label, text }) {
   );
 }
 
-function miniBtn(color) {
+function miniBtn(color: string): React.CSSProperties {
   return {
     padding: "4px 10px", background: "transparent", border: `1px solid ${color}50`,
     borderRadius: 8, color, fontSize: 11, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap",
-  };
+  } as React.CSSProperties;
 }
 
-function StoryForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
-  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+function StoryForm({ initial, onSave, onCancel }: { initial: Partial<StoryForm>; onSave: (form: StoryForm) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<StoryForm>({ ...EMPTY_FORM, ...initial });
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   return (
     <div
@@ -373,7 +376,7 @@ function StoryForm({ initial, onSave, onCancel }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <span style={{ fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" }}>{label}</span>
@@ -382,12 +385,14 @@ function Field({ label, children }) {
   );
 }
 
-function PromptDrill({ stories }) {
+type Prompt = { text: string; competency: string };
+
+function PromptDrill({ stories }: { stories: Story[] }) {
   const [promptIdx, setPromptIdx] = useState(() => Math.floor(Math.random() * PROMPTS.length));
   const [revealed, setRevealed] = useState(false);
 
-  const prompt = PROMPTS[promptIdx];
-  const matching = stories.filter((s) => s.competency === prompt.competency);
+  const prompt = PROMPTS[promptIdx] as Prompt | undefined;
+  const matching = stories.filter((s: Story) => s.competency === prompt?.competency);
 
   const nextPrompt = () => {
     let next = Math.floor(Math.random() * PROMPTS.length);
@@ -405,10 +410,10 @@ function PromptDrill({ stories }) {
         }}
       >
         <div style={{ marginBottom: 14 }}>
-          <CompetencyBadge competency={prompt.competency} />
+          <CompetencyBadge competency={prompt?.competency ?? ""} />
         </div>
         <p style={{ margin: "0 0 8px", fontSize: 17, fontWeight: 600, lineHeight: 1.5, color: colors.textBright }}>
-          "{prompt.text}"
+          "{prompt?.text}"
         </p>
         <p style={{ margin: "0 0 20px", fontSize: 12, color: colors.textFaint }}>
           Answer out loud — aim for 90 seconds, Action should be the longest part.
@@ -442,10 +447,10 @@ function PromptDrill({ stories }) {
           {matching.length === 0 ? (
             <p style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: colors.warningBright, fontSize: 13, textAlign: "center" }}>
               <BrandIcon name="warning" color={colors.warningBright} size={14} />
-              <span>No story tagged "{prompt.competency}" yet — that's a gap an interviewer will find first. Write one.</span>
+              <span>No story tagged "{prompt?.competency}" yet — that's a gap an interviewer will find first. Write one.</span>
             </p>
           ) : (
-            matching.map((s) => <StoryCard key={s.id} story={s} readOnly />)
+            matching.map((s: Story) => <StoryCard key={s.id} story={s} readOnly />)
           )}
         </div>
       )}

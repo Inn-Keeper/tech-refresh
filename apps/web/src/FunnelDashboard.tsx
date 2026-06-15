@@ -2,10 +2,20 @@ import { STATUS_STYLES } from "@tech-refresh/core/contacts";
 import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@tech-refresh/core/tokens";
 
-const percent = (value) => Math.round(value * 100);
+type FunnelSummary = {
+  active: number;
+  applicationsPerWeek: number;
+  reached: Record<string, number>;
+  rates: { contactedToApplied: number; appliedToInterviewing: number; interviewingToOffer: number };
+  statuses: string[];
+  counts: Record<string, number>;
+  signals: string[];
+};
+
+const percent = (value: number) => Math.round(value * 100);
 
 // Web twin of the mobile funnel dashboard: same buildFunnelSummary input.
-export function FunnelDashboard({ summary, compact = false }) {
+export function FunnelDashboard({ summary, compact = false }: { summary: FunnelSummary; compact?: boolean }) {
   return (
     <div
       style={{
@@ -40,8 +50,8 @@ export function FunnelDashboard({ summary, compact = false }) {
 
       <div style={{ display: "grid", gridTemplateColumns: compact ? "1fr" : "repeat(3, 1fr)", gap: compact ? 8 : 10 }}>
         <Metric label={t("funnel.appsPerWeek")} value={summary.applicationsPerWeek} color={colors.success} />
-        <Metric label={t("funnel.interviews")} value={summary.reached.Interviewing} color={colors.warning} />
-        <Metric label={t("funnel.offers")} value={summary.reached.Offer} color={STATUS_STYLES.Offer.color} />
+        <Metric label={t("funnel.interviews")} value={summary.reached.Interviewing ?? 0} color={colors.warning} />
+        <Metric label={t("funnel.offers")} value={summary.reached.Offer ?? 0} color={STATUS_STYLES.Offer?.color ?? ""} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -61,7 +71,7 @@ export function FunnelDashboard({ summary, compact = false }) {
           label={t("funnel.interviewingToOffer")}
           value={summary.rates.interviewingToOffer}
           detail={`${summary.reached.Offer}/${summary.reached.Interviewing}`}
-          color={STATUS_STYLES.Offer.color}
+          color={STATUS_STYLES.Offer?.color ?? ""}
         />
       </div>
 
@@ -71,9 +81,9 @@ export function FunnelDashboard({ summary, compact = false }) {
             key={status}
             style={{
               padding: "3px 10px",
-              background: `${STATUS_STYLES[status].color}20`,
+              background: `${STATUS_STYLES[status]?.color ?? ""}20`,
               borderRadius: 20,
-              color: STATUS_STYLES[status].color,
+              color: STATUS_STYLES[status]?.color ?? "",
               fontSize: 11,
               fontWeight: 700,
             }}
@@ -94,7 +104,7 @@ export function FunnelDashboard({ summary, compact = false }) {
   );
 }
 
-function Metric({ label, value, color }) {
+function Metric({ label, value, color }: { label: string; value: number; color: string | undefined }) {
   return (
     <div
       style={{
@@ -110,7 +120,7 @@ function Metric({ label, value, color }) {
   );
 }
 
-function ConversionRow({ label, value, detail, color }) {
+function ConversionRow({ label, value, detail, color }: { label: string; value: number; detail: string; color: string | undefined }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

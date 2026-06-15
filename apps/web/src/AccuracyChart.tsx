@@ -6,8 +6,10 @@ const WIDTH = 600; // viewBox units; scales to container width
 const PAD_X = 12;
 const PAD_Y = 14;
 
+type AccuracyPoint = { date: string; accuracy: number };
+
 // SVG twin of the mobile Skia chart: cumulative accuracy per day.
-export function AccuracyChart({ points, compact = false }) {
+export function AccuracyChart({ points, compact = false }: { points: AccuracyPoint[]; compact?: boolean }) {
   const latest = points.at(-1);
   const innerW = WIDTH - PAD_X * 2;
   const innerH = HEIGHT - PAD_Y * 2;

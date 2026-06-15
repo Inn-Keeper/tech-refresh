@@ -1,11 +1,18 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { NODE_TYPES, TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, buildCustomChecks, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
-import * as api from "./api.js";
+import * as api from "./api";
 import { colors, layout } from "@tech-refresh/core/tokens";
-import { BrandIcon, nodeIconName } from "./BrandIcon.jsx";
-import { Combobox } from "./Combobox.jsx";
+import { BrandIcon, nodeIconName } from "./BrandIcon";
+import { Combobox } from "./Combobox";
+
+type BoardNode = { id: string; type: string; x: number; y: number };
+type BoardEdge = { id: string; from: string; to: string };
+type ConnectDrag = { from: string; x: number; y: number; moved: boolean };
+type DragRef = { id: string; dx: number; dy: number; moved: boolean };
+// Augmented scenario type: the base Scenario from core plus optional UI-only fields.
+type AugmentedScenario = { id: string; name: string; brief: string; budget: number; checks: object[]; warnings?: object[]; category?: string; custom?: boolean };
 
 const NODE_W = 132;
 const NODE_H = 54;
@@ -18,7 +25,7 @@ const REVIEW_SCORE = 50;
 const MAINT_LEAN_MAX = 8;
 const MAINT_MODERATE_MAX = 14;
 
-const CATEGORY_ICONS = {
+const CATEGORY_ICONS: Record<string, string> = {
   Commerce: "cost",
   Fintech: "payment",
   Social: "contact",
@@ -33,28 +40,28 @@ const CATEGORY_ICONS = {
 };
 
 export default function ArchBoard() {
-  const [scenarioId, setScenarioId] = useState(SCENARIOS[0].id);
+  const [scenarioId, setScenarioId] = useState<string>((SCENARIOS[0] as AugmentedScenario).id);
   const [creatorOpen, setCreatorOpen] = useState(false);
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-  const [connectFrom, setConnectFrom] = useState(null);
-  const [connectDrag, setConnectDrag] = useState(null);
-  const [result, setResult] = useState(null);
+  const [nodes, setNodes] = useState<BoardNode[]>([]);
+  const [edges, setEdges] = useState<BoardEdge[]>([]);
+  const [connectFrom, setConnectFrom] = useState<string | null>(null);
+  const [connectDrag, setConnectDrag] = useState<ConnectDrag | null>(null);
+  const [result, setResult] = useState<ReturnType<typeof evaluate> | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
-  const [activeBoardId, setActiveBoardId] = useState(null);
-  const [activeBoardTitle, setActiveBoardTitle] = useState(null);
+  const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
+  const [activeBoardTitle, setActiveBoardTitle] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const canvasRef = useRef(null);
-  const dragRef = useRef(null);
-  const connectDragRef = useRef(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<DragRef | null>(null);
+  const connectDragRef = useRef<ConnectDrag | null>(null);
   const suppressClickRef = useRef(false);
 
   const { data: customScenarios = [] } = useQuery({
     queryKey: ["custom-scenarios"],
     queryFn: api.listCustomScenarios,
   });
-  const allScenarios = [
-    ...SCENARIOS,
+  const allScenarios: AugmentedScenario[] = [
+    ...(SCENARIOS as AugmentedScenario[]),
     ...customScenarios.map((s) => ({ ...s, category: CUSTOM_CATEGORY, custom: true })),
   ];
   const scenarioOptions = [...SCENARIO_CATEGORIES, CUSTOM_CATEGORY]
@@ -65,7 +72,7 @@ export default function ArchBoard() {
         .map((s) => ({ value: s.id, label: s.name })),
     }))
     .filter((group) => group.options.length > 0);
-  const scenario = allScenarios.find((s) => s.id === scenarioId) ?? SCENARIOS[0];
+  const scenario: AugmentedScenario = allScenarios.find((s) => s.id === scenarioId) ?? (SCENARIOS[0] as AugmentedScenario);
   const nodeById = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
   const { data: savedBoards = [], error: boardsError } = useQuery({
@@ -83,7 +90,7 @@ export default function ArchBoard() {
         nodes,
         edges,
       }),
-    onSuccess: (board) => {
+    onSuccess: (board: { id?: string; title: string }) => {
       setActiveBoardId(board.id ?? null);
       setActiveBoardTitle(board.title);
       invalidateBoards();
@@ -91,7 +98,7 @@ export default function ArchBoard() {
   });
   const deleteBoardMutation = useMutation({
     mutationFn: api.deleteBoard,
-    onSuccess: (_data, id) => {
+    onSuccess: (_data: unknown, id: string) => {
       if (id === activeBoardId) {
         setActiveBoardId(null);
         setActiveBoardTitle(null);
@@ -101,17 +108,17 @@ export default function ArchBoard() {
   });
   const saveScenarioMutation = useMutation({
     mutationFn: api.upsertCustomScenario,
-    onSuccess: (saved) => {
+    onSuccess: (saved: object) => {
       invalidateCustomScenarios();
       setCreatorOpen(false);
-      switchScenario(saved.id);
+      switchScenario((saved as { id: string }).id);
     },
   });
   const deleteScenarioMutation = useMutation({
     mutationFn: api.deleteCustomScenario,
-    onSuccess: (_data, id) => {
+    onSuccess: (_data: unknown, id: string) => {
       invalidateCustomScenarios();
-      if (id === scenarioId) switchScenario(SCENARIOS[0].id);
+      if (id === scenarioId) switchScenario((SCENARIOS[0] as AugmentedScenario).id);
     },
   });
 
@@ -121,7 +128,7 @@ export default function ArchBoard() {
     setConnectFrom(null);
   };
 
-  const loadBoard = (board) => {
+  const loadBoard = (board: { id?: string; title: string; scenarioId: string; nodes: BoardNode[]; edges: BoardEdge[] }) => {
     if (!allScenarios.some((item) => item.id === board.scenarioId)) {
       window.alert(t("board.unknownScenarioMessage", { scenarioId: board.scenarioId }));
       return;
@@ -138,7 +145,7 @@ export default function ArchBoard() {
   const liveCost = nodes.reduce((s, n) => s + meta(n.type).cost, 0);
   const liveMaint = nodes.reduce((s, n) => s + meta(n.type).maint, 0);
 
-  const switchScenario = (id) => {
+  const switchScenario = (id: string) => {
     setScenarioId(id);
     setNodes([]);
     setEdges([]);
@@ -148,7 +155,7 @@ export default function ArchBoard() {
     setActiveBoardTitle(null);
   };
 
-  const addNode = (type) => {
+  const addNode = (type: string) => {
     const i = nodes.length;
     setNodes([
       ...nodes,
@@ -157,31 +164,31 @@ export default function ArchBoard() {
     setResult(null);
   };
 
-  const removeNode = (id) => {
+  const removeNode = (id: string) => {
     setNodes(nodes.filter((n) => n.id !== id));
     setEdges(edges.filter((e) => e.from !== id && e.to !== id));
     if (connectFrom === id || connectDrag?.from === id) cancelConnection();
     setResult(null);
   };
 
-  const addEdge = (from, to) => {
+  const addEdge = (from: string, to: string) => {
     if (from === to || edges.some((e) => e.from === from && e.to === to)) return;
     setEdges([...edges, { id: crypto.randomUUID(), from, to }]);
     setResult(null);
   };
 
-  const removeEdge = (id) => {
+  const removeEdge = (id: string) => {
     setEdges(edges.filter((e) => e.id !== id));
     setResult(null);
   };
 
-  const canvasPoint = (e) => {
+  const canvasPoint = (e: React.PointerEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return null;
     return { x: e.clientX - rect.left, y: e.clientY - rect.top, rect };
   };
 
-  const nodeAtPoint = (x, y, sourceId) =>
+  const nodeAtPoint = (x: number, y: number, sourceId: string) =>
     nodes.find((node) => {
       if (node.id === sourceId) return false;
       const inBody = x >= node.x && x <= node.x + NODE_W && y >= node.y && y <= node.y + NODE_H;
@@ -190,13 +197,13 @@ export default function ArchBoard() {
       return inBody || leftAxis || rightAxis;
     });
 
-  const nodeAxisPoint = (node, target = connectDrag) => {
+  const nodeAxisPoint = (node: BoardNode, target: { x: number } | null = connectDrag) => {
     const targetX = target?.x ?? node.x + NODE_W;
     const useRight = targetX >= node.x + NODE_W / 2;
     return { x: node.x + (useRight ? NODE_W : 0), y: node.y + NODE_H / 2 };
   };
 
-  const startConnectionDrag = (e, n) => {
+  const startConnectionDrag = (e: React.PointerEvent, n: BoardNode) => {
     const point = canvasPoint(e);
     if (!point) return;
     e.currentTarget.setPointerCapture?.(e.pointerId);
@@ -206,7 +213,7 @@ export default function ArchBoard() {
     setConnectDrag(next);
   };
 
-  const updateConnectionDrag = (e) => {
+  const updateConnectionDrag = (e: React.PointerEvent) => {
     const point = canvasPoint(e);
     if (!point) return;
     const current = connectDragRef.current;
@@ -216,7 +223,7 @@ export default function ArchBoard() {
     setConnectDrag(next);
   };
 
-  const finishConnectionDrag = (e) => {
+  const finishConnectionDrag = (e: React.PointerEvent) => {
     const current = connectDragRef.current;
     const point = canvasPoint(e);
     if (current && point) {
@@ -229,7 +236,7 @@ export default function ArchBoard() {
     suppressClickRef.current = true;
   };
 
-  const onNodePointerDown = (e, n) => {
+  const onNodePointerDown = (e: React.PointerEvent, n: BoardNode) => {
     if (e.shiftKey) {
       startConnectionDrag(e, n);
       return;
@@ -240,7 +247,7 @@ export default function ArchBoard() {
     dragRef.current = { id: n.id, dx: point.x - n.x, dy: point.y - n.y, moved: false };
   };
 
-  const onNodePointerMove = (e) => {
+  const onNodePointerMove = (e: React.PointerEvent) => {
     if (connectDragRef.current) {
       updateConnectionDrag(e);
       return;
@@ -255,7 +262,7 @@ export default function ArchBoard() {
     setNodes((prev) => prev.map((n) => (n.id === d.id ? { ...n, x, y } : n)));
   };
 
-  const onNodePointerUp = (e) => {
+  const onNodePointerUp = (e: React.PointerEvent) => {
     if (connectDragRef.current) {
       finishConnectionDrag(e);
       return;
@@ -264,7 +271,7 @@ export default function ArchBoard() {
     dragRef.current = null;
   };
 
-  const onNodeClick = (n) => {
+  const onNodeClick = (n: BoardNode) => {
     if (suppressClickRef.current) {
       suppressClickRef.current = false;
       return;
@@ -289,7 +296,7 @@ export default function ArchBoard() {
 
       {/* Scenario picker */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-        <BrandIcon name={CATEGORY_ICONS[scenario.category] ?? "board"} color={colors.accentBright} size={16} />
+        <BrandIcon name={CATEGORY_ICONS[scenario.category ?? ""] ?? "board"} color={colors.accentBright} size={16} />
         <Combobox
           value={scenario.id}
           options={scenarioOptions}
@@ -385,7 +392,7 @@ export default function ArchBoard() {
             Clear board
           </button>
           <button
-            onClick={() => setResult(evaluate(scenario, nodes, edges))}
+            onClick={() => setResult(evaluate(scenario as Parameters<typeof evaluate>[0], nodes, edges))}
             disabled={nodes.length === 0}
             style={{
               padding: "7px 16px", background: colors.accent, border: "none", borderRadius: 8,
@@ -407,7 +414,7 @@ export default function ArchBoard() {
               ? `Delete failed: ${deleteBoardMutation.error.message}`
               : deleteScenarioMutation.error
                 ? `Delete failed: ${deleteScenarioMutation.error.message}`
-                : t("board.boardsError", { message: boardsError.message })}
+                : t("board.boardsError", { message: (boardsError as Error).message })}
         </p>
       )}
 
@@ -442,7 +449,7 @@ export default function ArchBoard() {
                       {t("common.load")}
                     </button>
                     <button
-                      onClick={() => window.confirm(t("board.deleteMessage", { title: board.title })) && deleteBoardMutation.mutate(board.id)}
+                      onClick={() => board.id && window.confirm(t("board.deleteMessage", { title: board.title })) && deleteBoardMutation.mutate(board.id)}
                       style={{ padding: "3px 10px", background: "transparent", border: `1px solid ${colors.danger}50`, borderRadius: 6, color: colors.dangerBright, fontSize: 11, fontWeight: 600, cursor: "pointer" }}
                     >
                       {t("common.delete")}
@@ -535,8 +542,10 @@ export default function ArchBoard() {
                 </g>
               );
             })}
-            {connectDrag && nodeById[connectDrag.from] && (() => {
-              const start = nodeAxisPoint(nodeById[connectDrag.from], connectDrag);
+            {connectDrag && (() => {
+              const fromNode = nodeById[connectDrag.from];
+              if (!fromNode) return null;
+              const start = nodeAxisPoint(fromNode, connectDrag);
               const mx = (start.x + connectDrag.x) / 2;
               const d = `M ${start.x} ${start.y} C ${mx} ${start.y}, ${mx} ${connectDrag.y}, ${connectDrag.x} ${connectDrag.y}`;
               return <path d={d} fill="none" stroke={colors.accentBright} strokeWidth="2" strokeDasharray="5 5" markerEnd="url(#arrow)" />;
@@ -548,7 +557,7 @@ export default function ArchBoard() {
             const t = meta(n.type);
             const color = TYPE_COLORS[n.type];
             const isSource = connectFrom === n.id;
-            const axisHandle = (side) => (
+            const axisHandle = (side: string) => (
               <button
                 onPointerDown={(ev) => {
                   ev.stopPropagation();
@@ -688,23 +697,24 @@ export default function ArchBoard() {
 
 // Authoring form for custom scenarios: requirements are picked from the
 // palette and compiled into evaluator checks via buildCustomChecks.
-function ScenarioForm({ onSave, onCancel, saving, error }) {
+type ScenarioFormProps = { onSave: (form: object) => void; onCancel: () => void; saving: boolean; error: Error | null };
+function ScenarioForm({ onSave, onCancel, saving, error }: ScenarioFormProps) {
   const [name, setName] = useState("");
   const [brief, setBrief] = useState("");
   const [budget, setBudget] = useState(12);
-  const [requiredNodes, setRequiredNodes] = useState([]);
-  const [requiredEdges, setRequiredEdges] = useState([]);
+  const [requiredNodes, setRequiredNodes] = useState<string[]>([]);
+  const [requiredEdges, setRequiredEdges] = useState<{ from: string; to: string }[]>([]);
 
-  const inputStyle = {
+  const inputStyle: React.CSSProperties = {
     boxSizing: "border-box", padding: "8px 10px",
     background: colors.bgDeep, border: `1px solid ${colors.border}`, borderRadius: 8,
     color: colors.text, fontSize: 13, outline: "none", fontFamily: "inherit",
   };
-  const labelStyle = { fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" };
+  const labelStyle: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" };
 
-  const toggleNode = (type) =>
+  const toggleNode = (type: string) =>
     setRequiredNodes((prev) => (prev.includes(type) ? prev.filter((x) => x !== type) : [...prev, type]));
-  const setEdgeAt = (index, side, value) =>
+  const setEdgeAt = (index: number, side: string, value: string) =>
     setRequiredEdges((prev) => prev.map((e, i) => (i === index ? { ...e, [side]: value } : e)));
   const nodeTypeOptions = NODE_TYPES.map((spec) => ({ value: spec.type, label: spec.label, color: TYPE_COLORS[spec.type] }));
 
@@ -746,7 +756,7 @@ function ScenarioForm({ onSave, onCancel, saving, error }) {
       <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         <span style={labelStyle}>Brief — the problem statement you'd get in the interview</span>
         <textarea
-          style={{ ...inputStyle, minHeight: 52, resize: "vertical", lineHeight: 1.5 }}
+          style={{ ...inputStyle, minHeight: 52, resize: "vertical" as const, lineHeight: 1.5 }}
           value={brief}
           onChange={(e) => setBrief(e.target.value)}
         />

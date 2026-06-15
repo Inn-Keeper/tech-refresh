@@ -1,24 +1,31 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CORRECT_XP } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
-import { addXp as addXpApi, getScores, recordAnswer } from "./api.js";
+import { addXp as addXpApi, getScores, recordAnswer } from "./api";
 
-const EMPTY = { xp: 0, answers: {} };
+type ScoreState = { 
+  xp: number; 
+  answers: Record<string, { correct: number; wrong: number }> 
+};
+type RecordArgs = { 
+  tech: string; isCorrect: boolean; source: string; difficulty: string | null };
+
+const EMPTY: ScoreState = { xp: 0, answers: {} };
 
 // Quiz score store backed by Supabase (profiles + answer_events).
 // Mutations apply optimistically so the quiz UI never waits on the network.
 export function useScores() {
   const queryClient = useQueryClient();
-  const { data } = useQuery({ queryKey: ["scores"], queryFn: getScores });
+  const { data, isFetched } = useQuery({ queryKey: ["scores"], queryFn: getScores });
   const scores = data ?? EMPTY;
 
-  const patch = (updater) =>
-    queryClient.setQueryData(["scores"], (old) => updater(old ?? EMPTY));
+  const patch = (updater: (s: ScoreState) => ScoreState) =>
+    queryClient.setQueryData(["scores"], (old: ScoreState | undefined) => updater(old ?? EMPTY));
   const rollback = () => queryClient.invalidateQueries({ queryKey: ["scores"] });
 
   const recordMutation = useMutation({
-    mutationFn: ({ tech, isCorrect, source, difficulty }) => recordAnswer(tech, isCorrect, source, difficulty),
-    onMutate: ({ tech, isCorrect, difficulty }) =>
+    mutationFn: ({ tech, isCorrect, source, difficulty }: RecordArgs) => recordAnswer(tech, isCorrect, source, difficulty),
+    onMutate: ({ tech, isCorrect, difficulty }: RecordArgs) =>
       patch((s) => ({
         xp: s.xp + (isCorrect ? (difficultyByKey(difficulty ?? "")?.xp ?? CORRECT_XP) : 0),
         answers: {
@@ -35,14 +42,15 @@ export function useScores() {
 
   const xpMutation = useMutation({
     mutationFn: addXpApi,
-    onMutate: (points) => patch((s) => ({ ...s, xp: s.xp + points })),
+    onMutate: (points: number) => patch((s) => ({ ...s, xp: s.xp + points })),
     onError: rollback,
   });
 
   return {
     scores,
-    record: (tech, isCorrect, source = "card", difficulty = null) =>
+    scoresReady: isFetched,
+    record: (tech: string, isCorrect: boolean, source = "card", difficulty: string | null = null) =>
       recordMutation.mutate({ tech, isCorrect, source, difficulty }),
-    addXp: (points) => xpMutation.mutate(points),
+    addXp: (points: number) => xpMutation.mutate(points),
   };
 }

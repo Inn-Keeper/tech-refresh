@@ -7,9 +7,20 @@
     "build": "pnpm --filter web build",
     "mobile": "pnpm --filter mobile start",
     "postinstall": "pnpm --filter mobile exec install-skia",
-    "typecheck": "pnpm --filter mobile exec tsc --noEmit",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "typecheck": "pnpm --filter mobile exec tsc --noEmit && pnpm --filter web typecheck",
     "test": "pnpm --filter @tech-refresh/core test && pnpm --filter mobile test",
     "clean:ghosts": "find . -name '._*' -delete",
-    "ci": "pnpm test && pnpm typecheck && pnpm build"
+    "ci": "pnpm lint && pnpm test && pnpm typecheck && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.5.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.4",
+    "typescript-eslint": "^8.61.0"
   }
 }

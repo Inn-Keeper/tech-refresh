@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { brand, colors } from "@tech-refresh/core/tokens";
 import {
   POE_ASSISTANT_PREF_EVENT,
   POE_ASSISTANT_VISIBLE_KEY,
   poeLineFor,
   poeVisibleByDefault,
-} from "./poeAssistant.js";
+} from "./poeAssistantUtils";
 import styles from "./PoeAssistant.module.css";
 
 const REACTION_MS = 3600;
@@ -21,18 +21,20 @@ const poseByMood = {
   thinking: "/mascot/poe-thinking.png",
 };
 
-export function PoeAssistant({ cue }) {
+type Cue = { type: string; id?: number } | null;
+export function PoeAssistant({ cue }: { cue: Cue }) {
   const [visible, setVisible] = useState(poeVisibleByDefault);
   const [mood, setMood] = useState("idle");
   const [message, setMessage] = useState("");
   const [messageKey, setMessageKey] = useState(0);
   const [shining, setShining] = useState(false);
-  const resetTimer = useRef(null);
-  const shineTimer = useRef(null);
-  const shineEndTimer = useRef(null);
+  const [footerLift, setFooterLift] = useState(0);
+  const resetTimer = useRef<number | null>(null);
+  const shineTimer = useRef<number | null>(null);
+  const shineEndTimer = useRef<number | null>(null);
 
-  const showReaction = useCallback((type, seed = Date.now()) => {
-    const nextMood = poseByMood[type] ? type : "thinking";
+  const showReaction = useCallback((type: string, seed = Date.now()) => {
+    const nextMood = (poseByMood as Record<string, string>)[type] ? type : "thinking";
     if (resetTimer.current) window.clearTimeout(resetTimer.current);
     setMood(nextMood);
     setMessage(poeLineFor(nextMood, seed));
@@ -44,8 +46,8 @@ export function PoeAssistant({ cue }) {
   }, []);
 
   useEffect(() => {
-    const onPreference = (event) => setVisible(event.detail?.visible ?? poeVisibleByDefault());
-    const onStorage = (event) => {
+    const onPreference = (event: Event) => setVisible((event as CustomEvent).detail?.visible ?? poeVisibleByDefault());
+    const onStorage = (event: StorageEvent) => {
       if (event.key === POE_ASSISTANT_VISIBLE_KEY) setVisible(poeVisibleByDefault());
     };
     window.addEventListener(POE_ASSISTANT_PREF_EVENT, onPreference);
@@ -88,16 +90,36 @@ export function PoeAssistant({ cue }) {
     showReaction(cue.type, cue.id ?? Date.now());
   }, [cue, showReaction]);
 
-  const imageSrc = poseByMood[mood] ?? poseByMood.idle;
+  // Slide Poe up when the footer scrolls into view so he never covers it.
+  useEffect(() => {
+    const footer = document.querySelector("footer");
+    if (!footer) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        const visible = entry.boundingClientRect.height * entry.intersectionRatio;
+        setFooterLift(Math.round(visible));
+      },
+      { threshold: Array.from({ length: 101 }, (_, i) => i / 100) }
+    );
+    observer.observe(footer);
+    return () => observer.disconnect();
+  }, []);
+
+  const imageSrc = (poseByMood as Record<string, string>)[mood] ?? poseByMood.idle;
   const accent = mood === "wrong" ? colors.warningBright : mood === "levelUp" ? colors.successBright : colors.accentBright;
   const label = useMemo(() => `${brand.mascotName}, ${brand.productName}'s raven guide`, []);
 
   if (!visible) return null;
 
   return (
-    <aside className={`${styles.assistant} ${styles[mood]} ${shining ? styles.shine : ""}`} aria-label={label}>
+    <aside
+      className={`${styles.assistant} ${styles[mood]} ${shining ? styles.shine : ""}`}
+      aria-label={label}
+      style={{ "--poe-lift": `${footerLift}px` } as React.CSSProperties}
+    >
       {message && (
-        <div key={messageKey} className={styles.quote} style={{ "--poe-accent": accent }} aria-live="polite">
+        <div key={messageKey} className={styles.quote} style={{ "--poe-accent": accent } as React.CSSProperties} aria-live="polite">
           {message}
         </div>
       )}

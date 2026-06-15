@@ -3,7 +3,12 @@ import { colors } from "@tech-refresh/core/tokens";
 // Web port of apps/mobile/src/components/BrandIcon.tsx — keep the icon
 // geometry in sync with the mobile component ("search" is web-only).
 
-const ICONS = {
+type Piece =
+  | { kind?: undefined; x: number; y: number; w: number; h: number; r?: number; fill?: boolean; opacity?: number; rotate?: string }
+  | { kind: "dot"; x: number; y: number; w: number; h: number; fill?: boolean; opacity?: number; rotate?: string; r?: never }
+  | { kind: "line"; x: number; y: number; w: number; h: number; rotate?: string; opacity?: number; r?: never; fill?: never };
+
+const ICONS: Record<string, Piece[]> = {
   accuracy: [
     { x: 3, y: 17, w: 18, h: 2, r: 1 },
     { x: 5, y: 13, w: 2, h: 4, r: 1, fill: true },
@@ -38,6 +43,7 @@ const ICONS = {
   maintenance: [{ x: 5, y: 11, w: 14, h: 4, r: 2, rotate: "-35deg" }, { kind: "dot", x: 4, y: 10, w: 5, h: 5 }, { kind: "dot", x: 15, y: 9, w: 5, h: 5 }],
   monitor: [{ x: 4, y: 5, w: 16, h: 13, r: 2 }, { kind: "line", x: 7, y: 13, w: 3, h: 0 }, { kind: "line", x: 10, y: 13, w: 3, h: 0, rotate: "-60deg" }, { kind: "line", x: 13, y: 10, w: 4, h: 0, rotate: "60deg" }],
   payment: [{ x: 4, y: 7, w: 16, h: 11, r: 2 }, { kind: "line", x: 4, y: 10, w: 16, h: 0 }, { kind: "line", x: 7, y: 15, w: 5, h: 0 }],
+  profile: [{ kind: "dot", x: 9, y: 4, w: 6, h: 6 }, { x: 6, y: 13, w: 12, h: 7, r: 4 }],
   prompt: [{ x: 6, y: 4, w: 12, h: 14, r: 6 }, { kind: "line", x: 12, y: 18, w: 0, h: 3 }, { kind: "line", x: 9, y: 21, w: 6, h: 0 }],
   queue: [{ kind: "line", x: 5, y: 7, w: 14, h: 0 }, { kind: "line", x: 5, y: 12, w: 14, h: 0 }, { kind: "line", x: 5, y: 17, w: 14, h: 0 }, { kind: "dot", x: 4, y: 5, w: 4, h: 4 }, { kind: "dot", x: 4, y: 10, w: 4, h: 4 }, { kind: "dot", x: 4, y: 15, w: 4, h: 4 }],
   rank: [{ x: 5, y: 6, w: 14, h: 11, r: 3 }, { kind: "line", x: 8, y: 5, w: 0, h: 5 }, { kind: "line", x: 16, y: 5, w: 0, h: 5 }, { kind: "line", x: 10, y: 19, w: 4, h: 0 }],
@@ -53,8 +59,8 @@ const ICONS = {
   worker: [{ x: 5, y: 7, w: 14, h: 10, r: 5 }, { kind: "line", x: 12, y: 4, w: 0, h: 16 }, { kind: "line", x: 7, y: 12, w: 10, h: 0 }],
 };
 
-export const nodeIconName = (type) => {
-  const map = {
+export const nodeIconName = (type: string): string => {
+  const map: Record<string, string> = {
     client: "client",
     cdn: "globe",
     lb: "layers",
@@ -72,8 +78,8 @@ export const nodeIconName = (type) => {
   return map[type] ?? "service";
 };
 
-export const categoryIconName = (name) => {
-  const map = {
+export const categoryIconName = (name: string): string => {
+  const map: Record<string, string> = {
     Languages: "code",
     Frontend: "client",
     Backend: "service",
@@ -87,8 +93,11 @@ export const categoryIconName = (name) => {
   return map[name] ?? "spark";
 };
 
-export function BrandIcon({ name, color = colors.textDim, size = 18, muted = false }) {
+type BrandIconProps = { name: string; color?: string; size?: number; muted?: boolean };
+
+export function BrandIcon({ name, color = colors.textDim, size = 18, muted = false }: BrandIconProps) {
   const scale = size / 24;
+  const pieces = ICONS[name] ?? ICONS["spark"]!;
   return (
     <span
       style={{
@@ -100,9 +109,9 @@ export function BrandIcon({ name, color = colors.textDim, size = 18, muted = fal
         opacity: muted ? 0.62 : 1,
       }}
     >
-      {(ICONS[name] ?? ICONS.spark).map((piece, index) => {
+      {pieces.map((piece, index) => {
         const stroke = Math.max(1, Math.round(2 * scale));
-        const common = {
+        const common: React.CSSProperties = {
           position: "absolute",
           boxSizing: "border-box",
           left: piece.x * scale,

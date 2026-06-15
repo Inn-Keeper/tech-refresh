@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { t } from "@tech-refresh/core/i18n";
 import { friendlyAuthError } from "@tech-refresh/core/auth";
-import { supabase } from "./supabase.js";
-import InterviewPrep from "./InterviewPrep.jsx";
-import Contacts from "./Contacts.jsx";
-import ArchBoard from "./ArchBoard.jsx";
-import StoryBank from "./StoryBank.jsx";
-import Profile from "./Profile.tsx";
+import { supabase } from "./supabase";
+import InterviewPrep from "./InterviewPrep";
+import Contacts from "./Contacts";
+import ArchBoard from "./ArchBoard";
+import StoryBank from "./StoryBank";
+import Profile from "./Profile";
 import { brand, colors, layout } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "./BrandIcon.jsx";
+import { BrandIcon } from "./BrandIcon";
 
 const pages = [
   { id: "prep", icon: "layers", label: t("tabs.prep") },
@@ -20,11 +21,24 @@ const pages = [
 
 const GITHUB_LINK_PENDING_KEY = "grip.githubLinkPending";
 const GITHUB_LINKED_KEY = "grip.githubLinked";
+const ACTIVE_PAGE_KEY = "grip.activePage";
 
+const DEFAULT_PAGE = "prep";
+const pageIds = pages.map((p) => p.id);
+
+// Resolves which page to show on load. An active GitHub OAuth return
+// (?linked=github) or a pending link wins, so the user lands on profile to
+// finish linking. Otherwise restore the last page they were on; a *completed*
+// link (GITHUB_LINKED_KEY) is intentionally NOT a routing signal, or every
+// reload would force profile.
 const initialPage = () => {
-  if (typeof window === "undefined") return "prep";
+  if (typeof window === "undefined") return DEFAULT_PAGE;
   const params = new URLSearchParams(window.location.search);
-  return params.get("linked") === "github" || window.localStorage.getItem(GITHUB_LINK_PENDING_KEY) === "1" || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1" ? "profile" : "prep";
+  if (params.get("linked") === "github" || window.localStorage.getItem(GITHUB_LINK_PENDING_KEY) === "1") {
+    return "profile";
+  }
+  const saved = window.localStorage.getItem(ACTIVE_PAGE_KEY);
+  return saved && pageIds.includes(saved) ? saved : DEFAULT_PAGE;
 };
 
 export default function App() {
@@ -33,8 +47,15 @@ export default function App() {
     if (typeof window === "undefined") return false;
     return new URLSearchParams(window.location.search).get("linked") === "github" || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1";
   });
-  const [session, setSession] = useState(undefined); // undefined = checking
+  // undefined = loading, null = signed out, Session = signed in
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
   const activePageIndex = Math.max(0, pages.findIndex((p) => p.id === page));
+
+  // Persist the page so a reload restores it instead of resetting to prep.
+  const selectPage = (id: string) => {
+    setPage(id);
+    window.localStorage.setItem(ACTIVE_PAGE_KEY, id);
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -45,6 +66,7 @@ export default function App() {
   const signOut = () => {
     window.localStorage.removeItem(GITHUB_LINK_PENDING_KEY);
     window.localStorage.removeItem(GITHUB_LINKED_KEY);
+    window.localStorage.removeItem(ACTIVE_PAGE_KEY);
     supabase.auth.signOut();
   };
 
@@ -68,8 +90,23 @@ export default function App() {
         color: colors.text,
         display: "flex",
         flexDirection: "column",
+        position: "relative",
       }}
     >
+      {/* Noise texture overlay — low-opacity, pointer-events-none so it never blocks interaction */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
+          pointerEvents: "none",
+          opacity: 0.032,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "200px 200px",
+        }}
+      />
       <header
         style={{
           minHeight: layout.webHeaderHeight,
@@ -80,8 +117,21 @@ export default function App() {
           zIndex: 10,
           backdropFilter: "blur(14px)",
           boxShadow: "0 14px 38px rgba(0, 0, 0, 0.18)",
+          overflow: "hidden",
         }}
       >
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            opacity: 0.04,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M0 8L8 0M-1 1L1-1M7 9L9 7' stroke='%23ffffff' stroke-width='0.8'/%3E%3C/svg%3E")`,
+            backgroundRepeat: "repeat",
+            backgroundSize: "8px 8px",
+          }}
+        />
         <div
           style={{
             minHeight: layout.webHeaderHeight,
@@ -154,7 +204,7 @@ export default function App() {
                 {pages.map((p) => (
                   <button
                     key={p.id}
-                    onClick={() => setPage(p.id)}
+                    onClick={() => selectPage(p.id)}
                     aria-current={page === p.id ? "page" : undefined}
                     style={{
                       display: "flex",
@@ -182,24 +232,6 @@ export default function App() {
                   </button>
                 ))}
               </nav>
-              <button
-                onClick={signOut}
-                title={session.user.email}
-                style={{
-                  minHeight: 36,
-                  padding: "8px 13px",
-                  background: colors.bgDeep,
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: 11,
-                  color: colors.textFaint,
-                  fontSize: 11,
-                  fontWeight: 800,
-                  cursor: "pointer",
-                  boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
-                }}
-              >
-                {t("auth.signOut")}
-              </button>
             </>
           )}
         </div>
@@ -226,31 +258,23 @@ export default function App() {
             {page === "stories" && <StoryBank />}
             {page === "board" && <ArchBoard />}
             {page === "contacts" && <Contacts />}
-            {page === "profile" && <Profile githubLinked={githubLinked} onGitHubLinkedSeen={() => setGithubLinked(false)} />}
+            {page === "profile" && <Profile githubLinked={githubLinked} onGitHubLinkedSeen={() => setGithubLinked(false)} onSignOut={signOut} />}
           </>
         )}
       </div>
 
-      <Footer onNavigate={session ? setPage : null} />
+      <Footer onNavigate={session ? selectPage : null} />
     </div>
   );
 }
 
-function Footer({ onNavigate }) {
-  const productLinks = pages.map((page) => ({
+type FooterLink = { label: string; action: (() => void) | null; href?: never } | { label: string; href: string; action?: never };
+
+function Footer({ onNavigate }: { onNavigate: ((page: string) => void) | null }) {
+  const productLinks: FooterLink[] = pages.map((page) => ({
     label: page.label,
     action: onNavigate ? () => onNavigate(page.id) : null,
   }));
-  const resourceLinks = [
-    { label: "Design", href: "https://github.com/Inn-Keeper/tech-refresh/blob/main/DESIGN.md" },
-    { label: "Plan", href: "https://github.com/Inn-Keeper/tech-refresh/blob/main/PLAN.md" },
-    { label: "Repo", href: "https://github.com/Inn-Keeper/tech-refresh" },
-  ];
-  const stackLinks = [
-    { label: "Supabase", href: "https://supabase.com" },
-    { label: "Vite", href: "https://vite.dev" },
-    { label: "Expo", href: "https://expo.dev" },
-  ];
 
   return (
     <footer
@@ -282,8 +306,6 @@ function Footer({ onNavigate }) {
         </div>
 
         <FooterColumn title="Product" links={productLinks} />
-        <FooterColumn title="Resources" links={resourceLinks} />
-        <FooterColumn title="Built With" links={stackLinks} />
       </div>
 
       <div
@@ -300,14 +322,13 @@ function Footer({ onNavigate }) {
           fontWeight: 600,
         }}
       >
-        <span>© {new Date().getFullYear()} {brand.productName}. Study case, interview prep, and hiring pipeline toolkit.</span>
-        <span>Private-by-default profile data. Auth source of truth: Supabase.</span>
+        <span>Built by InnKeeper Digital Solutions © {new Date().getFullYear()}</span>
       </div>
     </footer>
   );
 }
 
-function FooterColumn({ title, links }) {
+function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) {
   return (
     <div>
       <h2 style={{ margin: "0 0 10px", color: colors.textBright, fontSize: 12, fontWeight: 800 }}>{title}</h2>
@@ -327,7 +348,7 @@ function FooterColumn({ title, links }) {
             <button
               key={link.label}
               type="button"
-              onClick={link.action}
+              onClick={link.action ?? undefined}
               disabled={!link.action}
               style={{
                 padding: 0,
@@ -350,14 +371,14 @@ function FooterColumn({ title, links }) {
 }
 
 function SignIn() {
-  const [mode, setMode] = useState("signin"); // "signin" | "signup"
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const inputStyle = {
+  const inputStyle: React.CSSProperties = {
     padding: "11px 14px",
     background: colors.surface,
     border: `1px solid ${colors.border}`,
@@ -367,7 +388,7 @@ function SignIn() {
     outline: "none",
   };
 
-  const submit = async (e) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
@@ -516,6 +537,7 @@ function SignIn() {
   );
 }
 
-function LogoPlaceholder({ size }) {
+function LogoPlaceholder({ size }: { size: number }) {
   return <BrandIcon name="spark" color={colors.accentBright} size={size} />;
 }
+

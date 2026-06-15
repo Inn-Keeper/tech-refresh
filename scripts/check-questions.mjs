@@ -14,8 +14,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const envPath = path.join(__dirname, "..", "apps", "web", ".env");
+const scriptDir = path.dirname(fileURLToPath(import.meta.url));
+const envPath = path.join(scriptDir, "..", "apps", "web", ".env");
 
 function readEnv(file) {
   const out = {};
@@ -65,5 +65,5 @@ for (const difficulty of TIERS) {
 console.log(
   anyEmpty
     ? "\n⚠️  At least one tier returned 0 rows via the anon key. That's a DB/RLS/grant or wrong-project issue, NOT the client. Fix that first."
-    : "\n✅ All tiers return rows via the app's own anon key. The DB path is correct — any 'static' questions you still see are stale client cache: hard-reload web / fully restart mobile."
+    : "\n✅ All tiers return rows via the app's own anon key. The DB path is correct — any 'static' questions you still see are stale client cache: hard-reload web / fully restart mobile.",
 );

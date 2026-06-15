@@ -1,14 +1,26 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
 import { friendlyAuthError } from "@tech-refresh/core/auth";
-import * as api from "./api.js";
-import { supabase } from "./supabase.js";
-import { poeVisibleByDefault, setPoeAssistantVisible } from "./poeAssistant.js";
+import * as api from "./api";
+import { supabase } from "./supabase";
+import { poeVisibleByDefault, setPoeAssistantVisible } from "./poeAssistantUtils";
 
-const inputStyle = {
+type ProfileForm = {
+  displayName: string;
+  headline: string;
+  targetRole: string;
+  location: string;
+  timezone: string;
+  githubUrl: string;
+  linkedinUrl: string;
+  portfolioUrl: string;
+  [key: string]: string;
+};
+
+const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "9px 11px",
@@ -27,11 +39,12 @@ const GITHUB_LINKED_KEY = "grip.githubLinked";
 type ProfileProps = {
   githubLinked?: boolean;
   onGitHubLinkedSeen?: () => void;
+  onSignOut?: () => void;
 };
 
-export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: ProfileProps) {
+export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSignOut }: ProfileProps) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState(EMPTY_PROFILE_FORM);
+  const [form, setForm] = useState<ProfileForm>(EMPTY_PROFILE_FORM as ProfileForm);
   const [linkedInThisSession, setLinkedInThisSession] = useState(() => githubLinked || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1");
   const [poeVisible, setPoeVisible] = useState(poeVisibleByDefault);
   const { data: profile = null, error: loadError, isLoading } = useQuery({
@@ -144,7 +157,7 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
 
   useEffect(() => {
     if (!profile) return;
-    const next = profileToForm(profile);
+    const next = profileToForm(profile) as ProfileForm;
     if (!next.githubUrl && githubUrl) next.githubUrl = githubUrl;
     setForm(next);
   }, [githubUrl, profile]);
@@ -161,10 +174,10 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
     return () => window.clearTimeout(timeout);
   }, [githubLinked, onGitHubLinkedSeen]);
 
-  const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }));
-  const rank = rankForXp(profile?.xp ?? 0);
+  const set = (key: string) => (event: React.ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, [key]: event.target.value }));
+  const rank = rankForXp(profile?.xp ?? 0) ?? RANKS[0]!;
   const next = RANKS.find((item) => item.min > rank.min);
-  const save = (event) => {
+  const save = (event: React.FormEvent) => {
     event.preventDefault();
     saveMutation.mutate(profileFormToUpdate(form));
   };
@@ -390,8 +403,30 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
           </div>
         </Panel>
 
-        <div style={{ marginTop: "auto", color: colors.textFaint, fontSize: 12, lineHeight: 1.6 }}>
-          Private account details stay tied to your signed-in Grip workspace.
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+          <p style={{ margin: 0, color: colors.textFaint, fontSize: 12, lineHeight: 1.6 }}>
+            Private account details stay tied to your signed-in Grip workspace.
+          </p>
+          {onSignOut && (
+            <button
+              type="button"
+              onClick={onSignOut}
+              style={{
+                width: "100%",
+                padding: "9px 12px",
+                background: "transparent",
+                border: `1px solid ${colors.border}`,
+                borderRadius: 8,
+                color: colors.textFaint,
+                fontSize: 12,
+                fontWeight: 800,
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              Sign out
+            </button>
+          )}
         </div>
       </aside>
 
@@ -412,9 +447,11 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
                 Profile settings
               </h2>
             </div>
-            <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 600 }}>
-              {isLoading ? "loading..." : "Synced with Supabase"}
-            </span>
+            {isLoading && (
+              <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 600 }}>
+                loading...
+              </span>
+            )}
           </div>
           <p style={{ maxWidth: 760, margin: "0 0 30px", color: colors.textDim, fontSize: 15, lineHeight: 1.7 }}>
             Manage the private identity, goals, and links that travel with your interview prep and hiring pipeline.
@@ -508,30 +545,30 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen }: Pr
   );
 }
 
-function githubUrlFromIdentity(identity) {
+function githubUrlFromIdentity(identity: { identity_data?: Record<string, unknown> } | undefined) {
   const data = identity?.identity_data ?? {};
-  const directUrl = data.html_url || data.profile_url || data.avatar_url?.replace(/\/?u\/\d+.*/, "");
+  const directUrl = (data.html_url || data.profile_url || (typeof data.avatar_url === "string" ? data.avatar_url.replace(/\/?u\/\d+.*/, "") : "")) as string;
   if (typeof directUrl === "string" && directUrl.includes("github.com/") && !directUrl.includes("avatars.githubusercontent.com")) {
     return directUrl;
   }
   return githubUrlFromMetadata(data);
 }
 
-function githubUrlFromMetadata(data) {
+function githubUrlFromMetadata(data: Record<string, unknown> | undefined) {
   const username = data?.user_name || data?.preferred_username || data?.login;
   return username ? `https://github.com/${username}` : "";
 }
 
-function githubAccountIdFromIdentity(identity) {
+function githubAccountIdFromIdentity(identity: { identity_data?: Record<string, unknown> } | undefined) {
   return githubAccountIdFromMetadata(identity?.identity_data);
 }
 
-function githubAccountIdFromMetadata(data) {
+function githubAccountIdFromMetadata(data: Record<string, unknown> | undefined) {
   const id = data?.provider_id || data?.sub || data?.id;
   return id ? String(id) : "";
 }
 
-function ConnectionBadge({ connected }) {
+function ConnectionBadge({ connected }: { connected: boolean }) {
   return (
     <span
       style={{
@@ -562,7 +599,7 @@ function ConnectionBadge({ connected }) {
   );
 }
 
-function Switch({ checked, disabled, label, onChange }) {
+function Switch({ checked, disabled, label, onChange }: { checked: boolean; disabled: boolean; label: string; onChange: (checked: boolean) => void }) {
   return (
     <button
       type="button"
@@ -602,7 +639,7 @@ function Switch({ checked, disabled, label, onChange }) {
   );
 }
 
-function Panel({ children }) {
+function Panel({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
@@ -617,7 +654,7 @@ function Panel({ children }) {
   );
 }
 
-function MetaLabel({ children }) {
+function MetaLabel({ children }: { children: React.ReactNode }) {
   return (
     <p style={{ margin: "0 0 6px", color: colors.textFaint, fontSize: 11, fontWeight: 800, textTransform: "uppercase" }}>
       {children}
@@ -625,7 +662,7 @@ function MetaLabel({ children }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
       <span style={{ color: colors.textFaint, fontSize: 11, fontWeight: 800 }}>{label}</span>

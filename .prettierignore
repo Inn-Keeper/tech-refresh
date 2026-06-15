@@ -1,0 +1,9 @@
+**/._*
+**/.expo
+**/.vite
+**/coverage
+**/dist
+**/libs
+**/node_modules
+apps/mobile/ios
+apps/mobile/android

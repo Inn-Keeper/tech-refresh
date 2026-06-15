@@ -1,17 +1,18 @@
+import type { CSSProperties } from "react";
 import { useId, useState } from "react";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "./BrandIcon.jsx";
+import { BrandIcon } from "./BrandIcon";
 
 const DEFAULT_MAX_HEIGHT = 178;
 
-const labelStyle = {
+const labelStyle: CSSProperties = {
   fontSize: 11,
   fontWeight: 600,
   color: colors.textFaint,
   letterSpacing: "0.03em",
 };
 
-const controlStyle = {
+const controlStyle: CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "8px 10px",
@@ -22,6 +23,21 @@ const controlStyle = {
   fontSize: 13,
   outline: "none",
   fontFamily: "inherit",
+};
+
+type Option = { label: string; value: string; color?: string };
+type OptionGroup = { label: string | null; options: Option[] };
+
+type ComboboxProps = {
+  label?: string;
+  value: string;
+  options: Option[] | OptionGroup[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  style?: CSSProperties;
+  triggerStyle?: CSSProperties;
+  maxHeight?: number;
+  searchable?: boolean;
 };
 
 /**
@@ -41,7 +57,7 @@ export function Combobox({
   triggerStyle: triggerOverrides,
   maxHeight = DEFAULT_MAX_HEIGHT,
   searchable = false,
-}) {
+}: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const listboxId = useId();
@@ -49,8 +65,6 @@ export function Combobox({
   const flatOptions = flattenOptions(options);
   const selected = flatOptions.find((option) => option.value === value);
 
-  // In searchable mode the typed value filters the suggestions; otherwise the
-  // whole list is shown and the control behaves as a plain select.
   const query = searchable ? (value ?? "").trim().toLowerCase() : "";
   const visibleOptions = query
     ? flatOptions.filter((option) => option.label.toLowerCase().includes(query))
@@ -58,15 +72,13 @@ export function Combobox({
   const groups = searchable ? [{ label: null, options: visibleOptions }] : normalizeGroups(options);
   const activeOption = visibleOptions[Math.min(activeIndex, Math.max(visibleOptions.length - 1, 0))];
 
-  const choose = (nextValue) => {
+  const choose = (nextValue: string) => {
     onChange(nextValue);
     setOpen(false);
     setActiveIndex(0);
   };
 
-  const handleKeyDown = (event) => {
-    // In select mode, Enter/Space open the list; in searchable mode they must
-    // pass through (Space types, Enter selects the active suggestion).
+  const handleKeyDown = (event: React.KeyboardEvent) => {
     const openKeys = searchable ? ["ArrowDown", "ArrowUp"] : ["ArrowDown", "ArrowUp", "Enter", " "];
     if (!open && openKeys.includes(event.key)) {
       event.preventDefault();
@@ -124,7 +136,7 @@ export function Combobox({
             role="combobox"
             aria-expanded={open}
             aria-controls={listboxId}
-            onClick={() => setOpen((value) => !value)}
+            onClick={() => setOpen((v) => !v)}
             onKeyDown={handleKeyDown}
             style={{ ...controlStyle, cursor: "pointer", ...triggerOverrides }}
           >
@@ -209,11 +221,11 @@ export function Combobox({
   );
 }
 
-function normalizeGroups(options) {
+function normalizeGroups(options: Option[] | OptionGroup[]): OptionGroup[] {
   if (!options.length) return [];
-  return "options" in options[0] ? options : [{ label: null, options }];
+  return "options" in options[0]! ? (options as OptionGroup[]) : [{ label: null, options: options as Option[] }];
 }
 
-function flattenOptions(options) {
+function flattenOptions(options: Option[] | OptionGroup[]): Option[] {
   return normalizeGroups(options).flatMap((group) => group.options);
 }

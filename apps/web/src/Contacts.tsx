@@ -1,15 +1,21 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ROLE_POSITIONS, STATUSES, STATUS_STYLES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
-import { FunnelDashboard } from "./FunnelDashboard.jsx";
-import * as api from "./api.js";
+import { FunnelDashboard } from "./FunnelDashboard";
+import * as api from "./api";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import { BrandIcon } from "./BrandIcon.jsx";
-import { Combobox } from "./Combobox.jsx";
-import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout.jsx";
+import { BrandIcon } from "./BrandIcon";
+import { Combobox } from "./Combobox";
+import { WorkspaceLayout, WorkspacePanel, WorkspaceTitle } from "./WorkspaceLayout";
 
-const EMPTY_FORM = {
+type Retro = { id: string; round: string; questions: string; wentWell: string; toImprove: string; date: string };
+type Contact = {
+  id?: string; name: string; role: string; link: string; note: string; status: string;
+  date: string; nextAction: string; nextActionDate: string; retros?: Retro[];
+};
+
+const EMPTY_FORM: Omit<Contact, "id" | "retros"> = {
   name: "",
   role: "",
   link: "",
@@ -20,9 +26,9 @@ const EMPTY_FORM = {
   nextActionDate: "",
 };
 
-const EMPTY_RETRO = { round: "", questions: "", wentWell: "", toImprove: "" };
+const EMPTY_RETRO: Omit<Retro, "id" | "date"> = { round: "", questions: "", wentWell: "", toImprove: "" };
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   width: "100%",
   boxSizing: "border-box",
   padding: "8px 10px",
@@ -35,12 +41,12 @@ const inputStyle = {
   fontFamily: "inherit",
 };
 
-const textareaStyle = { ...inputStyle, minHeight: 56, resize: "vertical", lineHeight: 1.5 };
+const textareaStyle: React.CSSProperties = { ...inputStyle, minHeight: 56, resize: "vertical", lineHeight: 1.5 };
 
 export default function Contacts() {
   const queryClient = useQueryClient();
-  const [editingId, setEditingId] = useState(null); // contact id, "new", or null
-  const [retroFor, setRetroFor] = useState(null); // contact id with open retro form
+  const [editingId, setEditingId] = useState<string | null>(null); // contact id, "new", or null
+  const [retroFor, setRetroFor] = useState<string | null>(null); // contact id with open retro form
 
   const { data: contacts = null, error: loadError } = useQuery({
     queryKey: ["contacts"],
@@ -56,7 +62,7 @@ export default function Contacts() {
   const saveMutation = useMutation({ mutationFn: api.upsertContact, onSettled: invalidate });
   const deleteMutation = useMutation({ mutationFn: api.deleteContact, onSettled: invalidate });
   const retroAddMutation = useMutation({
-    mutationFn: ({ contactId, retro }) => api.addRetro(contactId, retro),
+    mutationFn: ({ contactId, retro }: { contactId: string; retro: Omit<Retro, "id" | "date"> }) => api.addRetro(contactId, retro),
     onSettled: invalidate,
   });
   const retroDeleteMutation = useMutation({ mutationFn: api.deleteRetro, onSettled: invalidate });
@@ -69,42 +75,42 @@ export default function Contacts() {
       ? `Save failed: ${mutationError.message}`
       : null;
 
-  const handleSave = (form) => {
+  const handleSave = (form: Omit<Contact, "id" | "retros">) => {
     if (!form.name.trim()) return;
     saveMutation.mutate({
       ...form,
-      id: editingId === "new" ? undefined : editingId,
+      id: editingId === "new" ? undefined : editingId ?? undefined,
       date: form.date || todayDDMMYYYY(),
     });
     setEditingId(null);
   };
 
-  const handleDelete = (c) => {
+  const handleDelete = (c: Contact) => {
     if (window.confirm(`Delete "${c.name}"?`)) {
       deleteMutation.mutate(c.id);
     }
   };
 
-  const handleAdvance = (c) => {
+  const handleAdvance = (c: Contact) => {
     const next = STATUSES[STATUSES.indexOf(c.status) + 1];
     if (!next) return;
-    saveMutation.mutate({ ...c, status: next, date: todayDDMMYYYY() });
+    saveMutation.mutate({ ...c, status: next, date: todayDDMMYYYY() } as Contact);
   };
 
-  const handleClearAction = (c) => {
-    saveMutation.mutate({ ...c, nextAction: "", nextActionDate: "" });
+  const handleClearAction = (c: Contact) => {
+    saveMutation.mutate({ ...c, nextAction: "", nextActionDate: "" } as Contact);
   };
 
-  const handleAddRetro = (contactId, retro) => {
+  const handleAddRetro = (contactId: string, retro: Omit<Retro, "id" | "date">) => {
     retroAddMutation.mutate({ contactId, retro });
     setRetroFor(null);
   };
 
-  const handleDeleteRetro = (contactId, retroId) => {
+  const handleDeleteRetro = (_contactId: string, retroId: string) => {
     retroDeleteMutation.mutate(retroId);
   };
 
-  const sorted = contacts ? [...contacts].sort((a, b) => isDue(b) - isDue(a)) : null;
+  const sorted = contacts ? [...contacts].sort((a: Contact, b: Contact) => (isDue(b) ? 1 : 0) - (isDue(a) ? 1 : 0)) : null;
   const dueCount = contacts ? contacts.filter(isDue).length : 0;
   const dueContacts = contacts ? contacts.filter(isDue) : [];
 
@@ -168,13 +174,13 @@ export default function Contacts() {
               key={c.id}
               contact={c}
               retroOpen={retroFor === c.id}
-              onEdit={() => setEditingId(c.id)}
+              onEdit={() => setEditingId(c.id ?? null)}
               onDelete={() => handleDelete(c)}
               onAdvance={() => handleAdvance(c)}
               onClearAction={() => handleClearAction(c)}
-              onOpenRetro={() => setRetroFor(retroFor === c.id ? null : c.id)}
-              onAddRetro={(retro) => handleAddRetro(c.id, retro)}
-              onDeleteRetro={(retroId) => handleDeleteRetro(c.id, retroId)}
+              onOpenRetro={() => setRetroFor(retroFor === c.id ? null : c.id ?? null)}
+              onAddRetro={(retro: Omit<Retro, "id" | "date">) => c.id && handleAddRetro(c.id, retro)}
+              onDeleteRetro={(retroId: string) => c.id && handleDeleteRetro(c.id, retroId)}
             />
           )
         )}
@@ -183,8 +189,8 @@ export default function Contacts() {
   );
 }
 
-function ContactsLeftRail({ canAdd, contacts, dueCount, onAdd }) {
-  const counts = Object.fromEntries(STATUSES.map((status) => [status, contacts.filter((contact) => contact.status === status).length]));
+function ContactsLeftRail({ canAdd, contacts, dueCount, onAdd }: { canAdd: boolean; contacts: Contact[]; dueCount: number; onAdd: () => void }) {
+  const counts = Object.fromEntries(STATUSES.map((status) => [status, contacts.filter((contact: Contact) => contact.status === status).length]));
 
   return (
     <>
@@ -218,7 +224,7 @@ function ContactsLeftRail({ canAdd, contacts, dueCount, onAdd }) {
       <WorkspacePanel style={{ padding: 8 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {STATUSES.map((status) => {
-            const style = STATUS_STYLES[status];
+            const style = STATUS_STYLES[status] ?? { color: "", bg: "" };
             return (
               <div
                 key={status}
@@ -253,7 +259,7 @@ function ContactsLeftRail({ canAdd, contacts, dueCount, onAdd }) {
   );
 }
 
-function ContactsRightRail({ dueContacts, funnel }) {
+function ContactsRightRail({ dueContacts, funnel }: { dueContacts: Contact[]; funnel: Parameters<typeof FunnelDashboard>[0]["summary"] }) {
   return (
     <>
       <FunnelDashboard summary={funnel} compact />
@@ -264,7 +270,7 @@ function ContactsRightRail({ dueContacts, funnel }) {
           subtitle={dueContacts.length ? "Clear these first." : "Your follow-up queue is calm."}
         />
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-          {dueContacts.slice(0, 5).map((contact) => (
+          {dueContacts.slice(0, 5).map((contact: Contact) => (
             <div key={contact.id} style={{ fontSize: 12, lineHeight: 1.45 }}>
               <div style={{ color: colors.textBright, fontWeight: 800 }}>{contact.name}</div>
               <div style={{ color: colors.textFaint }}>{contact.nextAction}</div>
@@ -277,6 +283,11 @@ function ContactsRightRail({ dueContacts, funnel }) {
   );
 }
 
+type ContactCardProps = {
+  contact: Contact; retroOpen: boolean;
+  onEdit: () => void; onDelete: () => void; onAdvance: () => void; onClearAction: () => void;
+  onOpenRetro: () => void; onAddRetro: (retro: Omit<Retro, "id" | "date">) => void; onDeleteRetro: (retroId: string) => void;
+};
 function ContactCard({
   contact: c,
   retroOpen,
@@ -287,9 +298,9 @@ function ContactCard({
   onOpenRetro,
   onAddRetro,
   onDeleteRetro,
-}) {
+}: ContactCardProps) {
   const [showRetros, setShowRetros] = useState(false);
-  const status = STATUS_STYLES[c.status] || STATUS_STYLES.Contacted;
+  const status = STATUS_STYLES[c.status] ?? STATUS_STYLES.Contacted ?? { color: "", bg: "" };
   const nextStatus = STATUSES[STATUSES.indexOf(c.status) + 1];
   const due = isDue(c);
   const retros = c.retros || [];
@@ -321,7 +332,7 @@ function ContactCard({
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           {nextStatus && (
-            <ActionButton onClick={onAdvance} color={STATUS_STYLES[nextStatus].color}>
+            <ActionButton onClick={onAdvance} color={STATUS_STYLES[nextStatus]?.color ?? ""}>
               → {nextStatus}
             </ActionButton>
           )}
@@ -418,7 +429,7 @@ function ContactCard({
       )}
 
       {showRetros &&
-        retros.map((r) => (
+        retros.map((r: Retro) => (
           <div
             key={r.id}
             style={{
@@ -433,7 +444,7 @@ function ContactCard({
               <span style={{ fontSize: 12, fontWeight: 700, color: colors.text }}>{r.round || "Interview"}</span>
               <span style={{ fontSize: 11, color: colors.textFaint }}>{r.date}</span>
               <button
-                onClick={() => onDeleteRetro(r.id)}
+                onClick={() => r.id && onDeleteRetro(r.id)}
                 title="Delete retro"
                 style={{
                   marginLeft: "auto",
@@ -459,7 +470,7 @@ function ContactCard({
   );
 }
 
-function RetroLine({ label, text }) {
+function RetroLine({ label, text }: { label: string; text?: string }) {
   if (!text) return null;
   return (
     <div style={{ marginBottom: 4 }}>
@@ -471,9 +482,9 @@ function RetroLine({ label, text }) {
   );
 }
 
-function RetroForm({ onSave, onCancel }) {
-  const [form, setForm] = useState(EMPTY_RETRO);
-  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+function RetroForm({ onSave, onCancel }: { onSave: (retro: Omit<Retro, "id" | "date">) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<Omit<Retro, "id" | "date">>(EMPTY_RETRO);
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   return (
     <div
@@ -538,7 +549,7 @@ function RetroForm({ onSave, onCancel }) {
   );
 }
 
-function ActionButton({ onClick, color, children }) {
+function ActionButton({ onClick, color, children }: { onClick: () => void; color: string | undefined; children: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
@@ -559,9 +570,9 @@ function ActionButton({ onClick, color, children }) {
   );
 }
 
-function ContactForm({ initial, onSave, onCancel }) {
-  const [form, setForm] = useState({ ...EMPTY_FORM, ...initial });
-  const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
+function ContactForm({ initial, onSave, onCancel }: { initial: Partial<Contact>; onSave: (form: Omit<Contact, "id" | "retros">) => void; onCancel: () => void }) {
+  const [form, setForm] = useState<Omit<Contact, "id" | "retros">>({ ...EMPTY_FORM, ...initial });
+  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [field]: e.target.value }));
 
   return (
     <div
@@ -582,7 +593,7 @@ function ContactForm({ initial, onSave, onCancel }) {
         <Combobox
           label="Status"
           value={form.status}
-          options={STATUSES.map((status) => ({ value: status, label: status, color: STATUS_STYLES[status].color }))}
+          options={STATUSES.map((status) => ({ value: status, label: status, color: STATUS_STYLES[status]?.color ?? "" }))}
           onChange={(status) => setForm((f) => ({ ...f, status }))}
         />
       </div>
@@ -660,7 +671,7 @@ function ContactForm({ initial, onSave, onCancel }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <span style={{ fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" }}>{label}</span>
@@ -669,7 +680,7 @@ function Field({ label, children }) {
   );
 }
 
-function DateInput({ value, onChange }) {
+function DateInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <input
       style={inputStyle}
@@ -682,7 +693,7 @@ function DateInput({ value, onChange }) {
   );
 }
 
-function formatDateEntry(value) {
+function formatDateEntry(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
   if (digits.length <= 2) return digits;
   if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;

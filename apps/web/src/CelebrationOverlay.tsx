@@ -3,18 +3,18 @@ import { colors } from "@tech-refresh/core/tokens";
 
 const DISMISS_MS = 2100;
 
-// Decorative confetti ramp, teal-led to match the brand accent — see DESIGN.md.
 const PARTICLE_COLORS = ["#2DD4BF", "#4ADE80", "#FBBF24", "#F472B6", "#38BDF8", "#A78BFA"];
 const PARTICLES = Array.from({ length: 36 }, (_, index) => ({
   angle: (Math.PI * 2 * index) / 36 + (index % 5) * 0.1,
   distance: 90 + (index % 9) * 22,
   size: 5 + (index % 4) * 2,
   delay: (index % 6) * 45,
-  color: PARTICLE_COLORS[index % PARTICLE_COLORS.length],
+  color: PARTICLE_COLORS[index % PARTICLE_COLORS.length] as string,
 }));
 
-// CSS-animated twin of the mobile Skia celebration.
-export function CelebrationOverlay({ title, subtitle, accent = colors.accent, onDone }) {
+type Props = { title: string; subtitle: string; accent?: string; onDone: () => void };
+
+export function CelebrationOverlay({ title, subtitle, accent = colors.accent, onDone }: Props) {
   useEffect(() => {
     const done = setTimeout(onDone, DISMISS_MS);
     return () => clearTimeout(done);
@@ -53,10 +53,10 @@ export function CelebrationOverlay({ title, subtitle, accent = colors.accent, on
             height: particle.size,
             borderRadius: "50%",
             background: particle.color,
-            "--dx": `${Math.cos(particle.angle) * particle.distance}px`,
-            "--dy": `${Math.sin(particle.angle) * particle.distance + 50}px`,
+            ["--dx" as string]: `${Math.cos(particle.angle) * particle.distance}px`,
+            ["--dy" as string]: `${Math.sin(particle.angle) * particle.distance + 50}px`,
             animation: `celebration-burst 1.1s cubic-bezier(0.16, 1, 0.3, 1) ${particle.delay}ms forwards`,
-          }}
+          } as React.CSSProperties}
         />
       ))}
 

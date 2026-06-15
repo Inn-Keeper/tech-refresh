@@ -1,10 +1,11 @@
 .assistant {
   position: fixed;
   left: clamp(14px, 2.2vw, 30px);
-  bottom: max(22px, env(safe-area-inset-bottom));
+  bottom: calc(max(22px, env(safe-area-inset-bottom)) + var(--poe-lift, 0px));
   z-index: 22;
   width: clamp(150px, 12vw, 180px);
   pointer-events: none;
+  transition: bottom 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .perch {
@@ -113,6 +114,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .assistant {
+    transition: none;
+  }
+
   .perch,
   .correct .perch,
   .levelUp .perch,
