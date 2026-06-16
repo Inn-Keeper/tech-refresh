@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Modal, Platform, Pressable, Text, TouchableOpacity, View } from "react-native";
 import DateTimePicker, { type DateTimePickerEvent } from "@react-native-community/datetimepicker";
 import { formatDDMMYYYY, parseDDMMYYYY, todayDDMMYYYY } from "@tech-refresh/core/contacts";
+import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@/theme";
 import { BrandIcon } from "@/components/BrandIcon";
 import { Field, MiniButton, inputStyle } from "@/components/ui";
@@ -41,12 +42,12 @@ export function DateField({ label, value, onChange, clearable = false }: Props) 
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <BrandIcon name="calendar" color={value ? colors.accentBright : colors.textFaint} size={16} />
             <Text style={{ color: value ? colors.text : colors.textFaint, fontSize: 13 }}>
-              {value || "Set date — defaults to today"}
+              {value || t("contacts.setDate")}
             </Text>
           </View>
         </TouchableOpacity>
         {clearable && !!value && (
-          <MiniButton label="Clear" color={colors.textFaint} onPress={() => onChange("")} />
+          <MiniButton label={t("common.clear")} color={colors.textFaint} onPress={() => onChange("")} />
         )}
       </View>
 

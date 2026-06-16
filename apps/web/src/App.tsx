@@ -1,61 +1,86 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { t } from "@tech-refresh/core/i18n";
+import { setLocale, t } from "@tech-refresh/core/i18n";
 import { friendlyAuthError } from "@tech-refresh/core/auth";
 import { supabase } from "./lib/supabase";
+import { useLocale } from "./lib/useLocale";
 import InterviewPrep from "./interviewPrep/InterviewPrep";
 import Contacts from "./contacts/Contacts";
 import ArchBoard from "./archBoard/ArchBoard";
 import StoryBank from "./storyBank/StoryBank";
 import Profile from "./profile/Profile";
+import About from "./about/About";
 import { brand, colors, layout } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "./components/BrandIcon";
 
-const pages = [
-  { id: "prep", icon: "layers", label: t("tabs.prep") },
-  { id: "stories", icon: "story", label: t("tabs.stories") },
-  { id: "board", icon: "board", label: t("tabs.board") },
-  { id: "contacts", icon: "contact", label: t("tabs.contacts") },
-  { id: "profile", icon: "profile", label: t("tabs.profile") },
-];
+const PAGE_DEFS = [
+  { id: "prep", icon: "layers", labelKey: "tabs.prep" },
+  { id: "stories", icon: "story", labelKey: "tabs.stories" },
+  { id: "board", icon: "board", labelKey: "tabs.board" },
+  { id: "contacts", icon: "contact", labelKey: "tabs.contacts" },
+  { id: "profile", icon: "profile", labelKey: "tabs.profile" },
+  { id: "about", icon: "spark", labelKey: "tabs.about" },
+] as const;
 
 const GITHUB_LINK_PENDING_KEY = "grip.githubLinkPending";
 const GITHUB_LINKED_KEY = "grip.githubLinked";
 const ACTIVE_PAGE_KEY = "grip.activePage";
 
 const DEFAULT_PAGE = "prep";
-const pageIds = pages.map((p) => p.id);
+const PAGE_IDS = PAGE_DEFS.map((p) => p.id);
+const LOCALE_STORAGE_KEY = "grip.locale";
 
-// Resolves which page to show on load. An active GitHub OAuth return
-// (?linked=github) or a pending link wins, so the user lands on profile to
-// finish linking. Otherwise restore the last page they were on; a *completed*
-// link (GITHUB_LINKED_KEY) is intentionally NOT a routing signal, or every
-// reload would force profile.
+// Restore persisted locale before first render so all t() calls use it.
+const savedLocale = typeof window !== "undefined" ? window.localStorage.getItem(LOCALE_STORAGE_KEY) : null;
+if (savedLocale) setLocale(savedLocale);
+
+// Resolves which page to show on load from the URL path, falling back to
+// stored preference. A GitHub OAuth return (?linked=github) overrides both.
 const initialPage = () => {
   if (typeof window === "undefined") return DEFAULT_PAGE;
   const params = new URLSearchParams(window.location.search);
   if (params.get("linked") === "github" || window.localStorage.getItem(GITHUB_LINK_PENDING_KEY) === "1") {
     return "profile";
   }
+  const fromPath = window.location.pathname.replace(/^\//, "");
+  if (fromPath && (PAGE_IDS as readonly string[]).includes(fromPath)) return fromPath;
   const saved = window.localStorage.getItem(ACTIVE_PAGE_KEY);
-  return saved && pageIds.includes(saved) ? saved : DEFAULT_PAGE;
+  return saved && (PAGE_IDS as readonly string[]).includes(saved) ? saved : DEFAULT_PAGE;
 };
 
 export default function App() {
   const [page, setPage] = useState(initialPage);
+  const locale = useLocale();
   const [githubLinked, setGithubLinked] = useState(() => {
     if (typeof window === "undefined") return false;
     return new URLSearchParams(window.location.search).get("linked") === "github" || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1";
   });
   // undefined = loading, null = signed out, Session = signed in
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+  const pages = PAGE_DEFS.map((p) => ({ ...p, label: t(p.labelKey as Parameters<typeof t>[0]) }));
   const activePageIndex = Math.max(0, pages.findIndex((p) => p.id === page));
 
-  // Persist the page so a reload restores it instead of resetting to prep.
+  const handleLocaleChange = (code: string) => {
+    setLocale(code);
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, code);
+  };
+
   const selectPage = (id: string) => {
     setPage(id);
     window.localStorage.setItem(ACTIVE_PAGE_KEY, id);
+    window.history.pushState({ page: id }, "", `/${id}`);
   };
+
+  // Sync state with browser back/forward.
+  useEffect(() => {
+    const onPop = () => {
+      const fromPath = window.location.pathname.replace(/^\//, "");
+      setPage((PAGE_IDS as readonly string[]).includes(fromPath) ? fromPath : DEFAULT_PAGE);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
@@ -206,6 +231,7 @@ export default function App() {
                     key={p.id}
                     onClick={() => selectPage(p.id)}
                     aria-current={page === p.id ? "page" : undefined}
+                    data-tour={`nav-${p.id}`}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -253,24 +279,25 @@ export default function App() {
         )}
         {session === null && <SignIn />}
         {session && (
-          <>
+          <React.Fragment key={locale}>
             {page === "prep" && <InterviewPrep />}
             {page === "stories" && <StoryBank />}
             {page === "board" && <ArchBoard />}
             {page === "contacts" && <Contacts />}
-            {page === "profile" && <Profile githubLinked={githubLinked} onGitHubLinkedSeen={() => setGithubLinked(false)} onSignOut={signOut} />}
-          </>
+            {page === "profile" && <Profile githubLinked={githubLinked} onGitHubLinkedSeen={() => setGithubLinked(false)} onSignOut={signOut} onLocaleChange={handleLocaleChange} />}
+            {page === "about" && <About onNavigate={selectPage} />}
+          </React.Fragment>
         )}
       </div>
 
-      <Footer onNavigate={session ? selectPage : null} />
+      <Footer pages={pages} onNavigate={session ? selectPage : null} />
     </div>
   );
 }
 
 type FooterLink = { label: string; action: (() => void) | null; href?: never } | { label: string; href: string; action?: never };
 
-function Footer({ onNavigate }: { onNavigate: ((page: string) => void) | null }) {
+function Footer({ pages, onNavigate }: { pages: { id: string; label: string }[]; onNavigate: ((page: string) => void) | null }) {
   const productLinks: FooterLink[] = pages.map((page) => ({
     label: page.label,
     action: onNavigate ? () => onNavigate(page.id) : null,
@@ -301,11 +328,11 @@ function Footer({ onNavigate }: { onNavigate: ((page: string) => void) | null })
             </div>
           </div>
           <p style={{ margin: 0, color: colors.textDim, fontSize: 12.5, lineHeight: 1.6 }}>
-            {brand.promise} Web and mobile share one Supabase-backed practice workspace for prep, stories, quests, boards, and profile data.
+            {brand.promise} {t("footer.promiseSuffix")}
           </p>
         </div>
 
-        <FooterColumn title="Product" links={productLinks} />
+        <FooterColumn title={t("footer.product")} links={productLinks} />
       </div>
 
       <div
@@ -322,7 +349,7 @@ function Footer({ onNavigate }: { onNavigate: ((page: string) => void) | null })
           fontWeight: 600,
         }}
       >
-        <span>Built by InnKeeper Digital Solutions © {new Date().getFullYear()}</span>
+        <span>{t("footer.builtBy", { year: new Date().getFullYear() })}</span>
       </div>
     </footer>
   );

@@ -1,9 +1,11 @@
 import React from "react";
 import { COMPETENCY_COLORS } from "@tech-refresh/core/stories";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 
 export function CompetencyBadge({ competency }: { competency: string }) {
   const color = COMPETENCY_COLORS[competency] || colors.textFaint;
+  const label = competency ? t(`enum.competency.${competency}` as Parameters<typeof t>[0]) : "";
   return (
     <span
       style={{
@@ -16,7 +18,7 @@ export function CompetencyBadge({ competency }: { competency: string }) {
         letterSpacing: "0.04em",
       }}
     >
-      {competency.toUpperCase()}
+      {label.toUpperCase()}
     </span>
   );
 }

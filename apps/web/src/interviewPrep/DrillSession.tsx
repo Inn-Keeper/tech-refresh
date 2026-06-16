@@ -1,5 +1,6 @@
 import { CORRECT_XP, PERFECT_QUIZ_BONUS } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
+import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import type { DrillState } from "./types";
@@ -42,8 +43,10 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: { drill: Drill
           {correctCount} / {questions.length}
         </div>
         <p style={{ margin: "0 0 20px", fontSize: 13, color: colors.textDim }}>
-          +{correctCount * perAnswerXp} XP{perfect ? ` · +${PERFECT_QUIZ_BONUS} perfect bonus` : ""} — accuracy recorded
-          per tech, so the next drill adapts.
+          {t("prep.drillResult", {
+            xp: correctCount * perAnswerXp,
+            bonus: perfect ? t("prep.perfectBonusSuffix", { bonus: PERFECT_QUIZ_BONUS }) : "",
+          })}
         </p>
         <button
           onClick={onExit}
@@ -52,7 +55,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: { drill: Drill
             color: colors.onAccent, fontSize: 13, fontWeight: 600, cursor: "pointer",
           }}
         >
-          Back to cards
+          {t("prep.backToCards")}
         </button>
       </div>
     );
@@ -91,7 +94,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: { drill: Drill
               borderRadius: 8, color: colors.textFaint, fontSize: 10, fontWeight: 600, cursor: "pointer",
             }}
           >
-            Exit
+            {t("prep.exit")}
             <BrandIcon name="close" color={colors.textFaint} size={11} />
           </button>
         </span>
@@ -143,7 +146,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: { drill: Drill
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, color: isCorrect ? colors.success : colors.danger, fontWeight: 600 }}>
-              {isCorrect ? `Correct! +${perAnswerXp} XP` : "Incorrect"}
+              {isCorrect ? t("prep.correct", { xp: perAnswerXp }) : t("prep.incorrect")}
             </span>
             {cur.link && (
               <a
@@ -152,7 +155,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: { drill: Drill
                 rel="noreferrer"
                 style={{ fontSize: 12, color: colors.accentBright, textDecoration: "none", fontWeight: 500 }}
               >
-                Docs ↗
+                {t("prep.docs")}
               </a>
             )}
           </span>
@@ -164,7 +167,7 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: { drill: Drill
               borderRadius: 8, color: cur.color, fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}
           >
-            {isLast ? "Finish" : "Next"}
+            {isLast ? t("prep.finish") : t("common.next")}
             <BrandIcon name={isLast ? "check" : "arrowRight"} color={cur.color} size={12} />
           </button>
         </div>

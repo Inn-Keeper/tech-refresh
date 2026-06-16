@@ -1,12 +1,12 @@
 export const PROFILE_FIELDS = [
-  { key: "displayName", label: "Display name", placeholder: "What should Grip call you?" },
-  { key: "headline", label: "Headline", placeholder: "Frontend engineer, systems learner..." },
-  { key: "targetRole", label: "Target role", placeholder: "Senior Frontend Engineer" },
-  { key: "location", label: "Location", placeholder: "Stockholm, remote, hybrid..." },
-  { key: "timezone", label: "Timezone", placeholder: "Europe/Stockholm" },
-  { key: "githubUrl", label: "GitHub", placeholder: "https://github.com/you", keyboardType: "url" },
-  { key: "linkedinUrl", label: "LinkedIn", placeholder: "https://linkedin.com/in/you", keyboardType: "url" },
-  { key: "portfolioUrl", label: "Portfolio", placeholder: "https://your-site.dev", keyboardType: "url" },
+  { key: "displayName", labelKey: "profile.field.displayName", placeholderKey: "profile.field.displayNamePlaceholder" },
+  { key: "headline", labelKey: "profile.field.headline", placeholderKey: "profile.field.headlinePlaceholder" },
+  { key: "targetRole", labelKey: "profile.field.targetRole", placeholderKey: "profile.field.targetRolePlaceholder" },
+  { key: "location", labelKey: "profile.field.location", placeholderKey: "profile.field.locationPlaceholder" },
+  { key: "timezone", labelKey: "profile.field.timezone", placeholderKey: "profile.field.timezonePlaceholder" },
+  { key: "githubUrl", labelKey: "profile.field.github", placeholderKey: "profile.field.githubPlaceholder", keyboardType: "url" },
+  { key: "linkedinUrl", labelKey: "profile.field.linkedin", placeholderKey: "profile.field.linkedinPlaceholder", keyboardType: "url" },
+  { key: "portfolioUrl", labelKey: "profile.field.portfolio", placeholderKey: "profile.field.portfolioPlaceholder", keyboardType: "url" },
 ];
 
 export const EMPTY_PROFILE_FORM = PROFILE_FIELDS.reduce((form, field) => ({ ...form, [field.key]: "" }), {});

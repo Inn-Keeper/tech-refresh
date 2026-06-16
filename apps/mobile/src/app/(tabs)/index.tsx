@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, FlatList, Text, View } from "react-native";
+import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
@@ -7,12 +8,13 @@ import { buildGithubTechCategory, fetchGithubTechSignals, githubUsernameFromUrl 
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
+import { useLocale } from "@/lib/useLocale";
 import { DEFAULT_QUIZ_SIZE, questionCapForPool } from "@tech-refresh/core/quizPrefs";
-import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
+import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { api } from "@/lib/api";
 import { getQuizSize, setQuizSize } from "@/lib/quizPrefs";
 import { useScores } from "@/lib/useScores";
-import { colors } from "@/theme";
+import { colors, layout } from "@/theme";
 import { FlipCard } from "@/components/FlipCard";
 import { StatsBar } from "@/components/StatsBar";
 import { DifficultyPicker } from "@/components/DifficultyPicker";
@@ -46,6 +48,8 @@ const colorByTech: Record<string, string> = Object.fromEntries(
 const allTechs: string[] = Object.keys(colorByTech);
 
 export default function PrepScreen() {
+  const locale = useLocale();
+  const insets = useSafeAreaInsets();
   // Track the selected category by name, not list index: the "From GitHub techs"
   // category is prepended once it loads, which would shift every index underneath it.
   const [activeCategoryName, setActiveCategoryName] = useState<string>(categories[0].name);
@@ -92,7 +96,7 @@ export default function PrepScreen() {
     const current = rankForXp(scores.xp);
     if (previousRank.current && current.min > previousRank.current.min) {
       setCelebration({
-        title: t("celebration.rankTitle", { rank: current.name }),
+        title: t("celebration.rankTitle", { rank: t(`enum.rank.${current.name}` as Parameters<typeof t>[0]) }),
         subtitle: t("celebration.rankSubtitle", { xp: scores.xp }),
         accent: colors.accent,
       });
@@ -127,6 +131,32 @@ export default function PrepScreen() {
         correctCount: 0,
         done: false,
         difficulty,
+      });
+    } catch {
+      setDrillError("Couldn't load questions. Check your connection and retry.");
+    } finally {
+      setDrillLoading(false);
+    }
+  };
+
+  const startCategoryDrill = async () => {
+    setDrillLoading(true);
+    setDrillError(null);
+    try {
+      const techs = selectCategoryDrillTechs(category.items, scores.answers, { techCount: category.items.length });
+      let questions = await fetchTierQuestions(level, techs);
+      if (questions.length === 0) questions = await fetchTierQuestions(level, allTechs);
+      if (questions.length === 0) {
+        setDrillError(`No ${difficultyByKey(level)?.label ?? level} questions yet — more land soon.`);
+        return;
+      }
+      setDrill({
+        questions: buildDrillFromQuestions(questions, { colorByTech, fallbackColor: colors.accent, size: DRILL_SIZE }),
+        index: 0,
+        answered: null,
+        correctCount: 0,
+        done: false,
+        difficulty: level,
       });
     } catch {
       setDrillError("Couldn't load questions. Check your connection and retry.");
@@ -204,9 +234,9 @@ export default function PrepScreen() {
   };
 
   return (
-    <Screen>
+    <Screen key={locale}>
       {!drill && (
-        <ScreenHeader title={t("tabs.prep")} subtitle="Flashcards, adaptive drills, and XP momentum.">
+        <ScreenHeader title={t("tabs.prep")} subtitle={t("screen.prepSubtitle")}>
           <SegmentedPills
             options={displayCategories.map((cat: { name: string; color: string }) => ({
               key: cat.name,
@@ -223,10 +253,29 @@ export default function PrepScreen() {
         data={drill ? [] : category.items.map((item: PrepItem) => ({ ...item, color: item.color ?? category.color }))}
         // Including level remounts cards on a tier change, resetting any open quiz to the new tier.
         keyExtractor={(item) => `${activeCategoryName}-${level}-${item.tech}`}
-        contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: insets.bottom + layout.tabBarClearance }}
         ListHeaderComponent={
           <View style={{ gap: 14 }}>
             <StatsBar scores={scores} onDrill={() => startDrill(level)} drillActive={!!drill || drillLoading} />
+            {!drill && (
+              <TouchableOpacity
+                onPress={startCategoryDrill}
+                disabled={drillLoading}
+                style={{
+                  alignSelf: "flex-start",
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: `${category.color}60`,
+                  opacity: drillLoading ? 0.5 : 1,
+                }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: "700", color: category.color }}>
+                  Drill {category.name}
+                </Text>
+              </TouchableOpacity>
+            )}
             {!drill && <DifficultyPicker level={level} onLevel={requestLevel} />}
             {!drill && <QuizSizePicker quizSize={quizSize} poolSize={poolSize} onQuizSize={updateQuizSize} />}
             {drillError && !drill && (

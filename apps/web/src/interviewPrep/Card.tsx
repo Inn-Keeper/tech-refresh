@@ -2,6 +2,7 @@ import React from "react";
 import { techLinks } from "@tech-refresh/core/techLinks";
 import { CORRECT_XP } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
+import { t } from "@tech-refresh/core/i18n";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { ACCURACY_GOOD_PCT, type CardState, type PrepItem, type QuizQuestion, type ScoreEntry } from "./types";
@@ -101,9 +102,9 @@ function FrontFace({ item, level, stat, onFlip }: { item: PrepItem; level: strin
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, fontSize: 10.5, color: colors.textFaint, marginTop: 12 }}>
         <span style={{ color: accuracy === null ? colors.textFaint : accuracy >= ACCURACY_GOOD_PCT ? colors.success : colors.warning }}>
-          {accuracy === null ? "" : `✓ ${accuracy}% · ${attempts} answered`}
+          {accuracy === null ? "" : t("prep.accuracyStat", { pct: accuracy, count: attempts })}
         </span>
-        <span style={{ whiteSpace: "nowrap" }}>prep notes</span>
+        <span style={{ whiteSpace: "nowrap" }}>{t("prep.prepNotes")}</span>
       </div>
     </div>
   );
@@ -125,7 +126,7 @@ function BackFace({ item, onBack, onQuiz }: { item: PrepItem; onBack: () => void
     >
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: item.color, marginBottom: 10, letterSpacing: "0.06em" }}>
-          INTERVIEW PREP
+          {t("prep.interviewPrep")}
         </div>
         <ul style={{ margin: 0, paddingLeft: 16, display: "flex", flexDirection: "column", gap: 6 }}>
           {item.prep.map((point) => (
@@ -149,7 +150,7 @@ function BackFace({ item, onBack, onQuiz }: { item: PrepItem; onBack: () => void
             cursor: "pointer",
           }}
         >
-          ← Flip back
+          {t("prep.flipBack")}
         </button>
         <button
           onClick={onQuiz}
@@ -164,7 +165,7 @@ function BackFace({ item, onBack, onQuiz }: { item: PrepItem; onBack: () => void
             cursor: "pointer",
           }}
         >
-          Take quiz →
+          {t("prep.takeQuiz")}
         </button>
       </div>
     </div>
@@ -260,7 +261,7 @@ function QuizFace({ item, level, link, question, questionNumber, total, answered
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 12, color: isCorrect ? colors.success : colors.danger, fontWeight: 600 }}>
-              {isCorrect ? `Correct! +${perAnswerXp} XP` : "Incorrect"}
+              {isCorrect ? t("prep.correct", { xp: perAnswerXp }) : t("prep.incorrect")}
             </span>
             {link && (
               <a
@@ -269,7 +270,7 @@ function QuizFace({ item, level, link, question, questionNumber, total, answered
                 rel="noreferrer"
                 style={{ fontSize: 12, color: colors.accentBright, textDecoration: "none", fontWeight: 500 }}
               >
-                Docs ↗
+                {t("prep.docs")}
               </a>
             )}
           </span>
@@ -289,7 +290,7 @@ function QuizFace({ item, level, link, question, questionNumber, total, answered
               cursor: "pointer",
             }}
           >
-            {isLast ? "Done" : "Next"}
+            {isLast ? t("prep.finish") : t("common.next")}
             <BrandIcon name={isLast ? "check" : "arrowRight"} color={item.color} size={12} />
           </button>
         </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { colors, tints } from "@tech-refresh/core/tokens";
+import { t } from "@tech-refresh/core/i18n";
 
 export const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -40,7 +41,7 @@ export function ConnectionBadge({ connected }: { connected: boolean }) {
           background: connected ? colors.successBright : colors.textFaint,
         }}
       />
-      {connected ? "Linked" : "Optional"}
+      {connected ? t("profile.connectionLinked") : t("profile.connectionOptional")}
     </span>
   );
 }

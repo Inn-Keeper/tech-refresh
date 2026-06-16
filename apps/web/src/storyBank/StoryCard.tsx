@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { COMPETENCY_COLORS } from "@tech-refresh/core/stories";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { CompetencyBadge } from "./CompetencyBadge";
 import { miniBtn } from "./styles";
@@ -42,18 +43,18 @@ export function StoryCard({
           {s.title}
         </span>
         <button onClick={() => setExpanded((v) => !v)} style={miniBtn(colors.textDim ?? "")}>
-          {expanded ? "Collapse" : "Expand"}
+          {expanded ? t("stories.collapse") : t("stories.expand")}
         </button>
-        {!readOnly && <button onClick={onEdit} style={miniBtn(colors.textDim ?? "")}>Edit</button>}
-        {!readOnly && <button onClick={onDelete} style={miniBtn(colors.danger ?? "")}>Delete</button>}
+        {!readOnly && <button onClick={onEdit} style={miniBtn(colors.textDim ?? "")}>{t("common.edit")}</button>}
+        {!readOnly && <button onClick={onDelete} style={miniBtn(colors.danger ?? "")}>{t("common.delete")}</button>}
       </div>
 
       {expanded && (
         <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-          <StarSection label="Situation" text={s.situation} />
-          <StarSection label="Task" text={s.task} />
-          <StarSection label="Action" text={s.action} />
-          <StarSection label="Result" text={s.result} />
+          <StarSection label={t("stories.situation")} text={s.situation} />
+          <StarSection label={t("stories.task")} text={s.task} />
+          <StarSection label={t("stories.action")} text={s.action} />
+          <StarSection label={t("stories.result")} text={s.result} />
         </div>
       )}
     </div>

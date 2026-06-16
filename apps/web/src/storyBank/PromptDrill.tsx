@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { PROMPTS } from "@tech-refresh/core/stories";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { CompetencyBadge } from "./CompetencyBadge";
@@ -40,7 +41,7 @@ export function PromptDrill({ stories }: { stories: Story[] }) {
           "{prompt?.text}"
         </p>
         <p style={{ margin: "0 0 20px", fontSize: 12, color: colors.textFaint }}>
-          Answer out loud — aim for 90 seconds, Action should be the longest part.
+          {t("stories.answerOutLoud")}
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
           <button
@@ -58,7 +59,7 @@ export function PromptDrill({ stories }: { stories: Story[] }) {
               opacity: revealed ? 0.5 : 1,
             }}
           >
-            Reveal my stories
+            {t("stories.reveal")}
           </button>
           <button
             onClick={nextPrompt}
@@ -73,7 +74,7 @@ export function PromptDrill({ stories }: { stories: Story[] }) {
               cursor: "pointer",
             }}
           >
-            Next prompt →
+            {t("stories.nextPrompt")}
           </button>
         </div>
       </div>
@@ -94,7 +95,7 @@ export function PromptDrill({ stories }: { stories: Story[] }) {
             >
               <BrandIcon name="warning" color={colors.warningBright} size={14} />
               <span>
-                No story tagged "{prompt?.competency}" yet — that's a gap an interviewer will find first. Write one.
+                {t("stories.noStoryFor", { competency: prompt?.competency ? t(`enum.competency.${prompt.competency}` as Parameters<typeof t>[0]) : "" })}
               </span>
             </p>
           ) : (

@@ -1,5 +1,6 @@
 import React from "react";
 import { colors, tints } from "@tech-refresh/core/tokens";
+import { t } from "@tech-refresh/core/i18n";
 import { BrandIcon } from "../components/BrandIcon";
 import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import type { Story } from "./types";
@@ -22,13 +23,13 @@ export function StoryLeftRail({
       <WorkspacePanel>
         <WorkspaceTitle
           icon={<BrandIcon name="story" color={colors.accentBright} size={17} />}
-          title="Behavioral prep"
-          subtitle={`${stories.length} saved stories. Keep the center for writing and rehearsing.`}
+          title={t("stories.behavioralPrep")}
+          subtitle={t("stories.savedCount", { count: stories.length })}
         />
         <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 14 }}>
           {[
-            { id: "stories", icon: "story", label: "My stories" },
-            { id: "drill", icon: "prompt", label: "Drill prompts" },
+            { id: "stories", icon: "story", label: t("stories.myStories") },
+            { id: "drill", icon: "prompt", label: t("stories.drillPrompts") },
           ].map((item) => {
             const active = mode === item.id;
             return (
@@ -60,12 +61,8 @@ export function StoryLeftRail({
       <WorkspacePanel tone="sunken">
         <WorkspaceTitle
           icon={<BrandIcon name="spark" color={colors.warningBright} size={17} />}
-          title="Next useful action"
-          subtitle={
-            mode === "stories"
-              ? "Write one specific story, then reuse it across prompts."
-              : "Answer out loud before revealing matching stories."
-          }
+          title={t("stories.nextAction")}
+          subtitle={mode === "stories" ? t("stories.nextActionWrite") : t("stories.nextActionDrill")}
         />
         {canAdd && (
           <button

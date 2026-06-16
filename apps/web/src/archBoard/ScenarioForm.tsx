@@ -77,7 +77,7 @@ export function ScenarioForm({ onSave, onCancel, saving, error }: ScenarioFormPr
             style={inputStyle}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Ticketing webhook storm"
+            placeholder={t("board.scenarioNamePlaceholder")}
             autoFocus
           />
         </label>
@@ -153,7 +153,7 @@ export function ScenarioForm({ onSave, onCancel, saving, error }: ScenarioFormPr
               />
               <button
                 onClick={() => setRequiredEdges((prev) => prev.filter((_, i) => i !== index))}
-                title="Remove connection"
+                title={t("board.removeConnection")}
                 style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", padding: 4 }}
               >
                 <BrandIcon name="close" color={colors.textFaint} size={11} />
@@ -212,7 +212,7 @@ export function ScenarioForm({ onSave, onCancel, saving, error }: ScenarioFormPr
             opacity: canSave && !saving ? 1 : 0.5,
           }}
         >
-          {saving ? t("common.saving") : "Save scenario"}
+          {saving ? t("common.saving") : t("archBoard.saveScenario")}
         </button>
       </div>
     </div>

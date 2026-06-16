@@ -1,3 +1,4 @@
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { categoryIconName } from "../components/brandIconNames";
@@ -8,7 +9,7 @@ function categoryAnswered(cat: Category, scores: Scores) {
   return cat.items.filter((item) => scores.answers[item.tech]?.correct || scores.answers[item.tech]?.wrong).length;
 }
 
-export function PrepLeftRail({ activeCategoryName, allItems, categories, githubStatus, scores, search, setSearch, onCategory }: {
+export function PrepLeftRail({ activeCategoryName, allItems, categories, githubStatus, scores, search, setSearch, onCategory, onCategoryDrill }: {
   activeCategoryName: string;
   allItems: PrepItem[];
   categories: Category[];
@@ -17,14 +18,15 @@ export function PrepLeftRail({ activeCategoryName, allItems, categories, githubS
   search: string;
   setSearch: (s: string) => void;
   onCategory: (name: string) => void;
+  onCategoryDrill: (categoryName: string) => void;
 }) {
   return (
     <>
       <WorkspacePanel>
         <WorkspaceTitle
           icon={<BrandIcon name="layers" color={colors.accentBright} size={17} />}
-          title="Practice map"
-          subtitle={`${allItems.length} technologies grouped by interview surface.`}
+          title={t("prep.practiceMap")}
+          subtitle={t("prep.practiceMapSubtitle", { count: allItems.length })}
         />
         <div style={{ position: "relative", marginTop: 14 }}>
           <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", display: "flex" }}>
@@ -33,7 +35,7 @@ export function PrepLeftRail({ activeCategoryName, allItems, categories, githubS
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search technology"
+            placeholder={t("prep.searchTechnology")}
             style={{
               width: "100%",
               boxSizing: "border-box",
@@ -56,33 +58,53 @@ export function PrepLeftRail({ activeCategoryName, allItems, categories, githubS
             const answered = categoryAnswered(cat, scores);
             const pct = Math.round((answered / cat.items.length) * 100);
             return (
-              <button
-                key={cat.name}
-                onClick={() => onCategory(cat.name)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 9,
-                  padding: "9px 10px",
-                  border: "none",
-                  borderRadius: 7,
-                  background: active ? `${cat.color}24` : "transparent",
-                  color: active ? colors.textBright : colors.textDim,
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <BrandIcon name={categoryIconName(cat.name)} color={active ? cat.color : colors.textFaint} size={15} />
-                <span style={{ flex: 1, minWidth: 0 }}>
-                  <span style={{ display: "block", fontSize: 12.5, fontWeight: 750 }}>{cat.name}</span>
-                  <span style={{ display: "block", marginTop: 3, color: colors.textFaint, fontSize: 10.5 }}>
-                    {answered}/{cat.items.length} touched
+              <div key={cat.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <button
+                  onClick={() => onCategory(cat.name)}
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 9,
+                    padding: "9px 10px",
+                    border: "none",
+                    borderRadius: 7,
+                    background: active ? `${cat.color}24` : "transparent",
+                    color: active ? colors.textBright : colors.textDim,
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                >
+                  <BrandIcon name={categoryIconName(cat.name)} color={active ? cat.color : colors.textFaint} size={15} />
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 12.5, fontWeight: 750 }}>{cat.name}</span>
+                    <span style={{ display: "block", marginTop: 3, color: colors.textFaint, fontSize: 10.5 }}>
+                      {t("prep.touched", { answered, total: cat.items.length })}
+                    </span>
                   </span>
-                </span>
-                <span style={{ width: 34, textAlign: "right", color: pct > 0 ? cat.color : colors.textFaint, fontSize: 11, fontWeight: 800 }}>
-                  {pct}%
-                </span>
-              </button>
+                  <span style={{ width: 34, textAlign: "right", color: pct > 0 ? cat.color : colors.textFaint, fontSize: 11, fontWeight: 800 }}>
+                    {pct}%
+                  </span>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onCategoryDrill(cat.name); }}
+                  title={t("prep.drillCategory", { category: cat.name })}
+                  style={{
+                    flexShrink: 0,
+                    padding: "5px 8px",
+                    border: `1px solid ${cat.color}40`,
+                    borderRadius: 6,
+                    background: "transparent",
+                    color: cat.color,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  {t("prep.drill")}
+                </button>
+              </div>
             );
           })}
         </div>
@@ -91,12 +113,12 @@ export function PrepLeftRail({ activeCategoryName, allItems, categories, githubS
       {githubStatus?.enabled && githubStatus?.hasUrl && (
         <WorkspacePanel tone="sunken" style={{ color: colors.textFaint, fontSize: 11.5, lineHeight: 1.5 }}>
           {githubStatus.loading
-            ? "Reading public GitHub repo languages..."
+            ? t("github.loading")
             : githubStatus.error
-              ? "GitHub tech sync could not load. Saved profile URL is still intact."
+              ? t("github.error")
               : githubStatus.count
-                ? `${githubStatus.count} profile techs matched from public GitHub repos.`
-                : "No matching prep techs found from public GitHub repos yet."}
+                ? t("github.matched", { count: githubStatus.count })
+                : t("github.noMatch")}
         </WorkspacePanel>
       )}
     </>

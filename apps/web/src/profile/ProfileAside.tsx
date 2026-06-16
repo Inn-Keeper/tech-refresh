@@ -1,5 +1,7 @@
 import { PROFILE_FIELDS } from "@tech-refresh/core/user";
 import { colors, layout } from "@tech-refresh/core/tokens";
+import { LOCALE_FLAGS, LOCALE_LABELS, t } from "@tech-refresh/core/i18n";
+import { BrandIcon } from "../components/BrandIcon";
 import { ConnectionBadge, MetaLabel, Panel, Switch } from "./shared";
 import type { ProfileForm, ProfileRecord, Rank } from "./types";
 
@@ -10,8 +12,10 @@ export function ProfileAside({
   githubConnected,
   githubPrepPending,
   linkPending,
+  locale,
   onGithubPrepChange,
   onLinkGitHub,
+  onLocaleChange,
   onPoeVisibilityChange,
   onResetScores,
   onSignOut,
@@ -28,8 +32,10 @@ export function ProfileAside({
   githubConnected: boolean;
   githubPrepPending: boolean;
   linkPending: boolean;
+  locale: string;
   onGithubPrepChange: (checked: boolean) => void;
   onLinkGitHub: () => void;
+  onLocaleChange: (code: string) => void;
   onPoeVisibilityChange: (checked: boolean) => void;
   onResetScores: () => void;
   onSignOut?: () => void;
@@ -71,18 +77,18 @@ export function ProfileAside({
         </div>
         <div style={{ minWidth: 0 }}>
           <h1 style={{ margin: 0, color: colors.textBright, fontSize: 20, fontWeight: 800 }}>
-            {profile?.displayName || "Your profile"}
+            {profile?.displayName || t("profile.yourProfile")}
           </h1>
           <p style={{ margin: "3px 0 0", color: colors.textFaint, fontSize: 12, overflowWrap: "anywhere" }}>
-            {profile?.email || "Loading..."}
+            {profile?.email || t("profile.loading")}
           </p>
         </div>
       </div>
 
       <Panel>
-        <MetaLabel>Rank</MetaLabel>
+        <MetaLabel>{t("profile.rank")}</MetaLabel>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-          <strong style={{ color: colors.textBright, fontSize: 24 }}>{rank.name}</strong>
+          <strong style={{ color: colors.textBright, fontSize: 24 }}>{t(`enum.rank.${rank.name}` as Parameters<typeof t>[0])}</strong>
           <span style={{ color: colors.textDim, fontSize: 12, fontWeight: 700 }}>{profile?.xp ?? 0} XP</span>
         </div>
         <div style={{ height: 8, background: colors.well, borderRadius: 999, overflow: "hidden", marginTop: 12 }}>
@@ -95,7 +101,7 @@ export function ProfileAside({
           />
         </div>
         <p style={{ margin: "8px 0 0", color: colors.textFaint, fontSize: 12 }}>
-          {next ? `${next.min - (profile?.xp ?? 0)} XP to ${next.name}` : "Top rank reached"}
+          {next ? t("profile.xpToNext", { xp: next.min - (profile?.xp ?? 0), rank: t(`enum.rank.${next.name}` as Parameters<typeof t>[0]) }) : t("profile.topRank")}
         </p>
         <button
           onClick={onResetScores}
@@ -114,41 +120,39 @@ export function ProfileAside({
             opacity: resetPending || !profile ? 0.6 : 1,
           }}
         >
-          {resetPending ? "Resetting..." : "Reset score"}
+          {resetPending ? t("profile.resetting") : t("profile.resetScore")}
         </button>
         {resetSuccess && (
           <p style={{ margin: "8px 0 0", color: colors.successBright, fontSize: 12, fontWeight: 700 }}>
-            Score reset
+            {t("profile.scoreReset")}
           </p>
         )}
       </Panel>
 
       <Panel>
-        <MetaLabel>Profile</MetaLabel>
+        <MetaLabel>{t("profile.profileCompletion")}</MetaLabel>
         <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
           <strong style={{ color: colors.textBright, fontSize: 22 }}>{completionPct}%</strong>
           <span style={{ color: colors.textDim, fontSize: 12, fontWeight: 700 }}>
-            {completionItems}/{PROFILE_FIELDS.length} fields
+            {t("profile.fields", { filled: completionItems, total: PROFILE_FIELDS.length })}
           </span>
         </div>
         <div style={{ height: 8, background: colors.well, borderRadius: 999, overflow: "hidden", marginTop: 12 }}>
           <div style={{ height: "100%", width: `${completionPct}%`, background: colors.success }} />
         </div>
         <p style={{ margin: "8px 0 0", color: colors.textFaint, fontSize: 12 }}>
-          Optional details help keep your job-search workspace grounded.
+          {t("profile.profileSubtitle")}
         </p>
       </Panel>
 
       <Panel>
-        <MetaLabel>Connections</MetaLabel>
+        <MetaLabel>{t("profile.connections")}</MetaLabel>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <strong style={{ color: colors.textBright, fontSize: 18 }}>GitHub</strong>
           <ConnectionBadge connected={githubConnected} />
         </div>
         <p style={{ margin: "8px 0 0", color: colors.textFaint, fontSize: 12, lineHeight: 1.5 }}>
-          {githubConnected
-            ? "GitHub is linked to this protected workspace. Profile-based prep can use your public repo techs."
-            : "Link GitHub while signed in to keep this same protected workspace and unlock profile-based prep."}
+          {githubConnected ? t("profile.githubLinkedBlurb") : t("profile.githubUnlinkedBlurb")}
         </p>
         {githubConnected && form.githubUrl && (
           <a
@@ -185,7 +189,7 @@ export function ProfileAside({
             opacity: linkPending || !profile ? 0.6 : 1,
           }}
         >
-          {githubConnected ? "GitHub connected" : linkPending ? "Opening GitHub..." : "Connect GitHub"}
+          {githubConnected ? t("profile.githubConnectedButton") : linkPending ? t("profile.githubOpening") : t("profile.githubConnectButton")}
         </button>
         <div
           style={{
@@ -202,39 +206,68 @@ export function ProfileAside({
           }}
         >
           <span>
-            <span style={{ display: "block", fontWeight: 800 }}>Use for prep recommendations</span>
+            <span style={{ display: "block", fontWeight: 800 }}>{t("profile.useGithubLabel")}</span>
             <span style={{ display: "block", marginTop: 3, color: colors.textFaint }}>
-              Show the From GitHub techs category on Interview Prep.
+              {t("profile.useGithubSub")}
             </span>
           </span>
           <Switch
             checked={!!profile?.useGithubTechsForPrep}
             disabled={!githubConnected || !form.githubUrl || githubPrepPending}
-            label="Use GitHub techs for prep recommendations"
+            label={t("profile.useGithubLabel")}
             onChange={onGithubPrepChange}
           />
         </div>
       </Panel>
 
       <Panel>
-        <MetaLabel>Preferences</MetaLabel>
+        <MetaLabel>{t("profile.preferences")}</MetaLabel>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <span style={{ color: colors.text, fontSize: 12, lineHeight: 1.45 }}>
-            <span style={{ display: "block", color: colors.textBright, fontWeight: 800 }}>Poe assistant</span>
-            <span style={{ display: "block", marginTop: 3, color: colors.textFaint }}>Show Poe on Interview Prep.</span>
+            <span style={{ display: "block", color: colors.textBright, fontWeight: 800 }}>{t("profile.poeLabel")}</span>
+            <span style={{ display: "block", marginTop: 3, color: colors.textFaint }}>{t("profile.poeSub")}</span>
           </span>
           <Switch
             checked={poeVisible}
             disabled={false}
-            label="Show Poe assistant on Interview Prep"
+            label={t("profile.poeLabel")}
             onChange={onPoeVisibilityChange}
           />
+        </div>
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${colors.border}` }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: colors.textBright, marginBottom: 10 }}>
+            {t("profile.language")}
+          </div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {(Object.entries(LOCALE_LABELS) as [string, string][]).map(([code, label]) => {
+              const active = locale === code;
+              return (
+                <button
+                  key={code}
+                  title={label}
+                  onClick={() => onLocaleChange(code)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    padding: "5px 8px",
+                    background: active ? colors.accent : "transparent",
+                    border: `1px solid ${active ? colors.accent : colors.border}`,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    opacity: active ? 1 : 0.7,
+                  }}
+                >
+                  <BrandIcon name={(LOCALE_FLAGS as Record<string, string>)[code] ?? "globe"} size={20} />
+                </button>
+              );
+            })}
+          </div>
         </div>
       </Panel>
 
       <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
         <p style={{ margin: 0, color: colors.textFaint, fontSize: 12, lineHeight: 1.6 }}>
-          Private account details stay tied to your signed-in Grip workspace.
+          {t("profile.privateNote")}
         </p>
         {onSignOut && (
           <button

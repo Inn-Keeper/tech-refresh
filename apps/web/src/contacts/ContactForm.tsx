@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { ROLE_POSITIONS, STATUSES, STATUS_STYLES } from "@tech-refresh/core/contacts";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { Combobox } from "../components/Combobox";
 import { DateInput, Field } from "./shared";
@@ -32,49 +33,49 @@ export function ContactForm({
       }}
     >
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <Field label="Name *">
+        <Field label={t("contacts.fieldName")}>
           <input style={inputStyle} value={form.name} onChange={set("name")} autoFocus />
         </Field>
         <Combobox
-          label="Status"
+          label={t("contacts.fieldStatus")}
           value={form.status}
           options={STATUSES.map((status) => ({
             value: status,
-            label: status,
+            label: t(`enum.status.${status}` as Parameters<typeof t>[0]),
             color: STATUS_STYLES[status]?.color ?? "",
           }))}
           onChange={(status) => setForm((current) => ({ ...current, status }))}
         />
       </div>
       <Combobox
-        label="Role / Position"
+        label={t("contacts.fieldRole")}
         searchable
         value={form.role}
         onChange={(role) => setForm((current) => ({ ...current, role }))}
-        placeholder="Start typing a role..."
+        placeholder={t("contacts.fieldRolePlaceholder")}
         options={ROLE_POSITIONS.map((role) => ({ value: role, label: role }))}
       />
-      <Field label="Link">
+      <Field label={t("contacts.fieldLink")}>
         <input style={inputStyle} value={form.link} onChange={set("link")} placeholder="https://..." />
       </Field>
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
-        <Field label="Note">
+        <Field label={t("contacts.fieldNote")}>
           <input style={inputStyle} value={form.note} onChange={set("note")} />
         </Field>
-        <Field label="Date">
+        <Field label={t("contacts.fieldDate")}>
           <DateInput value={form.date} onChange={(date) => setForm((current) => ({ ...current, date }))} />
         </Field>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
-        <Field label="Next action - what's the next move?">
+        <Field label={t("contacts.fieldNextAction")}>
           <input
             style={inputStyle}
             value={form.nextAction}
             onChange={set("nextAction")}
-            placeholder="Chase for feedback / send thank-you note / prep round 2..."
+            placeholder={t("contacts.fieldNextActionPlaceholder")}
           />
         </Field>
-        <Field label="Due">
+        <Field label={t("contacts.fieldDue")}>
           <DateInput
             value={form.nextActionDate}
             onChange={(nextActionDate) => setForm((current) => ({ ...current, nextActionDate }))}
@@ -96,7 +97,7 @@ export function ContactForm({
             cursor: "pointer",
           }}
         >
-          Cancel
+          {t("common.cancel")}
         </button>
         <button
           onClick={() => onSave(form)}
@@ -113,7 +114,7 @@ export function ContactForm({
             opacity: form.name.trim() ? 1 : 0.5,
           }}
         >
-          Save
+          {t("common.save")}
         </button>
       </div>
     </div>

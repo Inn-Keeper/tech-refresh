@@ -1,5 +1,6 @@
 import React from "react";
 import { colors } from "@tech-refresh/core/tokens";
+import { t } from "@tech-refresh/core/i18n";
 import { inputStyle } from "./types";
 
 export function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -48,7 +49,7 @@ export function DateInput({ value, onChange }: { value: string; onChange: (v: st
       inputMode="numeric"
       maxLength={10}
       onChange={(e) => onChange(formatDateEntry(e.target.value))}
-      placeholder="DD-MM-YYYY"
+      placeholder={t("contacts.datePlaceholder")}
     />
   );
 }

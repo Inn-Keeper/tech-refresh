@@ -1,4 +1,5 @@
 import { DIFFICULTIES } from "@tech-refresh/core/difficulty";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
@@ -11,8 +12,8 @@ export function LevelSelector({ level, onLevel }: { level: string; onLevel: (key
     <WorkspacePanel>
       <WorkspaceTitle
         icon={<BrandIcon name="drill" color={colors.accentBright} size={17} />}
-        title="Difficulty level"
-        subtitle="Applies to quiz cards and drills."
+        title={t("prep.difficultyLevel")}
+        subtitle={t("prep.difficultySubtitle")}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 7, marginTop: 14 }}>
         {DIFFICULTIES.map((d) => {
@@ -37,7 +38,7 @@ export function LevelSelector({ level, onLevel }: { level: string; onLevel: (key
               <DifficultyIcon tier={d} size={18} />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span style={{ display: "block", fontSize: 12.5, fontWeight: 800, color: active ? d.color : colors.text }}>{d.label}</span>
-                <span style={{ display: "block", fontSize: 10.5, color: colors.textFaint }}>{d.blurb}</span>
+                <span style={{ display: "block", fontSize: 10.5, color: colors.textFaint }}>{t(d.blurbKey as Parameters<typeof t>[0])}</span>
               </span>
               <span style={{ fontSize: 11, fontWeight: 800, color: active ? d.color : colors.textFaint }}>+{d.xp}</span>
             </button>

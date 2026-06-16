@@ -1,106 +1,17 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { STATUSES, STATUS_STYLES, isDue } from "@tech-refresh/core/contacts";
+import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { ActionButton } from "./shared";
 import type { Contact, Retro } from "./types";
-import { EMPTY_RETRO, inputStyle, textareaStyle } from "./types";
-import { Field } from "./shared";
-
-function RetroLine({ label, text }: { label: string; text?: string }) {
-  if (!text) return null;
-  return (
-    <div style={{ marginBottom: 4 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, color: colors.textFaint, letterSpacing: "0.06em" }}>
-        {label.toUpperCase()}:{" "}
-      </span>
-      <span style={{ fontSize: 12.5, color: colors.textDim, whiteSpace: "pre-wrap" }}>{text}</span>
-    </div>
-  );
-}
-
-function RetroForm({
-  onSave,
-  onCancel,
-}: {
-  onSave: (retro: Omit<Retro, "id" | "date">) => void;
-  onCancel: () => void;
-}) {
-  const [form, setForm] = useState<Omit<Retro, "id" | "date">>(EMPTY_RETRO);
-  const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [field]: e.target.value }));
-
-  return (
-    <div
-      style={{
-        marginTop: 10,
-        padding: "12px 14px",
-        background: colors.well,
-        border: `1px solid ${colors.accent}60`,
-        borderRadius: 10,
-        display: "flex",
-        flexDirection: "column",
-        gap: 8,
-      }}
-    >
-      <Field label="Round">
-        <input
-          style={inputStyle}
-          value={form.round}
-          onChange={set("round")}
-          placeholder="Recruiter screen / Tech round / System design…"
-          autoFocus
-        />
-      </Field>
-      <Field label="Questions they actually asked">
-        <textarea style={textareaStyle} value={form.questions} onChange={set("questions")} />
-      </Field>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-        <Field label="Went well">
-          <textarea style={textareaStyle} value={form.wentWell} onChange={set("wentWell")} />
-        </Field>
-        <Field label="To improve">
-          <textarea style={textareaStyle} value={form.toImprove} onChange={set("toImprove")} />
-        </Field>
-      </div>
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button
-          onClick={onCancel}
-          style={{
-            padding: "6px 14px",
-            background: "transparent",
-            border: `1px solid ${colors.border}`,
-            borderRadius: 8,
-            color: colors.textDim,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={() => onSave(form)}
-          style={{
-            padding: "6px 14px",
-            background: colors.accent,
-            border: "none",
-            borderRadius: 8,
-            color: colors.onAccent,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          Save retro
-        </button>
-      </div>
-    </div>
-  );
-}
+import { RetroForm, RetroLine } from "./RetroForm";
+import { StoryMatchSection } from "./StoryMatchSection";
+import type { Story } from "./StoryMatchSection";
 
 type ContactCardProps = {
   contact: Contact;
+  stories: Story[];
   retroOpen: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -113,6 +24,7 @@ type ContactCardProps = {
 
 export function ContactCard({
   contact: c,
+  stories,
   retroOpen,
   onEdit,
   onDelete,
@@ -149,24 +61,24 @@ export function ContactCard({
             letterSpacing: "0.04em",
           }}
         >
-          {c.status.toUpperCase()}
+          {t(`enum.status.${c.status}` as Parameters<typeof t>[0]).toUpperCase()}
         </span>
         {c.date && <span style={{ fontSize: 11, color: colors.textFaint }}>{c.date}</span>}
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           {nextStatus && (
             <ActionButton onClick={onAdvance} color={STATUS_STYLES[nextStatus]?.color ?? ""}>
-              → {nextStatus}
+              → {t(`enum.status.${nextStatus}` as Parameters<typeof t>[0])}
             </ActionButton>
           )}
           <ActionButton onClick={onOpenRetro} color={colors.accentBright}>
-            + Retro
+            {t("contacts.addRetro")}
           </ActionButton>
           <ActionButton onClick={onEdit} color={colors.textDim}>
-            Edit
+            {t("common.edit")}
           </ActionButton>
           <ActionButton onClick={onDelete} color={colors.danger}>
-            Delete
+            {t("common.delete")}
           </ActionButton>
         </div>
       </div>
@@ -208,13 +120,13 @@ export function ContactCard({
             size={15}
           />
           <span style={{ flex: 1 }}>
-            {due && <span style={{ fontWeight: 600 }}>DUE · </span>}
+            {due && <span style={{ fontWeight: 600 }}>{t("contacts.due")} · </span>}
             {c.nextAction}
             {c.nextActionDate && <span style={{ opacity: 0.7 }}> · {c.nextActionDate}</span>}
           </span>
           <button
             onClick={onClearAction}
-            title="Mark done"
+            title={t("contacts.markDone")}
             style={{
               padding: "3px 10px",
               background: "transparent",
@@ -226,10 +138,12 @@ export function ContactCard({
               cursor: "pointer",
             }}
           >
-            Done
+            {t("contacts.doneShort")}
           </button>
         </div>
       )}
+
+      <StoryMatchSection stories={stories} />
 
       {retros.length > 0 && (
         <button
@@ -250,7 +164,7 @@ export function ContactCard({
           }}
         >
           <BrandIcon name="retro" color={colors.textDim} size={12} />
-          Retros ({retros.length})
+          {t("contacts.retros", { count: retros.length })}
           <BrandIcon name={showRetros ? "arrowUp" : "arrowDown"} color={colors.textDim} size={11} />
         </button>
       )}
@@ -268,11 +182,11 @@ export function ContactCard({
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: colors.text }}>{r.round || "Interview"}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: colors.text }}>{r.round || t("retro.round")}</span>
               <span style={{ fontSize: 11, color: colors.textFaint }}>{r.date}</span>
               <button
                 onClick={() => r.id && onDeleteRetro(r.id)}
-                title="Delete retro"
+                title={t("contacts.deleteRetro")}
                 style={{
                   marginLeft: "auto",
                   background: "transparent",
@@ -286,9 +200,9 @@ export function ContactCard({
                 <BrandIcon name="close" color={colors.textFaint} size={11} />
               </button>
             </div>
-            <RetroLine label="Questions asked" text={r.questions} />
-            <RetroLine label="Went well" text={r.wentWell} />
-            <RetroLine label="To improve" text={r.toImprove} />
+            <RetroLine label={t("contacts.questionsAsked")} text={r.questions} />
+            <RetroLine label={t("retro.wentWell")} text={r.wentWell} />
+            <RetroLine label={t("retro.toImprove")} text={r.toImprove} />
           </div>
         ))}
 

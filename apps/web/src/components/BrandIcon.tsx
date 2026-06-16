@@ -3,6 +3,36 @@ import { colors } from "@tech-refresh/core/tokens";
 // Web port of apps/mobile/src/components/BrandIcon.tsx — keep the icon
 // geometry in sync with the mobile component ("search" is web-only).
 
+const FLAGS: Record<string, React.ReactNode> = {
+  flagUS: (
+    <svg viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%", display: "block", borderRadius: 2 }}>
+      {[0,1,2,3,4,5,6,7,8,9,10,11,12].map((i) => (
+        <rect key={i} x="0" y={i * (14/13)} width="20" height={14/13} fill={i % 2 === 0 ? "#B22234" : "#FFFFFF"} />
+      ))}
+      <rect x="0" y="0" width="8" height={14 * 7/13} fill="#3C3B6E" />
+      {[0,1,2,3,4,5,6,7,8].map((col) => [0,1,2,3,4].map((row) => (
+        <circle key={`${col}-${row}`} cx={0.8 + col * 0.85} cy={0.6 + row * 1.1} r="0.28" fill="#FFFFFF" />
+      )))}
+    </svg>
+  ),
+  flagBR: (
+    <svg viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%", display: "block", borderRadius: 2 }}>
+      <rect x="0" y="0" width="20" height="14" fill="#009C3B" />
+      <polygon points="10,1.5 18.5,7 10,12.5 1.5,7" fill="#FFDF00" />
+      <circle cx="10" cy="7" r="3" fill="#002776" />
+    </svg>
+  ),
+  flagSE: (
+    <svg viewBox="0 0 20 14" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%", display: "block", borderRadius: 2 }}>
+      <rect x="0" y="0" width="20" height="14" fill="#006AA7" />
+      <rect x="0" y="5.5" width="20" height="3" fill="#FECC02" />
+      <rect x="6" y="0" width="3" height="14" fill="#FECC02" />
+    </svg>
+  ),
+};
+
+import React from "react";
+
 type Piece =
   | { kind?: undefined; x: number; y: number; w: number; h: number; r?: number; fill?: boolean; opacity?: number; rotate?: string }
   | { kind: "dot"; x: number; y: number; w: number; h: number; fill?: boolean; opacity?: number; rotate?: string; r?: never }
@@ -63,6 +93,14 @@ type BrandIconProps = { name: string; color?: string; size?: number; muted?: boo
 
 export function BrandIcon({ name, color = colors.textDim, size = 18, muted = false }: BrandIconProps) {
   const scale = size / 24;
+  const flag = FLAGS[name];
+  if (flag) {
+    return (
+      <span style={{ width: size, height: Math.round(size * 14 / 20), display: "inline-block", flexShrink: 0, opacity: muted ? 0.62 : 1, overflow: "hidden", borderRadius: 2 }}>
+        {flag}
+      </span>
+    );
+  }
   const pieces = ICONS[name] ?? ICONS["spark"]!;
   return (
     <span

@@ -39,7 +39,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><BrandIcon name="rank" color={colors.accentBright} size={16} /><Text style={{ fontSize: 14, fontWeight: "700", color: colors.textBright }}>{rank.name}</Text></View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><BrandIcon name="rank" color={colors.accentBright} size={16} /><Text style={{ fontSize: 14, fontWeight: "700", color: colors.textBright }}>{t(`enum.rank.${rank.name}` as Parameters<typeof t>[0])}</Text></View>
         <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{scores.xp} XP</Text>
         {accuracy !== null && (
           <Text style={{ fontSize: 12, fontWeight: "600", color: accuracy >= 70 ? colors.success : colors.warning }}>
@@ -69,7 +69,7 @@ export function StatsBar({ scores, onDrill, drillActive }: Props) {
       </View>
 
       <Text style={{ fontSize: 10.5, color: colors.textFaint }}>
-        {next ? `${t("prep.xpToNext", { xp: next.min - scores.xp, rank: next.name })} · ` : ""}
+        {next ? `${t("prep.xpToNext", { xp: next.min - scores.xp, rank: t(`enum.rank.${next.name}` as Parameters<typeof t>[0]) })} · ` : ""}
         {t("prep.xpRules", { correct: CORRECT_XP, bonus: PERFECT_QUIZ_BONUS })}
       </Text>
     </View>

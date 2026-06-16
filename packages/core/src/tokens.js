@@ -87,4 +87,7 @@ export const layout = {
   workspaceRightRailMin: 260,
   workspaceRightRailMax: 340,
   prepCardMinHeight: 236,
+  // Mobile: extra scroll padding so content clears the native tab bar.
+  // Added on top of the safe-area bottom inset (home indicator).
+  tabBarClearance: 56,
 };

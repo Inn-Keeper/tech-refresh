@@ -1,5 +1,6 @@
 import { Text, TouchableOpacity, View } from "react-native";
 import { DIFFICULTIES, difficultyByKey } from "@tech-refresh/core/difficulty";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@/theme";
 import { DifficultyIcon } from "@/components/DifficultyIcon";
 
@@ -25,7 +26,7 @@ export function DifficultyPicker({ level, onLevel }: Props) {
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textDim, letterSpacing: 0.6 }}>DIFFICULTY</Text>
-        {tier && <Text style={{ fontSize: 10.5, color: colors.textFaint }}>{tier.blurb}</Text>}
+        {tier && <Text style={{ fontSize: 10.5, color: colors.textFaint }}>{t(tier.blurbKey as Parameters<typeof t>[0])}</Text>}
       </View>
       <View style={{ flexDirection: "row", gap: 6 }}>
         {DIFFICULTIES.map((d) => {

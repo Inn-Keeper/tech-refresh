@@ -1,6 +1,7 @@
 import React from "react";
 import { PROFILE_FIELDS } from "@tech-refresh/core/user";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
+import { t } from "@tech-refresh/core/i18n";
 import { Field, inputStyle } from "./shared";
 import type { ProfileForm, ProfileRecord } from "./types";
 
@@ -38,19 +39,19 @@ export function ProfileFormSection({
       <div style={{ width: "100%" }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 10 }}>
           <div>
-            <p style={{ margin: "0 0 8px", color: colors.textFaint, fontSize: 13, fontWeight: 700 }}>Account</p>
+            <p style={{ margin: "0 0 8px", color: colors.textFaint, fontSize: 13, fontWeight: 700 }}>{t("profile.account")}</p>
             <h2 style={{ margin: 0, fontSize: 34, lineHeight: 1.12, fontWeight: 800, color: colors.textBright }}>
-              Profile settings
+              {t("profile.settings")}
             </h2>
           </div>
           {isLoading && (
             <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 600 }}>
-              loading...
+              {t("common.loading")}
             </span>
           )}
         </div>
         <p style={{ maxWidth: 760, margin: "0 0 30px", color: colors.textDim, fontSize: 15, lineHeight: 1.7 }}>
-          Manage the private identity, goals, and links that travel with your interview prep and hiring pipeline.
+          {t("profile.settingsSubtitle")}
         </p>
 
         {error && (
@@ -82,7 +83,7 @@ export function ProfileFormSection({
               fontWeight: 700,
             }}
           >
-            GitHub connected to this workspace.
+            {t("profile.githubConnectedBanner")}
           </div>
         )}
 
@@ -97,16 +98,16 @@ export function ProfileFormSection({
             gap: 16,
           }}
         >
-          <Field label="Email">
+          <Field label={t("profile.email")}>
             <input value={profile?.email ?? ""} readOnly style={{ ...inputStyle, color: colors.textDim }} />
           </Field>
 
           {PROFILE_FIELDS.map((field) => (
-            <Field key={field.key} label={field.label}>
+            <Field key={field.key} label={t(field.labelKey as Parameters<typeof t>[0])}>
               <input
                 value={form[field.key] ?? ""}
                 onChange={onSetField(field.key)}
-                placeholder={field.placeholder}
+                placeholder={t(field.placeholderKey as Parameters<typeof t>[0])}
                 style={inputStyle}
               />
             </Field>
@@ -114,7 +115,7 @@ export function ProfileFormSection({
 
           <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 8 }}>
             {saveSuccess && (
-              <span style={{ alignSelf: "center", color: colors.successBright, fontSize: 12, fontWeight: 700 }}>Saved</span>
+              <span style={{ alignSelf: "center", color: colors.successBright, fontSize: 12, fontWeight: 700 }}>{t("profile.saved")}</span>
             )}
             <button
               type="submit"
@@ -131,7 +132,7 @@ export function ProfileFormSection({
                 opacity: savePending || !profile ? 0.6 : 1,
               }}
             >
-              {savePending ? "Saving..." : "Save profile"}
+              {savePending ? t("profile.saving") : t("profile.saveProfile")}
             </button>
           </div>
         </form>

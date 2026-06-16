@@ -1,4 +1,5 @@
 import { effectiveQuizSize, normalizeQuizSize, quizSizeMax, QUIZ_SIZE_MIN } from "@tech-refresh/core/quizPrefs";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
@@ -11,21 +12,21 @@ export function QuizSizeSelector({ quizSize, poolSize, onQuizSize }: { quizSize:
   const effective = effectiveQuizSize(quizSize, poolSize);
   const subtitle =
     poolSize === null
-      ? "Open a card to count its question pool."
+      ? t("prep.quizPoolHint")
       : isAll
-        ? `All = ${poolSize} questions for the last opened card.`
-        : `Last opened card has ${poolSize} questions.`;
+        ? t("prep.quizPoolAll", { count: poolSize })
+        : t("prep.quizPoolCount", { count: poolSize });
 
   return (
     <WorkspacePanel>
       <WorkspaceTitle
         icon={<BrandIcon name="layers" color={colors.accentBright} size={17} />}
-        title="Questions per card"
+        title={t("prep.questionsPerCard")}
         subtitle={subtitle}
       />
       <div style={{ marginTop: 14 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ fontSize: 22, fontWeight: 800, color: colors.textBright }}>{isAll ? "All" : effective}</span>
+          <span style={{ fontSize: 22, fontWeight: 800, color: colors.textBright }}>{isAll ? t("prep.all") : effective}</span>
           <button
             type="button"
             onClick={() => onQuizSize(null)}
@@ -41,7 +42,7 @@ export function QuizSizeSelector({ quizSize, poolSize, onQuizSize }: { quizSize:
               cursor: isAll ? "default" : "pointer",
             }}
           >
-            All
+            {t("prep.all")}
           </button>
         </div>
         <input
