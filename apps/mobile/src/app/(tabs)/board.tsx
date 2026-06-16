@@ -7,19 +7,17 @@ import { api } from "@/lib/api";
 import { setTabBarHidden } from "@/lib/uiStore";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
+import { useLocale } from "@/lib/useLocale";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
 import type { SavedBoard } from "@tech-refresh/core/api";
-import { colors } from "@/theme";
+import { colors, layout } from "@/theme";
 import { Button, MiniButton, Screen, ScreenHeader, SegmentedPills } from "@/components/ui";
 import { BrandIcon, nodeIconName } from "@/components/BrandIcon";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
 import { ResultSheet } from "@/components/board/ResultSheet";
 
-// The native tab bar floats over the content area; non-scrolling screens
-// must clear it themselves (scroll views get automatic content insets).
-const TAB_BAR_CLEARANCE = 56;
-
 export default function BoardScreen() {
+  const locale = useLocale();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [scenarioIndex, setScenarioIndex] = useState(0);
@@ -145,7 +143,7 @@ export default function BoardScreen() {
     ]);
 
   return (
-    <Screen>
+    <Screen key={locale}>
       {chrome === "full" && (
         <Animated.View entering={FadeInDown.duration(180)}>
           <ScreenHeader title={t("tabs.board")} subtitle={scenario.brief}>
@@ -164,7 +162,7 @@ export default function BoardScreen() {
           paddingTop: chrome === "full" ? 8 : 6,
           paddingHorizontal: 6,
           gap: 8,
-          paddingBottom: chrome === "zen" ? insets.bottom + 4 : insets.bottom + TAB_BAR_CLEARANCE,
+          paddingBottom: chrome === "zen" ? insets.bottom + 4 : insets.bottom + layout.tabBarClearance,
         }}
       >
       {chrome !== "zen" && (

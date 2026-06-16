@@ -1,4 +1,4 @@
-import { buildDrill, buildDrillFromQuestions, selectDrillTechs, shuffleOptions } from "../quiz.js";
+import { buildDrill, buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, shuffleOptions } from "../quiz.js";
 
 const question = {
   question: "Which one is right?",
@@ -124,5 +124,41 @@ describe("buildDrillFromQuestions", () => {
     const drill = buildDrillFromQuestions(rows, { fallbackColor: "#123456", size: 2 });
     expect(drill).toHaveLength(2);
     expect(drill[0].color).toBe("#123456");
+  });
+});
+
+describe("selectCategoryDrillTechs", () => {
+  const items = ["t1", "t2", "t3", "t4"].map((tech) => ({ tech }));
+
+  it("orders attempted techs within the category weakest-first", () => {
+    const answers = {
+      t1: { correct: 0, wrong: 4 }, // 0%
+      t3: { correct: 2, wrong: 2 }, // 50%
+      t2: { correct: 4, wrong: 0 }, // 100%
+    };
+    const techs = selectCategoryDrillTechs(items, answers, { techCount: 3 });
+    expect(techs).toEqual(["t1", "t3", "t2"]);
+  });
+
+  it("ignores techs outside the category even if they are in answers", () => {
+    const answers = {
+      outside: { correct: 0, wrong: 10 },
+      t1: { correct: 1, wrong: 0 },
+    };
+    const techs = selectCategoryDrillTechs(items, answers, { techCount: 4 });
+    expect(techs.every((t) => ["t1", "t2", "t3", "t4"].includes(t))).toBe(true);
+  });
+
+  it("pads with unattempted techs and respects techCount", () => {
+    const answers = { t1: { correct: 0, wrong: 1 } };
+    const techs = selectCategoryDrillTechs(items, answers, { techCount: 3 });
+    expect(techs).toHaveLength(3);
+    expect(techs[0]).toBe("t1");
+    expect(new Set(techs).size).toBe(3);
+  });
+
+  it("returns all items when techCount exceeds category size", () => {
+    const techs = selectCategoryDrillTechs(items, {}, { techCount: 100 });
+    expect(techs).toHaveLength(items.length);
   });
 });

@@ -1,0 +1,133 @@
+/* Driver.js popover override — matches the app's dark design system.
+   Scoped to .grip-tour so nothing bleeds into driver's default styles. */
+
+.grip-tour.driver-popover {
+  background: #1E222D;
+  border: 1px solid #353C4D;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px #353C4D40,
+    0 8px 32px #00000066,
+    0 24px 64px #00000044;
+  padding: 28px 30px 22px;
+  min-width: 380px;
+  max-width: 480px;
+  color: #E8ECF4;
+  font-family: inherit;
+}
+
+.grip-tour .driver-popover-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #F4F7FC;
+  line-height: 1.3;
+  margin-bottom: 10px;
+  padding-right: 28px; /* clear the close button */
+}
+
+.grip-tour .driver-popover-description {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #9AA5BC;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.grip-tour .driver-popover-title[style*="block"] + .driver-popover-description {
+  margin-top: 0;
+}
+
+.grip-tour .driver-popover-footer {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid #353C4D;
+}
+
+.grip-tour .driver-popover-progress-text {
+  font-size: 12px;
+  font-weight: 700;
+  color: #6B7690;
+  letter-spacing: 0.02em;
+}
+
+/* Navigation buttons */
+.grip-tour .driver-popover-footer button {
+  background: #272C3A;
+  border: 1px solid #353C4D;
+  border-radius: 8px;
+  color: #9AA5BC;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  text-shadow: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  font-family: inherit;
+}
+
+.grip-tour .driver-popover-footer button:hover,
+.grip-tour .driver-popover-footer button:focus {
+  background: #353C4D;
+  border-color: #4A5268;
+  color: #F4F7FC;
+}
+
+/* Next button gets accent treatment */
+.grip-tour .driver-popover-next-btn {
+  background: #14B8A6;
+  border-color: #14B8A6;
+  color: #0F141C;
+}
+
+.grip-tour .driver-popover-next-btn:hover,
+.grip-tour .driver-popover-next-btn:focus {
+  background: #2DD4BF;
+  border-color: #2DD4BF;
+  color: #0F141C;
+}
+
+/* Close button */
+.grip-tour .driver-popover-close-btn {
+  color: #6B7690;
+  font-size: 20px;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.grip-tour .driver-popover-close-btn:hover,
+.grip-tour .driver-popover-close-btn:focus {
+  color: #F4F7FC;
+  background: #272C3A;
+}
+
+/* Arrow — match popover background and border */
+.grip-tour .driver-popover-arrow {
+  border-color: #1E222D;
+}
+
+.grip-tour .driver-popover-arrow-side-top {
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+
+.grip-tour .driver-popover-arrow-side-bottom {
+  border-left-color: transparent;
+  border-right-color: transparent;
+  border-top-color: transparent;
+}
+
+.grip-tour .driver-popover-arrow-side-left {
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+}
+
+.grip-tour .driver-popover-arrow-side-right {
+  border-left-color: transparent;
+  border-bottom-color: transparent;
+  border-top-color: transparent;
+}

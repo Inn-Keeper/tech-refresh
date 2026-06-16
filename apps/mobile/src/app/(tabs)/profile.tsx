@@ -1,20 +1,28 @@
 import { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
-import { t } from "@tech-refresh/core/i18n";
+import { LOCALE_LABELS, t } from "@tech-refresh/core/i18n";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
 import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
+import { changeLocale, useLocale } from "@/lib/useLocale";
 import { linkGitHubIdentity } from "@/lib/oauth";
-import { colors, font, radius, space, tints } from "@/theme";
+import { colors, font, layout, radius, space, tints } from "@/theme";
 import { Button, Field, HeaderAction, Screen, ScreenHeader, inputStyle } from "@/components/ui";
 
 type ProfileForm = Record<string, string>;
 
+const LOCALE_EMOJI: Record<string, string> = { en: "🇺🇸", pt: "🇧🇷", sv: "🇸🇪" };
+
 export default function ProfileScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ProfileForm>(EMPTY_PROFILE_FORM);
+  const locale = useLocale();
   const { data: profile = null, error: loadError } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
   const { data: identities = [], error: identitiesError } = useQuery({
     queryKey: ["auth-identities"],
@@ -83,12 +91,12 @@ export default function ProfileScreen() {
     <Screen>
       <ScreenHeader
         title={t("tabs.profile")}
-        subtitle="Private account details and job-search goals."
+        subtitle={t("screen.profileSubtitle")}
         right={<HeaderAction label={t("auth.signOut")} tone="muted" onPress={() => supabase.auth.signOut()} />}
       />
       <ScrollView
         style={{ flex: 1, backgroundColor: colors.bg }}
-        contentContainerStyle={{ padding: space.lg, gap: space.md, paddingBottom: 48 }}
+        contentContainerStyle={{ padding: space.lg, gap: space.md, paddingBottom: insets.bottom + layout.tabBarClearance }}
         keyboardShouldPersistTaps="handled"
       >
         {error && <Text style={{ color: colors.dangerBright, fontSize: font.size.body }}>{error.message}</Text>}
@@ -121,14 +129,14 @@ export default function ProfileScreen() {
 
           <View>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: space.xs }}>
-              <Text style={{ color: colors.textBright, fontSize: font.size.body, fontWeight: "700" }}>{rank.name}</Text>
+              <Text style={{ color: colors.textBright, fontSize: font.size.body, fontWeight: "700" }}>{t(`enum.rank.${rank.name}` as Parameters<typeof t>[0])}</Text>
               <Text style={{ color: colors.textDim, fontSize: font.size.small }}>{profile?.xp ?? 0} XP</Text>
             </View>
             <View style={{ height: 8, backgroundColor: colors.bgDeep, borderRadius: radius.pill, overflow: "hidden" }}>
               <View style={{ width: `${progress * 100}%`, height: "100%", backgroundColor: colors.accent }} />
             </View>
             <Text style={{ color: colors.textFaint, fontSize: font.size.small, marginTop: space.xs }}>
-              {next ? `${next.min - (profile?.xp ?? 0)} XP to ${next.name}` : "Top rank reached"}
+              {next ? t("profile.xpToNext", { xp: next.min - (profile?.xp ?? 0), rank: t(`enum.rank.${next.name}` as Parameters<typeof t>[0]) }) : t("profile.topRank")}
             </Text>
             <TouchableOpacity
               onPress={resetScores}
@@ -202,16 +210,16 @@ export default function ProfileScreen() {
         </View>
 
         <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: space.lg, gap: space.md }}>
-          <Field label="Email">
+          <Field label={t("profile.email")}>
             <TextInput editable={false} value={profile?.email ?? ""} style={[inputStyle, { color: colors.textDim }]} />
           </Field>
 
           {PROFILE_FIELDS.map((field) => (
-            <Field key={field.key} label={field.label}>
+            <Field key={field.key} label={t(field.labelKey as Parameters<typeof t>[0])}>
               <TextInput
                 value={form[field.key]}
                 onChangeText={set(field.key)}
-                placeholder={field.placeholder}
+                placeholder={t(field.placeholderKey as Parameters<typeof t>[0])}
                 placeholderTextColor={colors.textFaint}
                 keyboardType={field.keyboardType === "url" ? "url" : "default"}
                 autoCapitalize="none"
@@ -230,6 +238,53 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
+
+        <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: space.lg, gap: space.md }}>
+          <Text style={{ color: colors.textBright, fontSize: font.size.body, fontWeight: "800" }}>{t("profile.language")}</Text>
+          <View style={{ flexDirection: "row", gap: space.sm, flexWrap: "wrap" }}>
+            {(Object.entries(LOCALE_LABELS) as [string, string][]).map(([code, label]) => {
+              const active = locale === code;
+              return (
+                <TouchableOpacity
+                  key={code}
+                  accessibilityLabel={label}
+                  onPress={() => changeLocale(code)}
+                  style={{
+                    paddingVertical: 6,
+                    paddingHorizontal: 12,
+                    borderRadius: radius.sm,
+                    borderWidth: 1,
+                    borderColor: active ? colors.accent : colors.border,
+                    backgroundColor: active ? `${colors.accent}22` : "transparent",
+                    opacity: active ? 1 : 0.6,
+                  }}
+                >
+                  <Text style={{ fontSize: 22 }}>{LOCALE_EMOJI[code]}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <TouchableOpacity
+          onPress={() => router.push("/about")}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: radius.md,
+            padding: space.lg,
+          }}
+        >
+          <View>
+            <Text style={{ color: colors.textBright, fontSize: font.size.body, fontWeight: "800" }}>About Grip</Text>
+            <Text style={{ color: colors.textFaint, fontSize: font.size.small, marginTop: 2 }}>Features, how it works</Text>
+          </View>
+          <Text style={{ color: colors.textFaint, fontSize: 18 }}>›</Text>
+        </TouchableOpacity>
       </ScrollView>
     </Screen>
   );

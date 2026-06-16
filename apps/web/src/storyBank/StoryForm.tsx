@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { COMPETENCIES, COMPETENCY_COLORS } from "@tech-refresh/core/stories";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { Combobox } from "../components/Combobox";
 import { inputStyle, textareaStyle } from "./styles";
@@ -41,17 +42,17 @@ export function StoryForm({
       }}
     >
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
-        <Field label="Title *">
+        <Field label={t("stories.fieldTitle")}>
           <input
             style={inputStyle}
             value={form.title}
             onChange={set("title")}
-            placeholder="The payment outage we turned into a postmortem culture"
+            placeholder={t("stories.fieldTitlePlaceholder")}
             autoFocus
           />
         </Field>
         <Combobox
-          label="Competency"
+          label={t("stories.fieldCompetency")}
           value={form.competency}
           options={COMPETENCIES.map((competency) => ({
             value: competency,
@@ -61,16 +62,16 @@ export function StoryForm({
           onChange={(competency) => setForm((f) => ({ ...f, competency }))}
         />
       </div>
-      <Field label="Situation — context, stakes, who was involved">
+      <Field label={t("stories.fieldSituation")}>
         <textarea style={textareaStyle} value={form.situation} onChange={set("situation")} />
       </Field>
-      <Field label="Task — what was YOUR responsibility">
+      <Field label={t("stories.fieldTask")}>
         <textarea style={textareaStyle} value={form.task} onChange={set("task")} />
       </Field>
-      <Field label="Action — what you specifically did (the longest part)">
+      <Field label={t("stories.fieldAction")}>
         <textarea style={textareaStyle} value={form.action} onChange={set("action")} />
       </Field>
-      <Field label="Result — outcome with numbers if possible, and what you learned">
+      <Field label={t("stories.fieldResult")}>
         <textarea style={textareaStyle} value={form.result} onChange={set("result")} />
       </Field>
 
@@ -88,7 +89,7 @@ export function StoryForm({
             cursor: "pointer",
           }}
         >
-          Cancel
+          {t("common.cancel")}
         </button>
         <button
           onClick={() => onSave(form)}
@@ -105,7 +106,7 @@ export function StoryForm({
             opacity: form.title.trim() ? 1 : 0.5,
           }}
         >
-          Save
+          {t("common.save")}
         </button>
       </div>
     </div>

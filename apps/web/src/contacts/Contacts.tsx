@@ -21,6 +21,10 @@ export default function Contacts() {
     queryKey: ["contacts"],
     queryFn: api.listContacts,
   });
+  const { data: stories = [] } = useQuery({
+    queryKey: ["stories"],
+    queryFn: api.listStories,
+  });
   const { data: statusEvents = [] } = useQuery({
     queryKey: ["status-events"],
     queryFn: api.listStatusEvents,
@@ -146,6 +150,7 @@ export default function Contacts() {
             <ContactCard
               key={contact.id}
               contact={contact}
+              stories={stories}
               retroOpen={retroFor === contact.id}
               onEdit={() => setEditingId(contact.id ?? null)}
               onDelete={() => handleDelete(contact)}

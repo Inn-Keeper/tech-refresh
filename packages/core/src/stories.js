@@ -25,6 +25,23 @@ export const COMPETENCY_COLORS = {
   Delivery: "#F472B6",
 };
 
+/**
+ * Groups stories by competency. Competencies with stories come first (sorted
+ * by count desc), then empty competencies. Lets the contact card surface prep
+ * coverage at a glance without any server round-trip.
+ *
+ * @param {{ competency: string, title: string, id?: string }[]} stories
+ * @returns {{ competency: string, color: string, stories: { id?: string, title: string }[] }[]}
+ */
+export function groupStoriesByCompetency(stories) {
+  const byCompetency = Object.fromEntries(COMPETENCIES.map((c) => [c, []]));
+  for (const s of stories) {
+    if (byCompetency[s.competency]) byCompetency[s.competency].push({ id: s.id, title: s.title });
+  }
+  return COMPETENCIES.map((c) => ({ competency: c, color: COMPETENCY_COLORS[c], stories: byCompetency[c] }))
+    .sort((a, b) => b.stories.length - a.stories.length);
+}
+
 export const PROMPTS = [
   { competency: "Conflict", text: "Tell me about a time you disagreed with a colleague or your manager. How did you resolve it?" },
   { competency: "Conflict", text: "Describe a time you received harsh feedback. What did you do with it?" },

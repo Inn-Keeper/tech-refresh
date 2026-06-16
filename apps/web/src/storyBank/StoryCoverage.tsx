@@ -1,5 +1,6 @@
 import React from "react";
 import { COMPETENCIES, COMPETENCY_COLORS } from "@tech-refresh/core/stories";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
@@ -15,8 +16,8 @@ export function StoryCoverage({ stories }: { stories: Story[] }) {
     <WorkspacePanel>
       <WorkspaceTitle
         icon={<BrandIcon name="accuracy" color={colors.successBright} size={17} />}
-        title="Coverage"
-        subtitle={`${covered}/${COMPETENCIES.length} competencies have at least one story.`}
+        title={t("stories.coverage")}
+        subtitle={t("stories.coverageSubtitle", { covered, total: COMPETENCIES.length })}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
         {COMPETENCIES.map((competency) => {
@@ -31,7 +32,7 @@ export function StoryCoverage({ stories }: { stories: Story[] }) {
                   background: counts[competency] ? color : colors.border,
                 }}
               />
-              <span style={{ flex: 1, color: counts[competency] ? colors.text : colors.textFaint }}>{competency}</span>
+              <span style={{ flex: 1, color: counts[competency] ? colors.text : colors.textFaint }}>{t(`enum.competency.${competency}` as Parameters<typeof t>[0])}</span>
               <span style={{ color: counts[competency] ? color : colors.textFaint, fontWeight: 850 }}>
                 {counts[competency]}
               </span>

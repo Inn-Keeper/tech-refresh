@@ -1,6 +1,7 @@
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { t } from "@tech-refresh/core/i18n";
 import { useTabBarHidden } from "@/lib/uiStore";
+import { useLocale } from "@/lib/useLocale";
 import { colors } from "@/theme";
 
 const { Icon, Label } = NativeTabs.Trigger;
@@ -10,10 +11,12 @@ const tabChrome = `${colors.bgDeep}E6`;
 // versions, native bottom navigation on Android) instead of JS-rendered tabs.
 // The Arch Board's zen mode hides it for an edge-to-edge canvas.
 export default function TabLayout() {
+  const locale = useLocale();
   const hidden = useTabBarHidden();
 
   return (
     <NativeTabs
+      key={locale}
       hidden={hidden}
       tintColor={colors.accent}
       backgroundColor={tabChrome}

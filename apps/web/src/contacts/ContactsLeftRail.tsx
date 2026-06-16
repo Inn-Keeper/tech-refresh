@@ -1,5 +1,6 @@
 import React from "react";
 import { STATUSES, STATUS_STYLES } from "@tech-refresh/core/contacts";
+import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
@@ -25,8 +26,8 @@ export function ContactsLeftRail({
       <WorkspacePanel>
         <WorkspaceTitle
           icon={<BrandIcon name="contact" color={colors.accentBright} size={17} />}
-          title="Pipeline"
-          subtitle={`${contacts.length} people tracked. Keep the list ordered by urgency.`}
+          title={t("contacts.pipeline")}
+          subtitle={t("contacts.peopleTracked", { count: contacts.length })}
         />
         {canAdd && (
           <button
@@ -44,7 +45,7 @@ export function ContactsLeftRail({
               cursor: "pointer",
             }}
           >
-            Add contact
+            {t("contacts.addContactPlain")}
           </button>
         )}
       </WorkspacePanel>
@@ -81,7 +82,7 @@ export function ContactsLeftRail({
                     fontWeight: 750,
                   }}
                 >
-                  {status}
+                  {t(`enum.status.${status}` as Parameters<typeof t>[0])}
                 </span>
                 <span style={{ color: counts[status] ? style.color : colors.textFaint, fontSize: 12, fontWeight: 850 }}>
                   {counts[status]}
@@ -96,8 +97,8 @@ export function ContactsLeftRail({
         <WorkspacePanel tone="sunken" style={{ borderColor: `${colors.danger}70` }}>
           <WorkspaceTitle
             icon={<BrandIcon name="warning" color={colors.dangerBright} size={17} />}
-            title={`${dueCount} follow-up${dueCount > 1 ? "s" : ""} due`}
-            subtitle="These lose momentum when they slip."
+            title={t("contacts.dueTitle", { count: dueCount, plural: dueCount > 1 ? "s" : "" })}
+            subtitle={t("contacts.dueSubtitle")}
           />
         </WorkspacePanel>
       )}

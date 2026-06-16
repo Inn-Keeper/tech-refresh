@@ -9,6 +9,7 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { restoreLocale } from "@/lib/useLocale";
 import { SignIn } from "@/components/SignIn";
 import { colors } from "@/theme";
 
@@ -32,6 +33,10 @@ export default function RootLayout() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    restoreLocale();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: CACHE_TTL }}>
@@ -45,6 +50,7 @@ export default function RootLayout() {
         {session && (
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="about" />
           </Stack>
         )}
       </PersistQueryClientProvider>

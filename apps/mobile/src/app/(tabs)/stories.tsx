@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Alert, FlatList, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
 import { t } from "@tech-refresh/core/i18n";
+import { useLocale } from "@/lib/useLocale";
 import { api } from "@/lib/api";
-import { colors } from "@/theme";
+import { colors, layout } from "@/theme";
 import { BrandIcon } from "@/components/BrandIcon";
 import { Badge, Button, Field, HeaderAction, MiniButton, Pill, Screen, ScreenHeader, Section, SegmentedPills, inputStyle, multilineStyle } from "@/components/ui";
 import type { Story } from "@tech-refresh/core/api";
@@ -13,6 +15,8 @@ import type { Story } from "@tech-refresh/core/api";
 const EMPTY_FORM: Story = { title: "", competency: "Conflict", situation: "", task: "", action: "", result: "" };
 
 export default function StoriesScreen() {
+  const locale = useLocale();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"stories" | "drill">("stories");
   const [editing, setEditing] = useState<Story | null>(null);
@@ -35,17 +39,17 @@ export default function StoriesScreen() {
 
   if (editing) {
     return (
-      <Screen>
+      <Screen key={locale}>
         <StoryForm initial={editing} onSave={handleSave} onCancel={() => setEditing(null)} />
       </Screen>
     );
   }
 
   return (
-    <Screen>
+    <Screen key={locale}>
       <ScreenHeader
         title={t("tabs.stories")}
-        subtitle="STAR stories and interview prompt reps."
+        subtitle={t("screen.storiesSubtitle")}
         right={<HeaderAction icon="story" label={t("stories.addStory")} onPress={() => setEditing(EMPTY_FORM)} />}
       >
         <SegmentedPills
@@ -60,7 +64,7 @@ export default function StoriesScreen() {
       <FlatList
         data={mode === "stories" ? (stories ?? []) : []}
         keyExtractor={(story) => story.id!}
-        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: insets.bottom + layout.tabBarClearance }}
         ListHeaderComponent={
           <View style={{ gap: 12 }}>
             {error && <Text style={{ color: colors.dangerBright, fontSize: 13 }}>{t("stories.loadError", { message: error.message })}</Text>}
@@ -96,17 +100,17 @@ function StoryCard({ story, onEdit, onDelete }: StoryCardProps) {
         onPress={() => setExpanded((value) => !value)}
         style={{ flexDirection: "row", alignItems: "center", gap: 8 }}
       >
-        <Badge label={story.competency} color={color} />
+        <Badge label={t(`enum.competency.${story.competency}` as Parameters<typeof t>[0])} color={color} />
         <Text style={{ flex: 1, color: colors.textBright, fontSize: 14, fontWeight: "600" }}>{story.title}</Text>
         <BrandIcon name={expanded ? "arrowUp" : "arrowDown"} color={colors.textFaint} size={13} />
       </TouchableOpacity>
 
       {expanded && (
         <View style={{ marginTop: 12, gap: 10 }}>
-          <Section label="Situation" text={story.situation} />
-          <Section label="Task" text={story.task} />
-          <Section label="Action" text={story.action} />
-          <Section label="Result" text={story.result} />
+          <Section label={t("stories.situation")} text={story.situation} />
+          <Section label={t("stories.task")} text={story.task} />
+          <Section label={t("stories.action")} text={story.action} />
+          <Section label={t("stories.result")} text={story.result} />
           {onEdit && onDelete && (
             <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
               <MiniButton label={t("common.edit")} color={colors.textDim} onPress={onEdit} />
@@ -123,23 +127,24 @@ type StoryFormProps = { initial: Story; onSave: (story: Story) => void; onCancel
 
 function StoryForm({ initial, onSave, onCancel }: StoryFormProps) {
   const [form, setForm] = useState({ ...initial });
+  const insets = useSafeAreaInsets();
   const set = (field: keyof Story) => (value: string) => setForm((current) => ({ ...current, [field]: value }));
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: 60 }}
+      contentContainerStyle={{ padding: 16, gap: 10, paddingBottom: insets.bottom + layout.tabBarClearance }}
       keyboardShouldPersistTaps="handled"
     >
-      <Field label="Title *">
+      <Field label={t("stories.fieldTitle")}>
         <TextInput style={inputStyle} value={form.title} onChangeText={set("title")} autoFocus />
       </Field>
-      <Field label="Competency">
+      <Field label={t("stories.fieldCompetency")}>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {COMPETENCIES.map((competency: string) => (
             <Pill
               key={competency}
-              label={competency}
+              label={t(`enum.competency.${competency}` as Parameters<typeof t>[0])}
               active={form.competency === competency}
               activeColor={COMPETENCY_COLORS[competency]}
               onPress={() => set("competency")(competency)}
@@ -147,16 +152,16 @@ function StoryForm({ initial, onSave, onCancel }: StoryFormProps) {
           ))}
         </View>
       </Field>
-      <Field label="Situation — context, stakes, who was involved">
+      <Field label={t("stories.fieldSituation")}>
         <TextInput style={[inputStyle, multilineStyle]} value={form.situation} onChangeText={set("situation")} multiline />
       </Field>
-      <Field label="Task — what was YOUR responsibility">
+      <Field label={t("stories.fieldTask")}>
         <TextInput style={[inputStyle, multilineStyle]} value={form.task} onChangeText={set("task")} multiline />
       </Field>
-      <Field label="Action — what you specifically did (the longest part)">
+      <Field label={t("stories.fieldAction")}>
         <TextInput style={[inputStyle, multilineStyle]} value={form.action} onChangeText={set("action")} multiline />
       </Field>
-      <Field label="Result — outcome with numbers, and what you learned">
+      <Field label={t("stories.fieldResult")}>
         <TextInput style={[inputStyle, multilineStyle]} value={form.result} onChangeText={set("result")} multiline />
       </Field>
 
@@ -197,12 +202,12 @@ function PromptDrill({ stories }: { stories: Story[] }) {
           gap: 10,
         }}
       >
-        <Badge label={prompt.competency} color={COMPETENCY_COLORS[prompt.competency]} />
+        <Badge label={t(`enum.competency.${prompt.competency}` as Parameters<typeof t>[0])} color={COMPETENCY_COLORS[prompt.competency]} />
         <Text style={{ color: colors.textBright, fontSize: 16, fontWeight: "600", lineHeight: 23, textAlign: "center" }}>
           "{prompt.text}"
         </Text>
         <Text style={{ color: colors.textFaint, fontSize: 12, textAlign: "center" }}>
-          Answer out loud — aim for 90 seconds.
+          {t("stories.answerOutLoud")}
         </Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Button label={t("stories.reveal")} onPress={() => setRevealed(true)} disabled={revealed} />
@@ -213,7 +218,7 @@ function PromptDrill({ stories }: { stories: Story[] }) {
       {revealed &&
         (matching.length === 0 ? (
           <Text style={{ color: colors.warningBright, fontSize: 13, textAlign: "center" }}>
-            {t("stories.noStoryFor", { competency: prompt.competency })}
+            {t("stories.noStoryFor", { competency: t(`enum.competency.${prompt.competency}` as Parameters<typeof t>[0]) })}
           </Text>
         ) : (
           matching.map((story) => <StoryCard key={story.id} story={story} />)

@@ -476,7 +476,7 @@ export default function ArchBoard() {
 
           {/* Nodes */}
           {nodes.map((n) => {
-            const t = meta(n.type);
+            const spec = meta(n.type);
             const color = TYPE_COLORS[n.type];
             const isSource = connectFrom === n.id;
             const axisHandle = (side: string) => (
@@ -534,11 +534,11 @@ export default function ArchBoard() {
                 }}
               >
                 <BrandIcon name={nodeIconName(n.type)} color={color} size={18} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: colors.text, lineHeight: 1.2 }}>{t.label}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: colors.text, lineHeight: 1.2 }}>{spec.label}</span>
                 <button
                   onPointerDown={(ev) => ev.stopPropagation()}
                   onClick={(ev) => { ev.stopPropagation(); removeNode(n.id); }}
-                  title="Remove"
+                  title={t("board.remove")}
                   style={{
                     position: "absolute", top: -8, right: -8, width: 18, height: 18,
                     borderRadius: "50%", border: "none", background: colors.border,

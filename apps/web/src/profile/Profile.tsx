@@ -4,7 +4,9 @@ import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
 import { friendlyAuthError } from "@tech-refresh/core/auth";
+import { setLocale, t } from "@tech-refresh/core/i18n";
 import * as api from "../lib/api";
+import { useLocale } from "../lib/useLocale";
 import { supabase } from "../lib/supabase";
 import { poeVisibleByDefault, setPoeAssistantVisible } from "../components/poe/poeAssistantUtils";
 import { ProfileAside } from "./ProfileAside";
@@ -24,11 +26,13 @@ type ProfileProps = {
   githubLinked?: boolean;
   onGitHubLinkedSeen?: () => void;
   onSignOut?: () => void;
+  onLocaleChange?: (code: string) => void;
 };
 
-export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSignOut }: ProfileProps) {
+export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSignOut, onLocaleChange }: ProfileProps) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState<ProfileForm>(EMPTY_PROFILE_FORM as ProfileForm);
+  const locale = useLocale();
   const [linkedInThisSession, setLinkedInThisSession] = useState(
     () => githubLinked || window.localStorage.getItem(GITHUB_LINKED_KEY) === "1"
   );
@@ -177,7 +181,7 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSi
     saveMutation.mutate(profileFormToUpdate(form));
   };
   const resetScores = () => {
-    if (!window.confirm("Reset all XP and answer history? This cannot be undone.")) return;
+    if (!window.confirm(t("profile.resetConfirm"))) return;
     resetMutation.mutate();
   };
   const updatePoeVisibility = (checked: boolean) => {
@@ -214,9 +218,11 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSi
         githubConnected={githubConnected}
         githubPrepPending={githubPrepMutation.isPending}
         linkPending={linkGitHubMutation.isPending}
+        locale={locale}
         next={next}
         onGithubPrepChange={(checked) => githubPrepMutation.mutate(checked)}
         onLinkGitHub={() => linkGitHubMutation.mutate()}
+        onLocaleChange={(code) => { if (onLocaleChange) onLocaleChange(code); else setLocale(code); }}
         onPoeVisibilityChange={updatePoeVisibility}
         onResetScores={resetScores}
         onSignOut={onSignOut}

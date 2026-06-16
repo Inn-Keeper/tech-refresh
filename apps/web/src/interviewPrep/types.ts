@@ -1,4 +1,4 @@
-export type Difficulty = { key: string; label: string; emoji: string; color: string; blurb: string; xp: number };
+export type Difficulty = { key: string; label: string; emoji: string; color: string; blurbKey: string; xp: number };
 export type QuizQuestion = { question: string; options: string[]; correct: number };
 export type PrepItem = { tech: string; oneliner: string; prep: string[]; quiz: QuizQuestion[]; color?: string; emoji?: string; category?: string };
 export type Category = { name: string; emoji: string; color: string; items: PrepItem[] };

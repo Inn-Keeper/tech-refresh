@@ -12,12 +12,12 @@ describe("difficulty tiers", () => {
     expect(new Set(xp).size).toBe(xp.length); // all distinct
   });
 
-  it("gives every tier a label, emoji, color, and blurb", () => {
+  it("gives every tier a label, emoji, color, and blurbKey", () => {
     for (const d of DIFFICULTIES) {
       expect(d.label.trim()).not.toBe("");
       expect(d.emoji.trim()).not.toBe("");
       expect(d.color).toMatch(/^#[0-9A-Fa-f]{6}$/);
-      expect(d.blurb.trim()).not.toBe("");
+      expect(d.blurbKey.trim()).not.toBe("");
     }
   });
 

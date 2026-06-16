@@ -4,7 +4,7 @@ import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
 import { buildGithubTechCategory, fetchGithubTechSignals, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
-import { buildDrillFromQuestions, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
+import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
 import { questionCapForPool } from "@tech-refresh/core/quizPrefs";
@@ -85,7 +85,7 @@ export default function InterviewPrep() {
     const current = rankForXp(scores.xp);
     if (previousRank.current && current && current.min > previousRank.current.min) {
       setCelebration({
-        title: t("celebration.rankTitle", { rank: current.name }),
+        title: t("celebration.rankTitle", { rank: t(`enum.rank.${current.name}` as Parameters<typeof t>[0]) }),
         subtitle: t("celebration.rankSubtitle", { xp: scores.xp }),
         accent: colors.accent ?? "",
       });
@@ -111,7 +111,7 @@ export default function InterviewPrep() {
   const displayCategory = displayCategories.find((c) => c.name === activeCategoryName) ?? displayCategories[0]!;
   const summary = summarizeScores(scores);
   const visibleItems: PrepItem[] = filtered ?? (displayCategory.items as PrepItem[]).map((item: PrepItem) => ({ ...item, color: item.color ?? displayCategory.color, emoji: displayCategory.emoji }));
-  const activeTitle = filtered ? "Search results" : displayCategory.name;
+  const activeTitle = filtered ? t("prep.searchResults") : displayCategory.name;
 
   const getState = (key: string): CardState =>
     cardState[key] ?? { phase: "front", quizIndex: 0, answered: null, runCorrect: 0, shuffled: null };
@@ -205,7 +205,7 @@ export default function InterviewPrep() {
       let questions = await fetchTierQuestions(difficulty, weakest);
       if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
       if (questions.length === 0) {
-        setDrillError(`No ${difficultyByKey(difficulty)?.label ?? difficulty} questions yet — more land soon.`);
+        setDrillError(t("prep.noQuestionsYet", { tier: difficultyByKey(difficulty)?.label ?? difficulty }));
         return;
       }
       const entries = buildDrillFromQuestions(questions, { colorByTech, fallbackColor: colors.accent, size: DRILL_SIZE }).map(
@@ -213,7 +213,32 @@ export default function InterviewPrep() {
       );
       setDrill({ questions: entries, index: 0, answered: null, correctCount: 0, done: false, difficulty });
     } catch {
-      setDrillError("Couldn't load questions. Check your connection and retry.");
+      setDrillError(t("prep.drillLoadError"));
+    } finally {
+      setDrillLoading(false);
+    }
+  };
+
+  const startCategoryDrill = async (categoryName: string) => {
+    const cat = displayCategories.find((c) => c.name === categoryName);
+    if (!cat) return;
+    setDrillLoading(true);
+    setDrillError(null);
+    try {
+      const techs = selectCategoryDrillTechs(cat.items, scores.answers, { techCount: cat.items.length });
+      let questions = await fetchTierQuestions(level, techs);
+      if (questions.length === 0) questions = await fetchTierQuestions(level, Object.keys(colorByTech));
+      if (questions.length === 0) {
+        setDrillError(t("prep.noQuestionsYet", { tier: difficultyByKey(level)?.label ?? level }));
+        return;
+      }
+      const entries = buildDrillFromQuestions(questions, { colorByTech, fallbackColor: colors.accent, size: DRILL_SIZE }).map(
+        (entry) => ({ ...entry, link: techLinks[entry.tech] })
+      );
+      setActiveCategoryName(categoryName);
+      setDrill({ questions: entries, index: 0, answered: null, correctCount: 0, done: false, difficulty: level });
+    } catch {
+      setDrillError(t("prep.drillLoadError"));
     } finally {
       setDrillLoading(false);
     }
@@ -286,6 +311,7 @@ export default function InterviewPrep() {
             setSearch("");
             setCardState({});
           }}
+          onCategoryDrill={startCategoryDrill}
         />
       }
       right={
@@ -353,9 +379,9 @@ export default function InterviewPrep() {
 
       {pendingLevel && (
         <ConfirmDialog
-          title="Switch difficulty?"
-          message={`You have a quiz in progress. Switching to ${difficultyByKey(pendingLevel)?.label ?? pendingLevel} resets your open card.`}
-          confirmLabel="Switch & reload"
+          title={t("prep.switchDifficulty")}
+          message={t("prep.switchDifficultyMessage", { level: difficultyByKey(pendingLevel)?.label ?? pendingLevel })}
+          confirmLabel={t("prep.switchReload")}
           onConfirm={() => applyLevel(pendingLevel)}
           onCancel={() => setPendingLevel(null)}
         />

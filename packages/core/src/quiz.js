@@ -51,6 +51,22 @@ export function buildDrill(categories, answers, { techCount = 5, size = 10 } = {
   return shuffle(pool).slice(0, size);
 }
 
+// Returns the techs for a single-category drill, weakest first.
+// Same logic as selectDrillTechs but scoped to one category's items.
+export function selectCategoryDrillTechs(categoryItems, answers, { techCount = 5 } = {}) {
+  const techs = categoryItems.map((item) => item.tech);
+  const attempted = Object.entries(answers)
+    .filter(([tech]) => techs.includes(tech))
+    .map(([tech, s]) => {
+      const total = s.correct + s.wrong;
+      return { tech, acc: total > 0 ? s.correct / total : 0 };
+    })
+    .sort((a, b) => a.acc - b.acc)
+    .map((s) => s.tech);
+  const unattempted = shuffle(techs.filter((t) => !answers[t]));
+  return [...attempted, ...unattempted].slice(0, techCount);
+}
+
 // Builds a tiered drill from questions already fetched from the DB. Maps each
 // row to the drill-entry shape (tech, color, shuffled question) the UI expects.
 // `colorByTech` resolves a tech's category color; falls back to `fallbackColor`.
