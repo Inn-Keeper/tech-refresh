@@ -309,7 +309,7 @@ export const en = {
 
   "tour.prev": "← Previous",
   "tour.done": "Done",
-  "tour.welcomeTitle": "Welcome to Grip",
+  "tour.welcomeTitle": "Hey I'm Grip...",
   "tour.welcomeBody": "Grip is your all-in-one job-hunt toolkit — interview prep, story bank, system design, and pipeline tracking in one place. This quick tour covers each section.",
   "tour.prepTitle": "Prep — Interview flashcards",
   "tour.prepBody": "100+ technologies grouped by interview surface. Flip cards for prep notes, take a quiz per tech, or hit Drill to run 10 adaptive questions focused on your weakest areas. XP and rank track your momentum.",
