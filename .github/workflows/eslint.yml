@@ -18,6 +18,9 @@ on:
   schedule:
     - cron: '30 14 * * 4'
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   eslint:
     name: Run eslint scanning
@@ -40,16 +43,21 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install SARIF formatter
         run: |
-          pnpm install --frozen-lockfile
-          pnpm add -D @microsoft/eslint-formatter-sarif@3.1.0
+          mkdir -p /tmp/sarif-formatter
+          cd /tmp/sarif-formatter && npm install @microsoft/eslint-formatter-sarif@3.1.0
 
       - name: Run ESLint
         env:
           SARIF_ESLINT_IGNORE_SUPPRESSED: "true"
-        run: npx eslint .
-          --format @microsoft/eslint-formatter-sarif
-          --output-file eslint-results.sarif
+          NODE_PATH: /tmp/sarif-formatter/node_modules
+        run: |
+          npx eslint . \
+            --format @microsoft/eslint-formatter-sarif \
+            --output-file eslint-results.sarif
         continue-on-error: true
 
       - name: Upload analysis results to GitHub
