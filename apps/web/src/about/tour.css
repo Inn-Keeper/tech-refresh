@@ -37,6 +37,376 @@
   margin-top: 0;
 }
 
+.grip-tour .grip-tour-poe {
+  position: relative;
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  align-items: end;
+  gap: 14px;
+  min-height: 104px;
+  margin-top: 20px;
+  padding: 12px 14px 10px 8px;
+  border: 1px solid #353C4D;
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 18% 24%, #2DD4BF18, transparent 28%),
+    linear-gradient(135deg, #191D27 0%, #14171F 100%);
+  overflow: hidden;
+}
+
+.grip-tour .grip-tour-poe::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 10px;
+  border: 1px solid #F4F7FC0D;
+  pointer-events: none;
+}
+
+.grip-tour .grip-tour-poe-figure {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: end center;
+  height: 84px;
+  filter: drop-shadow(0 12px 14px #00000052);
+  animation: gripTourPoeBob 3.6s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-image {
+  display: block;
+  width: 74px;
+  max-height: 88px;
+  object-fit: contain;
+  user-select: none;
+}
+
+.grip-tour .grip-tour-poe-stage {
+  position: relative;
+  z-index: 1;
+  height: 78px;
+  min-width: 0;
+  border-radius: 10px;
+  background: #10131A;
+  border: 1px solid #353C4D;
+  box-shadow: inset 0 1px 0 #FFFFFF08;
+  overflow: hidden;
+}
+
+.grip-tour .grip-tour-poe-stage::before,
+.grip-tour .grip-tour-poe-stage::after,
+.grip-tour .grip-tour-poe-mark {
+  content: "";
+  position: absolute;
+  display: block;
+}
+
+.grip-tour .grip-tour-poe-mark {
+  background: #2DD4BF;
+  box-shadow: 0 0 12px #14B8A633;
+}
+
+.grip-tour .grip-tour-poe-welcome .grip-tour-poe-stage {
+  background:
+    linear-gradient(145deg, transparent 0 55%, #14B8A61C 56% 58%, transparent 59%),
+    #10131A;
+}
+
+.grip-tour .grip-tour-poe-welcome .grip-tour-poe-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  animation: gripTourPulse 1.8s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-welcome .grip-tour-poe-mark:nth-child(1) {
+  left: 18%;
+  bottom: 18px;
+}
+
+.grip-tour .grip-tour-poe-welcome .grip-tour-poe-mark:nth-child(2) {
+  left: 34%;
+  bottom: 27px;
+  animation-delay: 120ms;
+}
+
+.grip-tour .grip-tour-poe-welcome .grip-tour-poe-mark:nth-child(3) {
+  left: 50%;
+  bottom: 38px;
+  animation-delay: 240ms;
+}
+
+.grip-tour .grip-tour-poe-welcome .grip-tour-poe-mark:nth-child(4) {
+  left: 66%;
+  bottom: 49px;
+  animation-delay: 360ms;
+}
+
+.grip-tour .grip-tour-poe-welcome .grip-tour-poe-mark:nth-child(5) {
+  left: 82%;
+  bottom: 58px;
+  background: #D4A574;
+  animation-delay: 480ms;
+}
+
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(1) {
+  left: 14%;
+  top: 16px;
+  width: 46px;
+  height: 48px;
+  border: 1px solid #2DD4BF;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #272C3A, #191D27);
+  transform-origin: center;
+  animation: gripTourCardFlip 2.4s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(2),
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(3),
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(4) {
+  right: 14%;
+  height: 8px;
+  border-radius: 999px;
+  background: #353C4D;
+}
+
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(2) {
+  top: 20px;
+  width: 42%;
+}
+
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(3) {
+  top: 36px;
+  width: 34%;
+}
+
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(4) {
+  top: 52px;
+  width: 38%;
+  background: #14B8A6;
+  animation: gripTourAnswerGlow 2.4s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-prep .grip-tour-poe-mark:nth-child(5) {
+  left: 28%;
+  top: 34px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #D4A574;
+  animation: gripTourSpark 2.4s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-stage::before {
+  left: 18%;
+  top: 14px;
+  width: 58%;
+  height: 50px;
+  border-radius: 8px;
+  background: #1E222D;
+  border: 1px solid #353C4D;
+}
+
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-stage::after {
+  left: 25%;
+  top: 22px;
+  width: 44%;
+  height: 6px;
+  border-radius: 999px;
+  background: #2DD4BF;
+  box-shadow:
+    0 14px 0 #D4A574,
+    0 28px 0 #353C4D;
+  animation: gripTourWrite 2.6s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-mark {
+  right: 15%;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: #272C3A;
+  border: 1px solid #14B8A6;
+  animation: gripTourStamp 2.6s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-mark:nth-child(1) {
+  top: 18px;
+}
+
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-mark:nth-child(2) {
+  top: 34px;
+  animation-delay: 140ms;
+}
+
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-mark:nth-child(3) {
+  top: 50px;
+  animation-delay: 280ms;
+}
+
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-mark:nth-child(4),
+.grip-tour .grip-tour-poe-stories .grip-tour-poe-mark:nth-child(5) {
+  display: none;
+}
+
+.grip-tour .grip-tour-poe-board .grip-tour-poe-stage::before {
+  inset: 18px 28px;
+  background:
+    linear-gradient(18deg, transparent 0 47%, #6B7690 48% 52%, transparent 53%),
+    linear-gradient(150deg, transparent 0 47%, #6B7690 48% 52%, transparent 53%);
+  opacity: 0.8;
+}
+
+.grip-tour .grip-tour-poe-board .grip-tour-poe-mark {
+  width: 26px;
+  height: 18px;
+  border-radius: 7px;
+  background: #272C3A;
+  border: 1px solid #14B8A6;
+  animation: gripTourNode 2.8s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-board .grip-tour-poe-mark:nth-child(1) {
+  left: 14%;
+  top: 28px;
+}
+
+.grip-tour .grip-tour-poe-board .grip-tour-poe-mark:nth-child(2) {
+  left: 42%;
+  top: 14px;
+  animation-delay: 160ms;
+}
+
+.grip-tour .grip-tour-poe-board .grip-tour-poe-mark:nth-child(3) {
+  right: 16%;
+  top: 38px;
+  animation-delay: 320ms;
+}
+
+.grip-tour .grip-tour-poe-board .grip-tour-poe-mark:nth-child(4),
+.grip-tour .grip-tour-poe-board .grip-tour-poe-mark:nth-child(5) {
+  display: none;
+}
+
+.grip-tour .grip-tour-poe-quest .grip-tour-poe-stage::before {
+  left: 18%;
+  right: 18%;
+  top: 37px;
+  height: 2px;
+  border-radius: 999px;
+  background: #353C4D;
+}
+
+.grip-tour .grip-tour-poe-quest .grip-tour-poe-mark {
+  top: 29px;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #353C4D;
+  border-radius: 999px;
+  background: #10131A;
+  animation: gripTourPipeline 2.7s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-quest .grip-tour-poe-mark:nth-child(1) {
+  left: 14%;
+}
+
+.grip-tour .grip-tour-poe-quest .grip-tour-poe-mark:nth-child(2) {
+  left: 31%;
+  animation-delay: 140ms;
+}
+
+.grip-tour .grip-tour-poe-quest .grip-tour-poe-mark:nth-child(3) {
+  left: 48%;
+  animation-delay: 280ms;
+}
+
+.grip-tour .grip-tour-poe-quest .grip-tour-poe-mark:nth-child(4) {
+  left: 65%;
+  animation-delay: 420ms;
+}
+
+.grip-tour .grip-tour-poe-quest .grip-tour-poe-mark:nth-child(5) {
+  left: 82%;
+  border-color: #D4A574;
+  animation-delay: 560ms;
+}
+
+.grip-tour .grip-tour-poe-profile .grip-tour-poe-stage::before {
+  left: 16%;
+  top: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 7px solid #353C4D;
+  border-top-color: #14B8A6;
+  border-right-color: #D4A574;
+  animation: gripTourRing 3s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-profile .grip-tour-poe-mark {
+  right: 16%;
+  height: 8px;
+  border-radius: 999px;
+  background: #353C4D;
+}
+
+.grip-tour .grip-tour-poe-profile .grip-tour-poe-mark:nth-child(1) {
+  top: 18px;
+  width: 38%;
+}
+
+.grip-tour .grip-tour-poe-profile .grip-tour-poe-mark:nth-child(2) {
+  top: 34px;
+  width: 30%;
+  background: #14B8A6;
+}
+
+.grip-tour .grip-tour-poe-profile .grip-tour-poe-mark:nth-child(3) {
+  top: 50px;
+  width: 34%;
+}
+
+.grip-tour .grip-tour-poe-profile .grip-tour-poe-mark:nth-child(4),
+.grip-tour .grip-tour-poe-profile .grip-tour-poe-mark:nth-child(5) {
+  display: none;
+}
+
+.grip-tour .grip-tour-poe-about .grip-tour-poe-stage::before {
+  left: 20%;
+  top: 23px;
+  width: 54%;
+  height: 30px;
+  border: 2px solid #14B8A6;
+  border-left-color: transparent;
+  border-radius: 999px;
+}
+
+.grip-tour .grip-tour-poe-about .grip-tour-poe-stage::after {
+  right: 23%;
+  top: 19px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid #14B8A6;
+  border-right: 2px solid #14B8A6;
+  transform: rotate(45deg);
+  animation: gripTourArrow 2s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-about .grip-tour-poe-mark {
+  left: 25%;
+  top: 33px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #D4A574;
+  animation: gripTourPulse 2s ease-in-out infinite;
+}
+
+.grip-tour .grip-tour-poe-about .grip-tour-poe-mark:nth-child(n + 2) {
+  display: none;
+}
+
 .grip-tour .driver-popover-footer {
   margin-top: 22px;
   padding-top: 16px;
@@ -130,4 +500,170 @@
   border-left-color: transparent;
   border-bottom-color: transparent;
   border-top-color: transparent;
+}
+
+@media (max-width: 560px) {
+  .grip-tour.driver-popover {
+    min-width: min(320px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    padding: 24px 22px 20px;
+  }
+
+  .grip-tour .grip-tour-poe {
+    grid-template-columns: 70px 1fr;
+    gap: 10px;
+    min-height: 94px;
+    padding-right: 10px;
+  }
+
+  .grip-tour .grip-tour-poe-figure {
+    height: 74px;
+  }
+
+  .grip-tour .grip-tour-poe-image {
+    width: 62px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .grip-tour .grip-tour-poe-figure,
+  .grip-tour .grip-tour-poe-stage::before,
+  .grip-tour .grip-tour-poe-stage::after,
+  .grip-tour .grip-tour-poe-mark {
+    animation: none;
+  }
+}
+
+@keyframes gripTourPoeBob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-4px) rotate(-0.7deg);
+  }
+}
+
+@keyframes gripTourPulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(0.9);
+  }
+
+  45% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes gripTourCardFlip {
+  0%,
+  100% {
+    transform: rotateY(0deg) translateY(0);
+  }
+
+  44%,
+  58% {
+    transform: rotateY(180deg) translateY(-3px);
+  }
+}
+
+@keyframes gripTourAnswerGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 #14B8A600;
+  }
+
+  55% {
+    box-shadow: 0 0 16px #14B8A655;
+  }
+}
+
+@keyframes gripTourSpark {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.7);
+  }
+
+  54% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1);
+  }
+}
+
+@keyframes gripTourWrite {
+  0%,
+  100% {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  45%,
+  72% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes gripTourStamp {
+  0%,
+  100% {
+    transform: scale(0.86);
+    opacity: 0.45;
+  }
+
+  48% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes gripTourNode {
+  0%,
+  100% {
+    transform: translateY(0);
+    box-shadow: 0 0 0 #14B8A600;
+  }
+
+  50% {
+    transform: translateY(-2px);
+    box-shadow: 0 0 14px #14B8A633;
+  }
+}
+
+@keyframes gripTourPipeline {
+  0%,
+  100% {
+    background: #10131A;
+    border-color: #353C4D;
+  }
+
+  45%,
+  70% {
+    background: #14B8A6;
+    border-color: #2DD4BF;
+  }
+}
+
+@keyframes gripTourRing {
+  0%,
+  100% {
+    transform: rotate(-16deg);
+  }
+
+  50% {
+    transform: rotate(26deg);
+  }
+}
+
+@keyframes gripTourArrow {
+  0%,
+  100% {
+    transform: translateX(0) rotate(45deg);
+  }
+
+  50% {
+    transform: translateX(4px) rotate(45deg);
+  }
 }

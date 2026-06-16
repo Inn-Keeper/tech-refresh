@@ -309,7 +309,7 @@ export const pt = {
 
   "tour.prev": "← Anterior",
   "tour.done": "Concluir",
-  "tour.welcomeTitle": "Bem-vindo ao Grip",
+  "tour.welcomeTitle": "Oi, eu sou o Grip...",
   "tour.welcomeBody": "O Grip é seu kit completo de busca de emprego — preparação para entrevistas, banco de histórias, system design e acompanhamento de pipeline em um só lugar. Este tour rápido cobre cada seção.",
   "tour.prepTitle": "Prep — Flashcards de entrevista",
   "tour.prepBody": "100+ tecnologias agrupadas por área de entrevista. Vire cards para notas de prep, faça um quiz por tech ou use o Treino para 10 perguntas adaptativas focadas nas suas áreas mais fracas. XP e rank acompanham seu ritmo.",

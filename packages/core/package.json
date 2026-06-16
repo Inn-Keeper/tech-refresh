@@ -15,6 +15,7 @@
     "./prepData": "./src/prepData.js",
     "./techLinks": "./src/techLinks.js",
     "./githubTechs": "./src/githubTechs.js",
+    "./githubUrl": "./src/githubUrl.js",
     "./arch": "./src/arch.js",
     "./gamification": "./src/gamification.js",
     "./funnel": "./src/funnel.js",

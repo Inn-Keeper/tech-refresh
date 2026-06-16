@@ -309,7 +309,7 @@ export const sv = {
 
   "tour.prev": "← Föregående",
   "tour.done": "Klar",
-  "tour.welcomeTitle": "Välkommen till Grip",
+  "tour.welcomeTitle": "Hej, jag är Grip...",
   "tour.welcomeBody": "Grip är ditt allt-i-ett-verktyg för jobbsökning — intervjuförberedelse, berättelsebank, systemdesign och pipelinespårning på ett ställe. Den här snabba rundturen täcker varje sektion.",
   "tour.prepTitle": "Prep — Intervjuflashcards",
   "tour.prepBody": "100+ teknologier grupperade efter intervjuområde. Vänd kort för prep-anteckningar, gör ett quiz per teknik eller kör Drill för 10 adaptiva frågor fokuserade på dina svagaste områden. XP och rang spårar din fart.",

@@ -1,3 +1,5 @@
+import { isGithubProfileUrl } from "@tech-refresh/core/githubUrl";
+
 export function githubUrlFromIdentity(identity: { identity_data?: Record<string, unknown> } | undefined) {
   const data = identity?.identity_data ?? {};
   const directUrl = (
@@ -5,11 +7,7 @@ export function githubUrlFromIdentity(identity: { identity_data?: Record<string,
     data.profile_url ||
     (typeof data.avatar_url === "string" ? data.avatar_url.replace(/\/?u\/\d+.*/, "") : "")
   ) as string;
-  if (
-    typeof directUrl === "string" &&
-    directUrl.includes("github.com/") &&
-    !directUrl.includes("avatars.githubusercontent.com")
-  ) {
+  if (isGithubProfileUrl(directUrl)) {
     return directUrl;
   }
   return githubUrlFromMetadata(data);
