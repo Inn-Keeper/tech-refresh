@@ -65,6 +65,7 @@ export const brand = {
   mascotName: "Poe",
   tagline: "Get a grip. Buckle up.",
   promise: "Navigate the job hunt with confidence, one skill at a time.",
+  companyLocation: "Stockholm, Sweden",
   colors: brandColors,
 };
 

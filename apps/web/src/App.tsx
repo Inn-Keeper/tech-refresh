@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { type CSSProperties, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { setLocale, t } from "@tech-refresh/core/i18n";
 import { friendlyAuthError } from "@tech-refresh/core/auth";
@@ -57,9 +57,9 @@ export default function App() {
   });
   // undefined = loading, null = signed out, Session = signed in
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const navRef = useRef<HTMLElement | null>(null);
 
   const pages = PAGE_DEFS.map((p) => ({ ...p, label: t(p.labelKey as Parameters<typeof t>[0]) }));
-  const activePageIndex = Math.max(0, pages.findIndex((p) => p.id === page));
 
   const handleLocaleChange = (code: string) => {
     setLocale(code);
@@ -87,6 +87,15 @@ export default function App() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    navRef.current?.querySelector<HTMLElement>("[aria-current='page']")?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [locale, page, session]);
+
+  useEffect(() => {
+    const activeLabel = pages.find((p) => p.id === page)?.label ?? brand.productName;
+    document.title = `${activeLabel} - ${brand.productName}`;
+  }, [locale, page, pages]);
 
   const signOut = () => {
     window.localStorage.removeItem(GITHUB_LINK_PENDING_KEY);
@@ -195,37 +204,26 @@ export default function App() {
           {session && (
             <>
               <nav
+                ref={navRef}
                 aria-label="Primary"
                 style={{
                   marginLeft: "auto",
-                  position: "relative",
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${pages.length}, minmax(0, 1fr))`,
+                  display: "flex",
                   alignItems: "center",
+                  gap: 4,
                   padding: 5,
                   borderRadius: 16,
                   background: `${colors.well}C7`,
                   border: `1px solid ${colors.border}`,
                   boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
-                  overflow: "hidden",
+                  flex: "1 1 620px",
+                  minWidth: 0,
+                  maxWidth: 760,
+                  overflowX: "auto",
+                  overflowY: "hidden",
+                  scrollbarWidth: "none",
                 }}
               >
-                <span
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    top: 5,
-                    bottom: 5,
-                    left: 5,
-                    width: `calc((100% - 10px) / ${pages.length})`,
-                    borderRadius: 11,
-                    background: colors.accent,
-                    boxShadow: `0 8px 22px ${colors.accent}22`,
-                    transform: `translateX(${activePageIndex * 100}%)`,
-                    transition: "transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s ease",
-                    willChange: "transform",
-                  }}
-                />
                 {pages.map((p) => (
                   <button
                     key={p.id}
@@ -233,12 +231,11 @@ export default function App() {
                     aria-current={page === p.id ? "page" : undefined}
                     data-tour={`nav-${p.id}`}
                     style={{
+                      flex: "0 0 auto",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 8,
-                      position: "relative",
-                      zIndex: 1,
                       minHeight: 36,
                       padding: "8px 14px",
                       borderRadius: 11,
@@ -248,9 +245,10 @@ export default function App() {
                       fontWeight: 800,
                       letterSpacing: "0px",
                       whiteSpace: "nowrap",
-                      background: "transparent",
+                      background: page === p.id ? colors.accent : "transparent",
+                      boxShadow: page === p.id ? `0 8px 22px ${colors.accent}22` : "none",
                       color: page === p.id ? colors.onAccent : colors.textDim,
-                      transition: "color 0.2s ease, transform 0.16s ease",
+                      transition: "background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease",
                     }}
                   >
                     <BrandIcon name={p.icon} color={page === p.id ? colors.onAccent : colors.textDim} size={16} />
@@ -308,40 +306,42 @@ function Footer({ pages, onNavigate }: { pages: { id: string; label: string }[];
       style={{
         borderTop: `1px solid ${colors.border}`,
         background: colors.bgDeep,
-        padding: "28px 24px 30px",
+        padding: "24px 24px 22px",
       }}
     >
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 24,
-          alignItems: "start",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 22,
+          flexWrap: "wrap",
         }}
       >
-        <div style={{ maxWidth: 360 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 260, flex: "1 1 360px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 11, flex: "0 0 auto", minWidth: 112 }}>
             <LogoPlaceholder size={28} />
             <div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: colors.textBright, lineHeight: 1 }}>{brand.productName}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: colors.textFaint, marginTop: 3 }}>{brand.tagline}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: colors.textBright, lineHeight: 1, whiteSpace: "nowrap" }}>{brand.productName}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: colors.textFaint, marginTop: 3, whiteSpace: "nowrap" }}>{brand.tagline}</div>
             </div>
           </div>
-          <p style={{ margin: 0, color: colors.textDim, fontSize: 12.5, lineHeight: 1.6 }}>
+          <p style={{ margin: 0, color: colors.textDim, fontSize: 12.5, lineHeight: 1.55, maxWidth: 560 }}>
             {brand.promise} {t("footer.promiseSuffix")}
           </p>
         </div>
 
-        <FooterColumn title={t("footer.product")} links={productLinks} />
+        <FooterLinkGroup title={t("footer.menu")} links={productLinks} />
       </div>
 
       <div
         style={{
-          marginTop: 26,
-          paddingTop: 16,
+          marginTop: 20,
+          paddingTop: 14,
           borderTop: `1px solid ${colors.surface}`,
           display: "flex",
           justifyContent: "space-between",
+          alignItems: "center",
           gap: 16,
           flexWrap: "wrap",
           color: colors.textFaint,
@@ -350,16 +350,39 @@ function Footer({ pages, onNavigate }: { pages: { id: string; label: string }[];
         }}
       >
         <span>{t("footer.builtBy", { year: new Date().getFullYear() })}</span>
+        <span>{t("footer.location")}</span>
       </div>
     </footer>
   );
 }
 
-function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) {
+function FooterLinkGroup({ title, links }: { title: string; links: FooterLink[] }) {
+  const linkStyle: CSSProperties = {
+    padding: "6px 0",
+    background: "transparent",
+    border: "none",
+    color: colors.textDim,
+    textDecoration: "none",
+    fontSize: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+  };
+
   return (
-    <div>
-      <h2 style={{ margin: "0 0 10px", color: colors.textBright, fontSize: 12, fontWeight: 800 }}>{title}</h2>
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+    <nav
+      aria-label={title}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        gap: 14,
+        flex: "1 1 420px",
+        flexWrap: "wrap",
+      }}
+    >
+      <h2 style={{ margin: 0, color: colors.textBright, fontSize: 12, fontWeight: 800 }}>{title}</h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "4px 14px", flexWrap: "wrap" }}>
         {links.map((link) =>
           link.href ? (
             <a
@@ -367,7 +390,7 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
               href={link.href}
               target="_blank"
               rel="noreferrer"
-              style={{ color: colors.textDim, textDecoration: "none", fontSize: 12, fontWeight: 700 }}
+              style={linkStyle}
             >
               {link.label}
             </a>
@@ -378,13 +401,8 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
               onClick={link.action ?? undefined}
               disabled={!link.action}
               style={{
-                padding: 0,
-                background: "transparent",
-                border: "none",
+                ...linkStyle,
                 color: link.action ? colors.textDim : colors.textFaint,
-                textAlign: "left",
-                fontSize: 12,
-                fontWeight: 700,
                 cursor: link.action ? "pointer" : "default",
               }}
             >
@@ -393,7 +411,7 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
           )
         )}
       </div>
-    </div>
+    </nav>
   );
 }
 

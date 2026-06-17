@@ -280,8 +280,8 @@ export default function ProfileScreen() {
           }}
         >
           <View>
-            <Text style={{ color: colors.textBright, fontSize: font.size.body, fontWeight: "800" }}>About Grip</Text>
-            <Text style={{ color: colors.textFaint, fontSize: font.size.small, marginTop: 2 }}>Features, how it works</Text>
+            <Text style={{ color: colors.textBright, fontSize: font.size.body, fontWeight: "800" }}>{t("about.profileLinkTitle")}</Text>
+            <Text style={{ color: colors.textFaint, fontSize: font.size.small, marginTop: 2 }}>{t("about.profileLinkSubtitle")}</Text>
           </View>
           <Text style={{ color: colors.textFaint, fontSize: 18 }}>›</Text>
         </TouchableOpacity>
