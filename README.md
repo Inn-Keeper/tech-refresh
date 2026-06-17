@@ -2,6 +2,13 @@
 
 Get a grip. Buckle up.
 
+![Pipeline: funnel](https://img.shields.io/badge/pipeline-funnel-14B8A6)
+![Pipeline: velocity](https://img.shields.io/badge/pipeline-velocity-14B8A6)
+![Pipeline: due follow-ups](https://img.shields.io/badge/pipeline-due%20follow--ups-14B8A6)
+![Auth: Supabase JWT](https://img.shields.io/badge/auth-Supabase%20JWT-2DD4BF)
+
+Pipeline seals: read-only hiring analytics for funnel conversion, stage velocity, and due follow-ups, typed from the OpenAPI contract and scoped by the signed-in user's Supabase session token.
+
 A full-stack interview prep and hiring pipeline manager - **web + React Native mobile** sharing one Postgres database via Supabase. Built as a **study case**, where each layer maps to an interview-prep topic.
 
 ## What It Does
