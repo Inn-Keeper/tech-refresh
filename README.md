@@ -36,7 +36,7 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 
 ## Screenshots
 
-Captured from the web app at 1600×1000 using the local screenshot script.
+Captured from the web app at 1600x1000 using `scripts/capture-web-screenshots.mjs`.
 
 | Prep | Poe — raven guide |
 | --- | --- |
@@ -61,10 +61,10 @@ Captured from the web app at 1600×1000 using the local screenshot script.
 | **Backend** | Supabase (Postgres + PostgREST + Auth + RLS) | One DB, two clients; RLS = auth study case |
 | **Repo** | pnpm workspaces monorepo | Web + mobile share quiz content, scoring logic |
 | **Web** | Vite + React | Fast dev loop, simple build |
-| **Mobile** | Expo + React Router | Native feel (NativeTabs, SF Symbol icons), Reanimated 3D, Skia canvas |
+| **Mobile** | Expo + expo-router | Native feel, tabbed navigation, Reanimated 3D, Skia canvas |
 | **Server state** | TanStack Query | Caching, optimistic updates, retry — handles offline reads |
 | **Design** | Dark-first, teal accent | Token-driven; mobile and web pixel-perfect aligned |
-| **Testing** | Jest + React Testing Library (web/mobile), Maestro (E2E) | 50+ tests covering core logic, CRUD, UI flows |
+| **Testing** | Jest + React Native Testing Library, Maestro (E2E) | 100+ tests covering shared logic and mobile UI flows |
 
 ## Project Structure
 
@@ -160,8 +160,8 @@ pnpm test
 # Typecheck
 pnpm typecheck
 
-# CI (test + typecheck + build)
-pnpm ci
+# CI (lint + test + typecheck + build)
+pnpm run ci
 
 # Run iOS simulator (native dev client, Skia support)
 pnpm exec expo run:ios
@@ -175,8 +175,8 @@ pnpm exec expo run:android
 With the web dev server running, capture the README screenshots:
 
 ```bash
-pnpm dev
-node scripts/capture-web-screenshots.mjs http://127.0.0.1:5173/
+pnpm --filter web dev --host 127.0.0.1 --port 5174
+node scripts/capture-web-screenshots.mjs http://127.0.0.1:5174/
 ```
 
 The script writes PNGs to `docs/screenshots/web/`. It injects a local-only browser session for documentation captures; it does not create a Supabase account or write app data.
@@ -282,7 +282,7 @@ status_events(
 
 ## Testing
 
-### Core package (Jest, 69 tests)
+### Core package (Jest, 102 tests)
 ```bash
 pnpm --filter @tech-refresh/core test
 ```
@@ -320,7 +320,7 @@ Covers: sign-in, bottom tabs, and CRUD smoke paths.
 ### Linting
 Run checks before commit:
 ```bash
-pnpm typecheck && pnpm test && pnpm build
+pnpm run ci
 ```
 
 ## Study Case: Interview Topics Covered
@@ -342,12 +342,15 @@ Each component/module is a study case for a real topic:
 
 ## CI/CD
 
-The repo is gated by:
-1. `pnpm test` — Jest on core + mobile (must pass)
-2. `pnpm typecheck` — TypeScript strict on mobile (must pass)
-3. `pnpm build` — Web production build (must succeed)
+The repo uses one required GitHub Actions workflow, `CI / Run checks`, to keep pull requests readable and avoid repeated dependency installs.
 
-See `package.json` → `scripts.ci`.
+The consolidated gate runs:
+1. `pnpm lint` — ESLint across the workspace
+2. `pnpm test` — Jest on core + mobile
+3. `pnpm typecheck` — TypeScript checks for mobile + web
+4. `pnpm build` — Web production build
+
+The workflow also uses read-only repository permissions, cancels superseded PR runs, and has a 15-minute timeout. CodeQL may still run from GitHub code-scanning settings, but it is separate from the repo workflow files.
 
 ## Deployment
 
@@ -372,7 +375,7 @@ When adding features:
 2. Add tests in `__tests__/`
 3. Consume in `apps/mobile` and `apps/web` independently
 4. Update design tokens if colors/spacing change
-5. Run `pnpm ci` before commit
+5. Run `pnpm run ci` before commit
 
 ## Files to Read First
 
@@ -388,6 +391,6 @@ MIT (personal project, open sourced for learning).
 
 ---
 
-**Last updated:** June 15, 2026  
-**Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked)  
-**Committed:** ✅ All phases 0–4 complete; 50+ tests; 100% coverage on quiz/scoring logic
+**Last updated:** June 17, 2026<br>
+**Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked)<br>
+**Committed:** All phases 0-4 complete; 100+ tests; consolidated CI; refreshed web screenshots
