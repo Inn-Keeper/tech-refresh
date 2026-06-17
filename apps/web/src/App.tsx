@@ -216,12 +216,11 @@ export default function App() {
                   background: `${colors.well}C7`,
                   border: `1px solid ${colors.border}`,
                   boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.03)",
-                  flex: "1 1 620px",
                   minWidth: 0,
-                  maxWidth: 760,
                   overflowX: "auto",
                   overflowY: "hidden",
                   scrollbarWidth: "none",
+                  justifyContent: "flex-end",
                 }}
               >
                 {pages.map((p) => (

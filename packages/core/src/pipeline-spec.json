@@ -1,0 +1,90 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Grip Pipeline Analytics API",
+    "description": "Read-only analytics over Grip's hiring pipeline. Reads the contacts and status_events tables in Grip's Supabase Postgres; the React/React Native clients own all writes.",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Pipeline analytics",
+      "description": "Read-only hiring-pipeline analytics over Grip's contacts and status_events. The user is taken from the bearer token; there is no userId parameter."
+    }
+  ],
+  "paths": {
+    "/api/pipeline/velocity": {
+      "get": {
+        "tags": ["Pipeline analytics"],
+        "summary": "Stage velocity",
+        "description": "Average days contacts spend in each stage before moving on, derived from the gaps between consecutive status_events. Contacts with a single recorded event contribute nothing, since no dwell interval exists.",
+        "operationId": "velocity",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/VelocityReport"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer-jwt": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "StageVelocity": {
+        "type": "object",
+        "properties": {
+          "fromStage": {
+            "type": "string",
+            "enum": ["CONTACTED", "APPLIED", "INTERVIEWING", "OFFER", "REJECTED"]
+          },
+          "toStage": {
+            "type": "string",
+            "enum": ["CONTACTED", "APPLIED", "INTERVIEWING", "OFFER", "REJECTED"]
+          },
+          "avgDays": {
+            "type": "number"
+          },
+          "transitions": {
+            "type": "integer",
+            "format": "int64"
+          }
+        }
+      },
+      "VelocityReport": {
+        "type": "object",
+        "properties": {
+          "stages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StageVelocity"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearer-jwt": {
+        "type": "http",
+        "description": "Supabase session JWT. Paste the access_token (HS256).",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

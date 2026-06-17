@@ -22,15 +22,24 @@
     "./accuracy": "./src/accuracy.js",
     "./i18n": "./src/i18n.js",
     "./tokens": "./src/tokens.js",
-    "./user": "./src/user.js"
+    "./user": "./src/user.js",
+    "./pipeline": {
+      "types": "./src/pipeline.d.ts",
+      "default": "./src/pipeline.js"
+    }
   },
   "devDependencies": {
     "@babel/core": "^7.29.7",
     "@babel/preset-env": "^7.29.7",
     "babel-jest": "29.7.0",
-    "jest": "29.7.0"
+    "jest": "29.7.0",
+    "openapi-typescript": "^7.13.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "generate:pipeline": "openapi-typescript src/pipeline-spec.json -o src/pipeline-types.d.ts"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0"
   }
 }

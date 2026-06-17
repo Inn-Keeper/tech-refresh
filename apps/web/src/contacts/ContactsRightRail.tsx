@@ -4,15 +4,18 @@ import { BrandIcon } from "../components/BrandIcon";
 import { FunnelDashboard } from "./FunnelDashboard";
 import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import type { Contact } from "./types";
+import type { VelocityReport } from "@tech-refresh/core/pipeline";
 
 type FunnelSummary = Parameters<typeof FunnelDashboard>[0]["summary"];
 
 export function ContactsRightRail({
   dueContacts,
   funnel,
+  velocity,
 }: {
   dueContacts: Contact[];
   funnel: FunnelSummary;
+  velocity?: VelocityReport;
 }) {
   return (
     <>
@@ -43,6 +46,28 @@ export function ContactsRightRail({
           )}
         </div>
       </WorkspacePanel>
+
+      {velocity?.stages && velocity.stages.length > 0 && (
+        <WorkspacePanel>
+          <WorkspaceTitle
+            icon={<BrandIcon name="calendar" color={colors.accentBright} size={17} />}
+            title="Stage velocity"
+            subtitle="Avg. days between transitions"
+          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+            {velocity.stages.map((s, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ flex: 1, fontSize: 11.5, color: colors.textDim, fontWeight: 600 }}>
+                  {s.fromStage} → {s.toStage}
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: colors.textBright }}>
+                  {Number(s.avgDays).toFixed(1)}d
+                </span>
+              </div>
+            ))}
+          </div>
+        </WorkspacePanel>
+      )}
     </>
   );
 }

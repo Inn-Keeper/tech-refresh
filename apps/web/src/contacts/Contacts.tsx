@@ -4,6 +4,7 @@ import { STATUSES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import * as api from "../lib/api";
+import { pipeline } from "../lib/api";
 import { WorkspaceLayout } from "../components/WorkspaceLayout";
 import { ContactCard } from "./ContactCard";
 import { ContactForm } from "./ContactForm";
@@ -28,6 +29,13 @@ export default function Contacts() {
   const { data: statusEvents = [] } = useQuery({
     queryKey: ["status-events"],
     queryFn: api.listStatusEvents,
+  });
+  const { data: velocity } = useQuery({
+    queryKey: ["pipeline-velocity"],
+    queryFn: () => pipeline.getVelocity(),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!contacts,
+    retry: false,
   });
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
 
@@ -102,7 +110,7 @@ export default function Contacts() {
           onAdd={() => setEditingId("new")}
         />
       }
-      right={<ContactsRightRail dueContacts={dueContacts} funnel={funnel} />}
+      right={<ContactsRightRail dueContacts={dueContacts} funnel={funnel} velocity={velocity} />}
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 850, color: colors.textBright }}>
