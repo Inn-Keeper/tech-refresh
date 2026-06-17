@@ -2,19 +2,6 @@ import React from "react";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { t } from "@tech-refresh/core/i18n";
 
-export const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "9px 11px",
-  background: colors.bgDeep,
-  border: `1px solid ${colors.border}`,
-  borderRadius: 8,
-  color: colors.text,
-  fontSize: 13,
-  outline: "none",
-  fontFamily: "inherit",
-};
-
 export function ConnectionBadge({ connected }: { connected: boolean }) {
   return (
     <span

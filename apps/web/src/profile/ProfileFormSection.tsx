@@ -2,7 +2,8 @@ import React from "react";
 import { PROFILE_FIELDS } from "@tech-refresh/core/user";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
 import { t } from "@tech-refresh/core/i18n";
-import { Field, inputStyle } from "./shared";
+import { Field } from "./shared";
+import { inputStyle } from "./styles";
 import type { ProfileForm, ProfileRecord } from "./types";
 
 export function ProfileFormSection({

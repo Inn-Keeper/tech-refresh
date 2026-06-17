@@ -54,7 +54,7 @@ export function DateInput({ value, onChange }: { value: string; onChange: (v: st
   );
 }
 
-export function formatDateEntry(value: string) {
+function formatDateEntry(value: string) {
   const digits = value.replace(/\D/g, "").slice(0, 8);
   if (digits.length <= 2) return digits;
   if (digits.length <= 4) return `${digits.slice(0, 2)}-${digits.slice(2)}`;
