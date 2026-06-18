@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
+import { inputStyle, textareaStyle, Field } from "../components/shared";
 import type { Retro } from "./types";
-import { EMPTY_RETRO, inputStyle, textareaStyle } from "./types";
-import { Field } from "./shared";
+import { EMPTY_RETRO } from "./types";
 
 export function RetroLine({ label, text }: { label: string; text?: string }) {
   if (!text) return null;

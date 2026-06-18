@@ -35,12 +35,7 @@ export function serializeQuizSize(value) {
  * @param {string | number | null | undefined} value
  * @returns {number | null}
  */
-export function normalizeQuizSize(value) {
-  if (value === null || value === undefined) return DEFAULT_QUIZ_SIZE;
-  const n = typeof value === "number" ? value : parseInt(String(value), 10);
-  if (!Number.isFinite(n) || n < QUIZ_SIZE_MIN) return DEFAULT_QUIZ_SIZE;
-  return n;
-}
+export const normalizeQuizSize = parseQuizSize;
 
 /**
  * @param {number | null | undefined} poolSize

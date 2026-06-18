@@ -3,18 +3,10 @@ import { COMPETENCIES, COMPETENCY_COLORS } from "@tech-refresh/core/stories";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { Combobox } from "../components/Combobox";
-import { inputStyle, textareaStyle } from "./styles";
+import { Field, inputStyle } from "../components/shared";
+import { textareaStyle } from "./styles";
 import { EMPTY_FORM } from "./types";
 import type { StoryForm as StoryFormType } from "./types";
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" }}>{label}</span>
-      {children}
-    </label>
-  );
-}
 
 export function StoryForm({
   initial,

@@ -108,11 +108,4 @@ export function MetaLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
-      <span style={{ color: colors.textFaint, fontSize: 11, fontWeight: 800 }}>{label}</span>
-      {children}
-    </label>
-  );
-}
+export { Field } from "../components/shared";

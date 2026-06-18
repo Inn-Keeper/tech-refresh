@@ -1,16 +1,8 @@
 import React from "react";
-import { colors } from "@tech-refresh/core/tokens";
 import { t } from "@tech-refresh/core/i18n";
-import { inputStyle } from "./types";
+import { inputStyle, miniBtn, Field } from "../components/shared";
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <span style={{ fontSize: 11, fontWeight: 600, color: colors.textFaint, letterSpacing: "0.03em" }}>{label}</span>
-      {children}
-    </label>
-  );
-}
+export { Field };
 
 export function ActionButton({
   onClick,
@@ -22,20 +14,7 @@ export function ActionButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: "4px 10px",
-        background: "transparent",
-        border: `1px solid ${color}50`,
-        borderRadius: 8,
-        color,
-        fontSize: 11,
-        fontWeight: 600,
-        cursor: "pointer",
-        whiteSpace: "nowrap",
-      }}
-    >
+    <button onClick={onClick} style={miniBtn(color ?? "")}>
       {children}
     </button>
   );

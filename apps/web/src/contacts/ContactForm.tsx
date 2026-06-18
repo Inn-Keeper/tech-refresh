@@ -4,8 +4,9 @@ import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { Combobox } from "../components/Combobox";
 import { DateInput, Field } from "./shared";
+import { inputStyle } from "../components/shared";
 import type { Contact } from "./types";
-import { EMPTY_FORM, inputStyle } from "./types";
+import { EMPTY_FORM } from "./types";
 
 export function ContactForm({
   initial,

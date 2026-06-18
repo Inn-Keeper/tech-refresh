@@ -5,6 +5,7 @@ import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { nodeIconName } from "../components/brandIconNames";
 import { Combobox } from "../components/Combobox";
+import { inputStyle } from "../components/shared";
 
 type ScenarioFormProps = {
   onSave: (form: object) => void;
@@ -20,17 +21,6 @@ export function ScenarioForm({ onSave, onCancel, saving, error }: ScenarioFormPr
   const [requiredNodes, setRequiredNodes] = useState<string[]>([]);
   const [requiredEdges, setRequiredEdges] = useState<{ from: string; to: string }[]>([]);
 
-  const inputStyle: React.CSSProperties = {
-    boxSizing: "border-box",
-    padding: "8px 10px",
-    background: colors.bgDeep,
-    border: `1px solid ${colors.border}`,
-    borderRadius: 8,
-    color: colors.text,
-    fontSize: 13,
-    outline: "none",
-    fontFamily: "inherit",
-  };
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
     fontWeight: 600,

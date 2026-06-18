@@ -39,7 +39,7 @@ export default function Contacts() {
         return { stages: [] };
       }
     },
-    staleTime: 5 * 60 * 1000,
+    // staleTime: 5 * 60 * 1000,
     enabled: !!contacts,
     retry: false,
     initialData: { stages: [] },
