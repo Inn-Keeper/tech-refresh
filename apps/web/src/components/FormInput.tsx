@@ -31,7 +31,7 @@ export const FormInput = React.forwardRef<HTMLInputElement, FormInputProps>(
 
 FormInput.displayName = "FormInput";
 
-export interface FormTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export type FormTextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 export const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaProps>(
   (props, ref) => {
