@@ -32,10 +32,17 @@ export default function Contacts() {
   });
   const { data: velocity } = useQuery({
     queryKey: ["pipeline-velocity"],
-    queryFn: () => pipeline.getVelocity(),
+    queryFn: async () => {
+      try {
+        return await pipeline.getVelocity();
+      } catch {
+        return { stages: [] };
+      }
+    },
     staleTime: 5 * 60 * 1000,
     enabled: !!contacts,
     retry: false,
+    initialData: { stages: [] },
   });
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
 

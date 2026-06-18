@@ -33,7 +33,8 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 ### **Quest** tab
 - Hiring pipeline tracker: Contacted → Applied → Interviewing → Offer → Rejected
 - Link to job postings; notes and retrospectives per contact
-- Funnel analytics: conversion rate, pace, due-soon highlighting
+- Pipeline analytics: stage velocity (avg. days between transitions), due follow-ups
+- Reads from grip-pipeline-service (Java backend) for real-time velocity metrics
 - DD-MM-YYYY date format for clarity
 
 ### **Profile** tab
@@ -114,6 +115,7 @@ grip/
 │   └── capture-web-screenshots.mjs
 ├── DESIGN.md                   # Design system & token reference
 ├── PLAN.md                     # Phases, decisions, study-case map
+├── CV-UPLOAD-PLAN.md           # CV extraction & tech filtering roadmap
 ├── package.json                # Workspace root
 ├── pnpm-workspace.yaml         # Monorepo config
 └── pnpm-lock.yaml              # Locked deps (pnpm@10.6.5)
@@ -388,9 +390,10 @@ When adding features:
 
 1. [DESIGN.md](DESIGN.md) — Visual identity and token reference
 2. [PLAN.md](PLAN.md) — Architecture decisions and phases
-3. [packages/core/src/tokens.js](packages/core/src/tokens.js) — Design system
-4. [packages/core/src/api.js](packages/core/src/api.js) — Data layer entry point
-5. [apps/mobile/src/app/_layout.tsx](apps/mobile/src/app/_layout.tsx) — Mobile routing
+3. [CV-UPLOAD-PLAN.md](CV-UPLOAD-PLAN.md) — CV extraction & tech filtering (in progress)
+4. [packages/core/src/tokens.js](packages/core/src/tokens.js) — Design system
+5. [packages/core/src/api.js](packages/core/src/api.js) — Data layer entry point
+6. [apps/mobile/src/app/_layout.tsx](apps/mobile/src/app/_layout.tsx) — Mobile routing
 
 ## License
 
@@ -399,5 +402,5 @@ MIT (personal project, open sourced for learning).
 ---
 
 **Last updated:** June 17, 2026<br>
-**Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked)<br>
-**Committed:** All phases 0-4 complete; 100+ tests; consolidated CI; refreshed web screenshots
+**Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked); pipeline analytics live; CV upload planned<br>
+**Committed:** All phases 0-4 complete; 100+ tests; consolidated CI; refreshed web screenshots; pipeline service integrated (velocity/due)

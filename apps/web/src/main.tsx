@@ -9,6 +9,14 @@ const queryClient = new QueryClient({
   },
 });
 
+// Expose QueryClient to browser console for debugging
+declare global {
+  interface Window {
+    __TANSTACK_QUERY_CLIENT__: typeof queryClient;
+  }
+}
+window.__TANSTACK_QUERY_CLIENT__ = queryClient;
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
