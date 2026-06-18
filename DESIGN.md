@@ -110,6 +110,54 @@ chips) · `md 12` (cards) · `lg 16` (sheets, large containers) · `pill 999` (p
 Convention: **new or touched code uses tokens**; existing literal values migrate
 opportunistically, not in bulk.
 
+## Styling Strategy
+
+We use a **hybrid approach**: CSS Modules for animation-heavy and state-driven styling, inline React `CSSProperties` for simple layout and dynamic values. This avoids over-engineering while keeping complex state maintainable.
+
+### When to Use CSS Modules
+
+Use `.module.css` files (colocated with components) for:
+
+- **Complex animations** — @keyframes, staggered delays, transitions across multiple properties
+- **Media queries** — responsive breakpoints where inline can't express condition logic
+- **Pseudo-classes and pseudo-elements** — `:hover`, `:focus`, `:before`, `:after`
+- **3D transforms** — `perspective`, `transform-style: preserve-3d`, `backface-visibility`
+- **State-driven styling** — multiple class variants (e.g., `.isBack`, `.correct`, `.wrong`)
+
+Example: `apps/web/src/interviewPrep/InterviewPrep.module.css` (flip card animations with perspective).
+
+### When to Use Inline Styles
+
+Use React `CSSProperties` for:
+
+- **Simple layout properties** — flexbox alignment, basic spacing, one-off sizes
+- **Dynamic values** — colors/sizes driven by component props
+- **Single-element styles** — no cascade, no child selectors
+- **Type safety** — TypeScript enforces property names; autocomplete reduces errors
+
+Example: `apps/web/src/App.tsx` (header layout with flex, gap, colors).
+
+### Shared Style Objects
+
+Extract repeated inline style objects to component wrappers or `shared.tsx`:
+
+- `FormInput`, `FormTextarea` (components) — use instead of raw objects
+- `MiniButton` (component) — use instead of raw objects  
+- `Field` — flexbox label wrapper with gap
+
+**Principle:** Do NOT duplicate inline objects across files; pull them into a shared export or component wrapper.
+
+### Design Tokens: Always Use Them
+
+**Never hardcode:**
+- Colors — use `colors.*` from tokens (or `tints.*` for pre-baked transluencies)
+- Font sizes — use `font.size.*` from tokens
+- Font weights — use string literals ("600", "700", "800")
+- Spacing (gap, padding, margin) — use `space.*` from tokens
+- Border radius — use `radius.*` from tokens
+
+All values from `@tech-refresh/core/tokens`.
+
 ## Motion
 
 Animations are a first-class feature (see PLAN.md's showcase). Principles:
