@@ -71,10 +71,20 @@ export const brand = {
 
 // Font weights stay as string literals in code ("600" etc.) — React Native's
 // fontWeight type only accepts literals, so a string-typed token can't carry them.
+/**
+ * Font sizes — use these for fontSize in inline styles.
+ * Example: fontSize: font.size.body
+ * @type {Record<string, Record<string, number>>}
+ */
 export const font = {
   size: { caption: 10, label: 11, small: 12, body: 13, bodyLg: 15, title: 17, heading: 20, display: 28 },
 };
 
+/**
+ * Spacing scale — use these values for gap, padding, margin.
+ * Examples: gap: space.sm, padding: `${space.md}px ${space.lg}px`
+ * @type {Record<string, number>}
+ */
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28 };
 
 export const radius = { sm: 8, md: 12, lg: 16, pill: 999 };
