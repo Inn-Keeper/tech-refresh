@@ -1,7 +1,5 @@
 import React, { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import * as api from "../lib/api";
 import { WorkspaceLayout } from "../components/WorkspaceLayout";
 import { PromptDrill } from "./PromptDrill";
 import { StoryCard } from "./StoryCard";
@@ -9,21 +7,16 @@ import { StoryForm } from "./StoryForm";
 import { StoryLeftRail } from "./StoryLeftRail";
 import { StoryCoverage } from "./StoryCoverage";
 import { EMPTY_FORM } from "./types";
+import { useDeleteStoryMutation, useSaveStoryMutation, useStoriesQuery } from "./queries";
 import type { Story, StoryForm as StoryFormType } from "./types";
 
 export default function StoryBank() {
-  const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [mode, setMode] = useState<"stories" | "drill">("stories");
 
-  const { data: stories = null, error: loadError } = useQuery({
-    queryKey: ["stories"],
-    queryFn: api.listStories,
-  });
-
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["stories"] });
-  const saveMutation = useMutation({ mutationFn: api.upsertStory, onSettled: invalidate });
-  const deleteMutation = useMutation({ mutationFn: api.deleteStory, onSettled: invalidate });
+  const { data: stories = null, error: loadError } = useStoriesQuery();
+  const saveMutation = useSaveStoryMutation();
+  const deleteMutation = useDeleteStoryMutation();
 
   const mutationError = saveMutation.error || deleteMutation.error;
   const error = loadError

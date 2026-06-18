@@ -1,0 +1,69 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchGithubTechSignals } from "@tech-refresh/core/githubTechs";
+import { questionCapForPool } from "@tech-refresh/core/quizPrefs";
+import { shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
+import * as api from "../lib/api";
+import type { AccuracyPoint, QuizQuestion } from "./types";
+
+const CARD_POOL_LIMIT = 500;
+const DRILL_SIZE = 10;
+const GITHUB_TECHS_STALE_MS = 1000 * 60 * 15;
+
+export const prepQueryKeys = {
+  accuracyTimeline: ["accuracy-timeline"] as const,
+  profile: ["profile"] as const,
+  githubTechs: (githubUsername: string) => ["github-techs", githubUsername] as const,
+  cardQuestions: (level: string, tech: string, limit = CARD_POOL_LIMIT) =>
+    ["questions", "v2", "card-pool", level, tech, limit] as const,
+  tierQuestions: (difficulty: string, techs: string[]) => ["questions", "v2", difficulty, techs] as const,
+};
+
+export function useAccuracyTimelineQuery() {
+  return useQuery<AccuracyPoint[]>({
+    queryKey: prepQueryKeys.accuracyTimeline,
+    queryFn: api.getAccuracyTimeline as () => Promise<AccuracyPoint[]>,
+  });
+}
+
+export function usePrepProfileQuery() {
+  return useQuery({ queryKey: prepQueryKeys.profile, queryFn: api.getUser });
+}
+
+export function useGithubTechsQuery(githubUsername: string, allTechs: string[], enabled: boolean) {
+  return useQuery({
+    queryKey: prepQueryKeys.githubTechs(githubUsername),
+    queryFn: () => fetchGithubTechSignals(githubUsername, allTechs),
+    enabled,
+    staleTime: GITHUB_TECHS_STALE_MS,
+  });
+}
+
+export function usePrepQuestionFetchers(level: string, quizSize: number | null, onCardPoolSize?: (size: number) => void) {
+  const queryClient = useQueryClient();
+
+  const fetchTierQuestions = (difficulty: string, techs: string[]) =>
+    queryClient.fetchQuery({
+      queryKey: prepQueryKeys.tierQuestions(difficulty, techs),
+      queryFn: () => api.getQuestions({ techs, difficulty, limit: DRILL_SIZE * 3 }),
+    });
+
+  const fetchCardQuestions = async (tech: string): Promise<QuizQuestion[] | null> => {
+    try {
+      const rows = await queryClient.fetchQuery({
+        queryKey: prepQueryKeys.cardQuestions(level, tech),
+        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: CARD_POOL_LIMIT }),
+      });
+      if (rows.length) {
+        onCardPoolSize?.(rows.length);
+        const cap = questionCapForPool(quizSize, rows.length);
+        return shuffle(rows).slice(0, cap).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
+      }
+      console.warn(`No ${level} questions in the DB for "${tech}" — falling back to static prep questions (these don't vary by level). Run the questions seed.`);
+    } catch (err) {
+      console.error(`Failed to load ${level} questions for "${tech}"; using static prep questions.`, err);
+    }
+    return null;
+  };
+
+  return { fetchTierQuestions, fetchCardQuestions };
+}

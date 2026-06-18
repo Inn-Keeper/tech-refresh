@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
-import { buildGithubTechCategory, fetchGithubTechSignals, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
+import { buildGithubTechCategory, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
-import { questionCapForPool } from "@tech-refresh/core/quizPrefs";
-import * as api from "../lib/api";
 import { useScores } from "./useScores";
 import { CelebrationOverlay } from "../components/CelebrationOverlay";
 import { colors } from "@tech-refresh/core/tokens";
@@ -17,7 +14,6 @@ import { PoeAssistant } from "../components/poe/PoeAssistant";
 import { getQuizSize, setQuizSize } from "./quizPrefs";
 import styles from "./InterviewPrep.module.css";
 import type {
-  AccuracyPoint,
   CardState,
   CelebrationState,
   DrillState,
@@ -30,11 +26,15 @@ import { ConfirmDialog } from "./ConfirmDialog";
 import { DrillSession } from "./DrillSession";
 import { PrepLeftRail } from "./PrepLeftRail";
 import { PrepRightRail } from "./PrepRightRail";
+import {
+  useAccuracyTimelineQuery,
+  useGithubTechsQuery,
+  usePrepProfileQuery,
+  usePrepQuestionFetchers,
+} from "./queries";
 import { summarizeScores } from "./summarizeScores";
 
 const DRILL_SIZE = 10;
-const CARD_POOL_LIMIT = 500; // pull the whole tier pool for a tech; size is controlled by user pref
-const GITHUB_TECHS_STALE_MS = 1000 * 60 * 15; // public GitHub repo languages rarely change mid-session
 
 // Map every tech to its category color so a fetched question can be themed.
 const colorByTech = Object.fromEntries(
@@ -67,18 +67,14 @@ export default function InterviewPrep() {
     setCardState({});
   };
   const previousRank = useRef<{ name: string; min: number } | null>(null);
-  const queryClient = useQueryClient();
   const { scores, scoresReady, record, addXp } = useScores();
-  const { data: accuracy = [] } = useQuery<AccuracyPoint[]>({ queryKey: ["accuracy-timeline"], queryFn: api.getAccuracyTimeline as () => Promise<AccuracyPoint[]> });
-  const { data: profile = null } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
+  const { data: accuracy = [] } = useAccuracyTimelineQuery();
+  const { data: profile = null } = usePrepProfileQuery();
   const githubPrepEnabled = !!profile?.useGithubTechsForPrep;
   const githubUsername = githubPrepEnabled ? githubUsernameFromUrl(profile?.githubUrl) : "";
-  const { data: githubTechs = [], error: githubError, isFetching: githubLoading } = useQuery({
-    queryKey: ["github-techs", githubUsername],
-    queryFn: () => fetchGithubTechSignals(githubUsername, allTechs),
-    enabled: githubPrepEnabled && !!githubUsername,
-    staleTime: GITHUB_TECHS_STALE_MS,
-  });
+  const { data: githubTechs = [], error: githubError, isFetching: githubLoading } =
+    useGithubTechsQuery(githubUsername, allTechs, githubPrepEnabled && !!githubUsername);
+  const { fetchTierQuestions, fetchCardQuestions } = usePrepQuestionFetchers(level, quizSize, setPoolSize);
 
   useEffect(() => {
     if (!scoresReady) return;
@@ -115,27 +111,6 @@ export default function InterviewPrep() {
 
   const getState = (key: string): CardState =>
     cardState[key] ?? { phase: "front", quizIndex: 0, answered: null, runCorrect: 0, shuffled: null };
-
-  // Loads this tech's questions at the active level for a flip card's quiz,
-  // falling back to the static prep questions if the bank has none.
-  const fetchCardQuestions = async (tech: string): Promise<QuizQuestion[] | null> => {
-    try {
-      const rows = await queryClient.fetchQuery({
-        queryKey: ["questions", "v2", "card-pool", level, tech, CARD_POOL_LIMIT],
-        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: CARD_POOL_LIMIT }),
-      });
-      if (rows.length) {
-        setPoolSize(rows.length);
-        // quizSize is a user-set cap; if it meets or exceeds the real pool it means "all".
-        const cap = questionCapForPool(quizSize, rows.length);
-        return shuffle(rows).slice(0, cap).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
-      }
-      console.warn(`No ${level} questions in the DB for "${tech}" — falling back to static prep questions (these don't vary by level). Run the questions seed.`);
-    } catch (err) {
-      console.error(`Failed to load ${level} questions for "${tech}"; using static prep questions.`, err);
-    }
-    return null;
-  };
 
   const handleFlip = async (key: string, item: PrepItem) => {
     const s = cardState[key] ?? { phase: "front" as const };
@@ -187,15 +162,6 @@ export default function InterviewPrep() {
       return { ...prev, [key]: { ...s, phase: "front" as const } };
     });
   };
-
-  // Fetches one tier's questions (cached by React Query), preferring the user's
-  // weakest techs but falling back to the whole bank so a partially-seeded tier
-  // still yields a drill.
-  const fetchTierQuestions = (difficulty: string, techs: string[]) =>
-    queryClient.fetchQuery({
-      queryKey: ["questions", "v2", difficulty, techs],
-      queryFn: () => api.getQuestions({ techs, difficulty, limit: DRILL_SIZE * 3 }),
-    });
 
   const startDrill = async (difficulty: string) => {
     setDrillLoading(true);

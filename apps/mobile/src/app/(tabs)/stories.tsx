@@ -2,29 +2,26 @@ import { useState } from "react";
 import { Alert, FlatList, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { COMPETENCIES, COMPETENCY_COLORS, PROMPTS } from "@tech-refresh/core/stories";
 import { t } from "@tech-refresh/core/i18n";
 import { useLocale } from "@/lib/useLocale";
-import { api } from "@/lib/api";
 import { colors, layout } from "@/theme";
 import { BrandIcon } from "@/components/BrandIcon";
 import { Badge, Button, Field, HeaderAction, MiniButton, Pill, Screen, ScreenHeader, Section, SegmentedPills, inputStyle, multilineStyle } from "@/components/ui";
 import type { Story } from "@tech-refresh/core/api";
+import { useDeleteStoryMutation, useSaveStoryMutation, useStoriesQuery } from "@/queries/stories";
 
 const EMPTY_FORM: Story = { title: "", competency: "Conflict", situation: "", task: "", action: "", result: "" };
 
 export default function StoriesScreen() {
   const locale = useLocale();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const [mode, setMode] = useState<"stories" | "drill">("stories");
   const [editing, setEditing] = useState<Story | null>(null);
 
-  const { data: stories, error } = useQuery<Story[]>({ queryKey: ["stories"], queryFn: api.listStories });
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["stories"] });
-  const saveMutation = useMutation({ mutationFn: api.upsertStory, onSettled: invalidate });
-  const deleteMutation = useMutation({ mutationFn: api.deleteStory, onSettled: invalidate });
+  const { data: stories, error } = useStoriesQuery();
+  const saveMutation = useSaveStoryMutation();
+  const deleteMutation = useDeleteStoryMutation();
 
   const confirmDelete = (story: Story) =>
     Alert.alert(t("stories.deleteTitle"), t("stories.deleteMessage", { title: story.title }), [

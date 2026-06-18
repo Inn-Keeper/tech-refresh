@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, FlatList, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
-import { buildGithubTechCategory, fetchGithubTechSignals, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
+import { buildGithubTechCategory, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
 import { useLocale } from "@/lib/useLocale";
-import { DEFAULT_QUIZ_SIZE, questionCapForPool } from "@tech-refresh/core/quizPrefs";
-import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
-import { api } from "@/lib/api";
+import { DEFAULT_QUIZ_SIZE } from "@tech-refresh/core/quizPrefs";
+import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs } from "@tech-refresh/core/quiz";
 import { getQuizSize, setQuizSize } from "@/lib/quizPrefs";
 import { useScores } from "@/lib/useScores";
 import { colors, layout } from "@/theme";
@@ -24,6 +22,12 @@ import { AccuracyChart } from "@/components/AccuracyChart";
 import { CelebrationOverlay } from "@/components/CelebrationOverlay";
 import { Screen, ScreenHeader, SegmentedPills } from "@/components/ui";
 import { categoryIconName } from "@/components/BrandIcon";
+import {
+  useAccuracyTimelineQuery,
+  useGithubTechsQuery,
+  usePrepProfileQuery,
+  usePrepQuestionFetchers,
+} from "@/queries/prep";
 
 type Celebration = { title: string; subtitle: string; accent?: string };
 type PrepItem = {
@@ -36,8 +40,6 @@ type PrepItem = {
 type PrepCategory = { name: string; emoji?: string; color: string; items: PrepItem[] };
 
 const DRILL_SIZE = 10;
-const CARD_POOL_LIMIT = 50; // fetch the whole tier pool for a tech, then sample from it
-const GITHUB_TECHS_STALE_MS = 1000 * 60 * 15; // public GitHub repo languages rarely change mid-session
 
 // Map every tech to its category color, so a fetched question can be themed.
 const colorByTech: Record<string, string> = Object.fromEntries(
@@ -63,18 +65,13 @@ export default function PrepScreen() {
   const [drillError, setDrillError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const previousRank = useRef<ReturnType<typeof rankForXp> | null>(null);
-  const queryClient = useQueryClient();
   const { scores, record, addXp } = useScores();
-  const { data: accuracy = [] } = useQuery({ queryKey: ["accuracy-timeline"], queryFn: api.getAccuracyTimeline });
-  const { data: profile = null } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
+  const { data: accuracy = [] } = useAccuracyTimelineQuery();
+  const { data: profile = null } = usePrepProfileQuery();
   const githubPrepEnabled = !!profile?.useGithubTechsForPrep;
   const githubUsername = githubPrepEnabled ? githubUsernameFromUrl(profile?.githubUrl) : "";
-  const { data: githubTechs = [] } = useQuery({
-    queryKey: ["github-techs", githubUsername],
-    queryFn: () => fetchGithubTechSignals(githubUsername, allTechs),
-    enabled: githubPrepEnabled && !!githubUsername,
-    staleTime: GITHUB_TECHS_STALE_MS,
-  });
+  const { data: githubTechs = [] } = useGithubTechsQuery(githubUsername, allTechs, githubPrepEnabled && !!githubUsername);
+  const { fetchTierQuestions, loadCardQuiz } = usePrepQuestionFetchers(level, quizSize, setPoolSize);
 
   useEffect(() => {
     getQuizSize().then(setQuizSizeState).catch(() => setQuizSizeState(DEFAULT_QUIZ_SIZE));
@@ -103,15 +100,6 @@ export default function PrepScreen() {
     }
     previousRank.current = current;
   }, [scores.xp]);
-
-  // Fetches one tier's questions (cached by React Query, offline-persisted),
-  // preferring the user's weakest techs but falling back to the whole bank so a
-  // partially-seeded tier still yields a drill.
-  const fetchTierQuestions = (difficulty: string, techs: string[]) =>
-    queryClient.fetchQuery({
-      queryKey: ["questions", "v2", difficulty, techs],
-      queryFn: () => api.getQuestions({ techs, difficulty, limit: DRILL_SIZE * 3 }),
-    });
 
   const startDrill = async (difficulty: string) => {
     setDrillLoading(true);
@@ -163,27 +151,6 @@ export default function PrepScreen() {
     } finally {
       setDrillLoading(false);
     }
-  };
-
-  // Loads a single tech's questions at the active level for a flip card's quiz,
-  // returning shuffled questions or null so the card falls back to static prep.
-  const loadCardQuiz = async (tech: string) => {
-    try {
-      const rows = await queryClient.fetchQuery({
-        queryKey: ["questions", "v2", level, [tech]],
-        queryFn: () => api.getQuestions({ techs: [tech], difficulty: level, limit: CARD_POOL_LIMIT }),
-      });
-      if (rows.length) {
-        setPoolSize(rows.length);
-        // Random subset of the tier's pool each open, so re-quizzing a card feels fresh.
-        const cap = questionCapForPool(quizSize, rows.length);
-        return shuffle(rows).slice(0, cap).map((r) => shuffleOptions({ question: r.prompt, options: r.options, correct: r.correct }));
-      }
-      console.warn(`No ${level} questions in the DB for "${tech}" — falling back to static prep questions (these don't vary by level). Run the questions seed.`);
-    } catch (err) {
-      console.error(`Failed to load ${level} questions for "${tech}"; using static prep questions.`, err);
-    }
-    return null;
   };
 
   // FlipCards report when their quiz opens/closes so we know whether to confirm.

@@ -2,16 +2,21 @@ import { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
 import { LOCALE_LABELS, t } from "@tech-refresh/core/i18n";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
-import { api } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { changeLocale, useLocale } from "@/lib/useLocale";
-import { linkGitHubIdentity } from "@/lib/oauth";
 import { colors, font, layout, radius, space, tints } from "@/theme";
 import { Button, Field, HeaderAction, Screen, ScreenHeader, inputStyle } from "@/components/ui";
+import {
+  useAuthIdentitiesQuery,
+  useGithubPrepMutation,
+  useLinkGitHubMutation,
+  useProfileQuery,
+  useResetScoresMutation,
+  useSaveProfileMutation,
+} from "@/queries/profile";
 
 type ProfileForm = Record<string, string>;
 
@@ -20,53 +25,19 @@ const LOCALE_EMOJI: Record<string, string> = { en: "🇺🇸", pt: "🇧🇷", s
 export default function ProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<ProfileForm>(EMPTY_PROFILE_FORM);
   const locale = useLocale();
-  const { data: profile = null, error: loadError } = useQuery({ queryKey: ["profile"], queryFn: api.getUser });
-  const { data: identities = [], error: identitiesError } = useQuery({
-    queryKey: ["auth-identities"],
-    queryFn: async () => {
-      const { data, error } = await supabase.auth.getUserIdentities();
-      if (error) throw error;
-      return data.identities ?? [];
-    },
-  });
+  const { data: profile = null, error: loadError } = useProfileQuery();
+  const { data: identities = [], error: identitiesError } = useAuthIdentitiesQuery();
   const githubIdentityUrl = githubUrlFromIdentities(identities);
   const displayGithubUrl = profile?.githubUrl || githubIdentityUrl;
   // "Connected" means a real GitHub OAuth identity is linked — not merely that a
   // githubUrl exists, since that can be a hand-typed/saved profile field.
   const githubConnected = identities.some((identity) => identity.provider === "github");
-  const saveMutation = useMutation({
-    mutationFn: api.updateProfile,
-    onSuccess: (saved) => queryClient.setQueryData(["profile"], saved),
-  });
-  const linkGitHubMutation = useMutation({
-    mutationFn: linkGitHubIdentity,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth-identities"] });
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-    },
-  });
-  const githubPrepMutation = useMutation({
-    mutationFn: (useGithubTechsForPrep: boolean) =>
-      api.updateProfile({
-        useGithubTechsForPrep,
-        ...(useGithubTechsForPrep && displayGithubUrl && !profile?.githubUrl ? { githubUrl: displayGithubUrl } : {}),
-      }),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(["profile"], saved);
-      queryClient.invalidateQueries({ queryKey: ["github-techs"] });
-    },
-  });
-  const resetMutation = useMutation({
-    mutationFn: api.resetScores,
-    onSuccess: () => {
-      queryClient.setQueryData(["scores"], { xp: 0, answers: {} });
-      if (profile) queryClient.setQueryData(["profile"], { ...profile, xp: 0 });
-      queryClient.invalidateQueries({ queryKey: ["accuracy-timeline"] });
-    },
-  });
+  const saveMutation = useSaveProfileMutation();
+  const linkGitHubMutation = useLinkGitHubMutation();
+  const githubPrepMutation = useGithubPrepMutation(profile, displayGithubUrl);
+  const resetMutation = useResetScoresMutation(profile);
 
   useEffect(() => {
     if (!profile) return;

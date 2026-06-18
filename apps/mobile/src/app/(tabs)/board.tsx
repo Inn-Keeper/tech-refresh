@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
 import { setTabBarHidden } from "@/lib/uiStore";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
@@ -15,11 +13,11 @@ import { Button, MiniButton, Screen, ScreenHeader, SegmentedPills } from "@/comp
 import { BrandIcon, nodeIconName } from "@/components/BrandIcon";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
 import { ResultSheet } from "@/components/board/ResultSheet";
+import { useDeleteBoardMutation, useSaveBoardMutation, useSavedBoardsQuery } from "@/queries/board";
 
 export default function BoardScreen() {
   const locale = useLocale();
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [nodes, setNodes] = useState<BoardNode[]>([]);
   const [edges, setEdges] = useState<BoardEdge[]>([]);
@@ -38,35 +36,23 @@ export default function BoardScreen() {
   }, [chrome]);
 
   const scenario = SCENARIOS[scenarioIndex];
-  const { data: savedBoards = [], error: boardsError } = useQuery<SavedBoard[]>({ queryKey: ["arch-boards"], queryFn: api.listBoards });
-  const invalidateBoards = () => queryClient.invalidateQueries({ queryKey: ["arch-boards"] });
-  const saveBoardMutation = useMutation({
-    mutationFn: () =>
-      api.upsertBoard({
-        id: activeBoardId ?? undefined,
-        title: activeBoardTitle ?? t("board.draftTitle", { scenario: scenario.name }),
-        scenarioId: scenario.id,
-        nodes,
-        edges,
-      }),
-    onSuccess: (board) => {
+  const { data: savedBoards = [], error: boardsError } = useSavedBoardsQuery();
+  const saveBoardMutation = useSaveBoardMutation(
+    (board) => {
       setActiveBoardId(board.id ?? null);
       setActiveBoardTitle(board.title);
-      invalidateBoards();
     },
-    onError: (error) => Alert.alert(t("board.saveFailedTitle"), error.message),
-  });
-  const deleteBoardMutation = useMutation({
-    mutationFn: api.deleteBoard,
-    onSuccess: (_data, id) => {
+    (error) => Alert.alert(t("board.saveFailedTitle"), error.message)
+  );
+  const deleteBoardMutation = useDeleteBoardMutation(
+    (id) => {
       if (id === activeBoardId) {
         setActiveBoardId(null);
         setActiveBoardTitle(null);
       }
-      invalidateBoards();
     },
-    onError: (error) => Alert.alert(t("common.delete"), error.message),
-  });
+    (error) => Alert.alert(t("common.delete"), error.message)
+  );
   const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
   const liveMaint = nodes.reduce((sum, node) => sum + meta(node.type).maint, 0);
   const overBudget = liveCost > scenario.budget;
@@ -117,11 +103,15 @@ export default function BoardScreen() {
     setSavedOpen(false);
   };
 
-  const confirmDeleteBoard = (board: SavedBoard) =>
+  const confirmDeleteBoard = (board: SavedBoard) => {
+    const id = board.id;
+    if (!id) return;
+
     Alert.alert(t("board.deleteTitle"), t("board.deleteMessage", { title: board.title }), [
       { text: t("common.cancel"), style: "cancel" },
-      { text: t("common.delete"), style: "destructive", onPress: () => deleteBoardMutation.mutate(board.id) },
+      { text: t("common.delete"), style: "destructive", onPress: () => deleteBoardMutation.mutate(id) },
     ]);
+  };
 
   const addEdge = (from: string, to: string) => {
     setEdges((current) =>
@@ -190,7 +180,19 @@ export default function BoardScreen() {
           </View>
           <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto", alignItems: "center" }}>
             <MiniButton label={t("board.saved")} color={savedOpen ? colors.accent : colors.textDim} onPress={() => setSavedOpen((value) => !value)} />
-            <MiniButton label={saveBoardMutation.isPending ? t("common.saving") : t("common.save")} color={colors.success} onPress={() => saveBoardMutation.mutate()} />
+            <MiniButton
+              label={saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
+              color={colors.success}
+              onPress={() =>
+                saveBoardMutation.mutate({
+                  id: activeBoardId ?? undefined,
+                  title: activeBoardTitle ?? t("board.draftTitle", { scenario: scenario.name }),
+                  scenarioId: scenario.id,
+                  nodes,
+                  edges,
+                })
+              }
+            />
             <MiniButton label={t("common.clear")} color={colors.textDim} onPress={clearBoard} />
             <Button label={t("board.evaluate")} onPress={() => setResult(evaluate(scenario, nodes, edges))} disabled={nodes.length === 0} />
           </View>

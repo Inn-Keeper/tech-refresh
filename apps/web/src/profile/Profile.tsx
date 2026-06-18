@@ -1,16 +1,24 @@
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { RANKS, rankForXp } from "@tech-refresh/core/gamification";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import { EMPTY_PROFILE_FORM, PROFILE_FIELDS, profileFormToUpdate, profileToForm } from "@tech-refresh/core/user";
-import { friendlyAuthError } from "@tech-refresh/core/auth";
 import { setLocale, t } from "@tech-refresh/core/i18n";
-import * as api from "../lib/api";
 import { useLocale } from "../lib/useLocale";
-import { supabase } from "../lib/supabase";
 import { poeVisibleByDefault, setPoeAssistantVisible } from "../components/poe/poeAssistantUtils";
 import { ProfileAside } from "./ProfileAside";
 import { ProfileFormSection } from "./ProfileFormSection";
+import {
+  useAuthIdentitiesQuery,
+  useAuthUserQuery,
+  useGithubPrepMutation,
+  useGithubPublicUrlQuery,
+  useGithubViewerUrlQuery,
+  useLinkGitHubMutation,
+  useProfileQuery,
+  useResetScoresMutation,
+  useSaveGithubUrlMutation,
+  useSaveProfileMutation,
+} from "./queries";
 import {
   githubAccountIdFromIdentity,
   githubAccountIdFromMetadata,
@@ -19,7 +27,6 @@ import {
 } from "./githubUtils";
 import type { ProfileForm } from "./types";
 
-const GITHUB_LINK_PENDING_KEY = "grip.githubLinkPending";
 const GITHUB_LINKED_KEY = "grip.githubLinked";
 
 type ProfileProps = {
@@ -30,7 +37,6 @@ type ProfileProps = {
 };
 
 export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSignOut, onLocaleChange }: ProfileProps) {
-  const queryClient = useQueryClient();
   const [form, setForm] = useState<ProfileForm>(EMPTY_PROFILE_FORM as ProfileForm);
   const locale = useLocale();
   const [linkedInThisSession, setLinkedInThisSession] = useState(
@@ -38,112 +44,24 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSi
   );
   const [poeVisible, setPoeVisible] = useState(poeVisibleByDefault);
 
-  const { data: profile = null, error: loadError, isLoading } = useQuery({
-    queryKey: ["profile"],
-    queryFn: api.getUser,
-  });
-  const { data: identities = [], error: identitiesError } = useQuery({
-    queryKey: ["auth-identities"],
-    queryFn: async () => {
-      const { data, error } = await supabase.auth.getUserIdentities();
-      if (error) throw error;
-      return data.identities ?? [];
-    },
-  });
-  const { data: authUser = null, error: authUserError } = useQuery({
-    queryKey: ["auth-user"],
-    queryFn: async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      return data.user ?? null;
-    },
-  });
+  const { data: profile = null, error: loadError, isLoading } = useProfileQuery();
+  const { data: identities = [], error: identitiesError } = useAuthIdentitiesQuery();
+  const { data: authUser = null, error: authUserError } = useAuthUserQuery();
 
-  const { data: githubViewerUrl = "", error: githubViewerError } = useQuery({
-    queryKey: ["github-viewer-url", githubLinked],
-    queryFn: async () => {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.provider_token;
-      if (!token) return "";
-      const response = await fetch("https://api.github.com/user", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!response.ok) return "";
-      const viewer = await response.json();
-      return typeof viewer.html_url === "string" ? viewer.html_url : "";
-    },
-    enabled: githubLinked,
-    retry: false,
-    staleTime: 1000 * 60 * 15,
-  });
+  const { data: githubViewerUrl = "", error: githubViewerError } = useGithubViewerUrlQuery(githubLinked);
 
   const authProviders = authUser?.app_metadata?.providers ?? [];
   const authIdentities = authUser?.identities ?? [];
   const githubIdentity = [...identities, ...authIdentities].find((identity) => identity.provider === "github");
   const githubAccountId = githubAccountIdFromIdentity(githubIdentity) || githubAccountIdFromMetadata(authUser?.user_metadata);
 
-  const { data: githubPublicUrl = "", error: githubPublicError } = useQuery({
-    queryKey: ["github-public-url", githubAccountId],
-    queryFn: async () => {
-      if (!githubAccountId) return "";
-      const response = await fetch(`https://api.github.com/user/${encodeURIComponent(githubAccountId)}`);
-      if (!response.ok) return "";
-      const user = await response.json();
-      return typeof user.html_url === "string" ? user.html_url : "";
-    },
-    enabled: !!githubAccountId,
-    retry: false,
-    staleTime: 1000 * 60 * 60,
-  });
+  const { data: githubPublicUrl = "", error: githubPublicError } = useGithubPublicUrlQuery(githubAccountId);
 
-  const saveMutation = useMutation({
-    mutationFn: api.updateProfile,
-    onSuccess: (saved) => {
-      queryClient.setQueryData(["profile"], saved);
-      queryClient.invalidateQueries({ queryKey: ["scores"] });
-    },
-  });
-  const saveGithubUrlMutation = useMutation({
-    mutationFn: (githubUrl: string) => api.updateProfile({ githubUrl }),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(["profile"], saved);
-      queryClient.invalidateQueries({ queryKey: ["github-techs"] });
-    },
-  });
-  const githubPrepMutation = useMutation({
-    mutationFn: (useGithubTechsForPrep: boolean) => api.updateProfile({ useGithubTechsForPrep }),
-    onSuccess: (saved) => {
-      queryClient.setQueryData(["profile"], saved);
-      queryClient.invalidateQueries({ queryKey: ["github-techs"] });
-    },
-  });
-  const resetMutation = useMutation({
-    mutationFn: api.resetScores,
-    onSuccess: () => {
-      queryClient.setQueryData(["scores"], { xp: 0, answers: {} });
-      if (profile) queryClient.setQueryData(["profile"], { ...profile, xp: 0 });
-      queryClient.invalidateQueries({ queryKey: ["accuracy-timeline"] });
-    },
-  });
-  const linkGitHubMutation = useMutation({
-    mutationFn: async () => {
-      window.localStorage.setItem(GITHUB_LINK_PENDING_KEY, "1");
-      const { data, error } = await supabase.auth.linkIdentity({
-        provider: "github",
-        options: { redirectTo: `${window.location.origin}/?linked=github`, skipBrowserRedirect: true },
-      });
-      if (error) {
-        window.localStorage.removeItem(GITHUB_LINK_PENDING_KEY);
-        throw new Error(friendlyAuthError(error.message));
-      }
-      if (data?.url) window.location.assign(data.url);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["auth-identities"] });
-      queryClient.invalidateQueries({ queryKey: ["auth-user"] });
-      queryClient.invalidateQueries({ queryKey: ["profile"] });
-    },
-  });
+  const saveMutation = useSaveProfileMutation();
+  const saveGithubUrlMutation = useSaveGithubUrlMutation();
+  const githubPrepMutation = useGithubPrepMutation();
+  const resetMutation = useResetScoresMutation(profile);
+  const linkGitHubMutation = useLinkGitHubMutation();
 
   const githubUrl =
     profile?.githubUrl ||

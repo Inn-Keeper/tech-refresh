@@ -1,63 +1,39 @@
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { STATUSES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { colors, tints } from "@tech-refresh/core/tokens";
-import * as api from "../lib/api";
-import { pipeline } from "../lib/api";
 import { WorkspaceLayout } from "../components/WorkspaceLayout";
 import { ContactCard } from "./ContactCard";
 import { ContactForm } from "./ContactForm";
 import { ContactsLeftRail } from "./ContactsLeftRail";
 import { ContactsRightRail } from "./ContactsRightRail";
 import { EMPTY_FORM } from "./types";
+import {
+  useAddRetroMutation,
+  useContactStoriesQuery,
+  useContactsQuery,
+  useDeleteContactMutation,
+  useDeleteRetroMutation,
+  usePipelineVelocityQuery,
+  useSaveContactMutation,
+  useStatusEventsQuery,
+} from "./queries";
 import type { Contact, Retro } from "./types";
 
 export default function Contacts() {
-  const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [retroFor, setRetroFor] = useState<string | null>(null);
 
-  const { data: contacts = null, error: loadError } = useQuery({
-    queryKey: ["contacts"],
-    queryFn: api.listContacts,
-  });
-  const { data: stories = [] } = useQuery({
-    queryKey: ["stories"],
-    queryFn: api.listStories,
-  });
-  const { data: statusEvents = [] } = useQuery({
-    queryKey: ["status-events"],
-    queryFn: api.listStatusEvents,
-  });
-  const { data: velocity } = useQuery({
-    queryKey: ["pipeline-velocity"],
-    queryFn: async () => {
-      try {
-        return await pipeline.getVelocity();
-      } catch {
-        return { stages: [] };
-      }
-    },
-    // staleTime: 5 * 60 * 1000,
-    enabled: !!contacts,
-    retry: false,
-    initialData: { stages: [] },
-  });
+  const { data: contacts = null, error: loadError } = useContactsQuery();
+  const { data: stories = [] } = useContactStoriesQuery();
+  const { data: statusEvents = [] } = useStatusEventsQuery();
+  const { data: velocity } = usePipelineVelocityQuery(!!contacts);
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["contacts"] });
-    queryClient.invalidateQueries({ queryKey: ["status-events"] });
-  };
-  const saveMutation = useMutation({ mutationFn: api.upsertContact, onSettled: invalidate });
-  const deleteMutation = useMutation({ mutationFn: api.deleteContact, onSettled: invalidate });
-  const retroAddMutation = useMutation({
-    mutationFn: ({ contactId, retro }: { contactId: string; retro: Omit<Retro, "id" | "date"> }) =>
-      api.addRetro(contactId, retro),
-    onSettled: invalidate,
-  });
-  const retroDeleteMutation = useMutation({ mutationFn: api.deleteRetro, onSettled: invalidate });
+  const saveMutation = useSaveContactMutation();
+  const deleteMutation = useDeleteContactMutation();
+  const retroAddMutation = useAddRetroMutation();
+  const retroDeleteMutation = useDeleteRetroMutation();
 
   const mutationError =
     saveMutation.error || deleteMutation.error || retroAddMutation.error || retroDeleteMutation.error;

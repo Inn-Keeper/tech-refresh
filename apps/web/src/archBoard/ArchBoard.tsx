@@ -1,8 +1,6 @@
 import React, { useRef, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
-import * as api from "../lib/api";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { nodeIconName } from "../components/brandIconNames";
@@ -12,6 +10,14 @@ import { EvalResults } from "./EvalResults";
 import { NodePalette } from "./NodePalette";
 import { SavedBoards } from "./SavedBoards";
 import { ScenarioForm } from "./ScenarioForm";
+import {
+  useCustomScenariosQuery,
+  useDeleteBoardMutation,
+  useDeleteScenarioMutation,
+  useSaveBoardMutation,
+  useSavedBoardsQuery,
+  useSaveScenarioMutation,
+} from "./queries";
 import type { AugmentedScenario, BoardEdge, BoardNode, ConnectDrag, DragRef, SavedBoard } from "./types";
 
 export default function ArchBoard() {
@@ -25,16 +31,12 @@ export default function ArchBoard() {
   const [savedOpen, setSavedOpen] = useState(false);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [activeBoardTitle, setActiveBoardTitle] = useState<string | null>(null);
-  const queryClient = useQueryClient();
   const canvasRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragRef | null>(null);
   const connectDragRef = useRef<ConnectDrag | null>(null);
   const suppressClickRef = useRef(false);
 
-  const { data: customScenarios = [] } = useQuery({
-    queryKey: ["custom-scenarios"],
-    queryFn: api.listCustomScenarios,
-  });
+  const { data: customScenarios = [] } = useCustomScenariosQuery();
   const allScenarios: AugmentedScenario[] = [
     ...(SCENARIOS as AugmentedScenario[]),
     ...customScenarios.map((s) => ({ ...s, category: CUSTOM_CATEGORY, custom: true })),
@@ -50,51 +52,23 @@ export default function ArchBoard() {
   const scenario: AugmentedScenario = allScenarios.find((s) => s.id === scenarioId) ?? (SCENARIOS[0] as AugmentedScenario);
   const nodeById = Object.fromEntries(nodes.map((n) => [n.id, n]));
 
-  const { data: savedBoards = [], error: boardsError } = useQuery({
-    queryKey: ["arch-boards"],
-    queryFn: api.listBoards,
+  const { data: savedBoards = [], error: boardsError } = useSavedBoardsQuery();
+  const saveBoardMutation = useSaveBoardMutation((board) => {
+    setActiveBoardId(board.id ?? null);
+    setActiveBoardTitle(board.title);
   });
-  const invalidateBoards = () => queryClient.invalidateQueries({ queryKey: ["arch-boards"] });
-  const invalidateCustomScenarios = () => queryClient.invalidateQueries({ queryKey: ["custom-scenarios"] });
-  const saveBoardMutation = useMutation({
-    mutationFn: () =>
-      api.upsertBoard({
-        id: activeBoardId ?? undefined,
-        title: activeBoardTitle ?? t("board.draftTitle", { scenario: scenario.name }),
-        scenarioId: scenario.id,
-        nodes,
-        edges,
-      }),
-    onSuccess: (board: { id?: string; title: string }) => {
-      setActiveBoardId(board.id ?? null);
-      setActiveBoardTitle(board.title);
-      invalidateBoards();
-    },
+  const deleteBoardMutation = useDeleteBoardMutation((id) => {
+    if (id === activeBoardId) {
+      setActiveBoardId(null);
+      setActiveBoardTitle(null);
+    }
   });
-  const deleteBoardMutation = useMutation({
-    mutationFn: api.deleteBoard,
-    onSuccess: (_data: unknown, id: string) => {
-      if (id === activeBoardId) {
-        setActiveBoardId(null);
-        setActiveBoardTitle(null);
-      }
-      invalidateBoards();
-    },
+  const saveScenarioMutation = useSaveScenarioMutation((saved) => {
+    setCreatorOpen(false);
+    switchScenario(saved.id);
   });
-  const saveScenarioMutation = useMutation({
-    mutationFn: api.upsertCustomScenario,
-    onSuccess: (saved: object) => {
-      invalidateCustomScenarios();
-      setCreatorOpen(false);
-      switchScenario((saved as { id: string }).id);
-    },
-  });
-  const deleteScenarioMutation = useMutation({
-    mutationFn: api.deleteCustomScenario,
-    onSuccess: (_data: unknown, id: string) => {
-      invalidateCustomScenarios();
-      if (id === scenarioId) switchScenario((SCENARIOS[0] as AugmentedScenario).id);
-    },
+  const deleteScenarioMutation = useDeleteScenarioMutation((id) => {
+    if (id === scenarioId) switchScenario((SCENARIOS[0] as AugmentedScenario).id);
   });
 
   const cancelConnection = () => {
@@ -348,7 +322,15 @@ export default function ArchBoard() {
             {t("board.saved")} ({savedBoards.length})
           </button>
           <button
-            onClick={() => saveBoardMutation.mutate()}
+            onClick={() =>
+              saveBoardMutation.mutate({
+                id: activeBoardId ?? undefined,
+                title: activeBoardTitle ?? t("board.draftTitle", { scenario: scenario.name }),
+                scenarioId: scenario.id,
+                nodes,
+                edges,
+              })
+            }
             disabled={saveBoardMutation.isPending}
             style={{
               padding: "7px 14px", background: "transparent", border: `1px solid ${colors.success}60`,
