@@ -43,9 +43,9 @@ export default function TabLayout() {
         <Icon sf={{ default: "square.grid.2x2", selected: "square.grid.2x2.fill" }} />
         <Label>{t("tabs.board")}</Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="contacts">
+      <NativeTabs.Trigger name="quest">
         <Icon sf={{ default: "map", selected: "map.fill" }} />
-        <Label>{t("tabs.contacts")}</Label>
+        <Label>{t("tabs.quest")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: "person.crop.circle", selected: "person.crop.circle.fill" }} />

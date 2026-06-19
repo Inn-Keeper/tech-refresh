@@ -71,7 +71,7 @@ Expo + expo-router tabs + TanStack Query + Supabase client. Prep tab: card grid,
 3D flip** (rotateY worklet — the flip the web version lost), quiz flow, weakest-drill, XP bar.
 Stats from `answer_events`. *Exit: full quiz loop on the phone over LAN.*
 
-**Phase 3 — Stories + Contacts tabs (1–2 evenings)** ✅
+**Phase 3 — Stories + Quest tabs (1–2 evenings)** ✅
 Standard RN forms/lists; prompt drill with Reanimated transitions; next-action due
 highlighting and retro forms. *Exit: full CRUD parity on mobile.*
 
@@ -101,7 +101,7 @@ playable on the phone.*
   development, with explicit simulator scripts (`pnpm ios:sim`, `pnpm dev-client`) so the
   day-to-day loop avoids physical-device signing, provisioning, Developer Mode, and iPhone
   platform-support issues.
-- ✅ **Job-hunt funnel dashboard** — Contacts now surfaces active pipeline counts,
+- ✅ **Job-hunt funnel dashboard** — Quest now surfaces active pipeline counts,
   Contacted -> Applied -> Interviewing -> Offer conversion, applications/week, due
   follow-ups, and bottleneck signals. Current limitation: the contacts table stores the
   current stage date, not historical transition dates, so the dashboard is a pragmatic

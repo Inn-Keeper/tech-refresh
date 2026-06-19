@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { VelocityReport } from "@tech-refresh/core/pipeline";
 import * as api from "../lib/api";
 import { pipeline } from "../lib/api";
 import type { Retro } from "./types";
@@ -10,8 +9,6 @@ export const contactsQueryKeys = {
   statusEvents: ["status-events"] as const,
   velocity: ["pipeline-velocity"] as const,
 };
-
-const emptyVelocity: VelocityReport = { stages: [] };
 
 export function useContactsQuery() {
   return useQuery({ queryKey: contactsQueryKeys.contacts, queryFn: api.listContacts });
@@ -25,19 +22,11 @@ export function useStatusEventsQuery() {
   return useQuery({ queryKey: contactsQueryKeys.statusEvents, queryFn: api.listStatusEvents });
 }
 
-export function usePipelineVelocityQuery(enabled: boolean) {
+export function usePipelineVelocityQuery() {
   return useQuery({
     queryKey: contactsQueryKeys.velocity,
-    queryFn: async () => {
-      try {
-        return await pipeline.getVelocity();
-      } catch {
-        return emptyVelocity;
-      }
-    },
-    enabled,
+    queryFn: pipeline.getVelocity,
     retry: false,
-    initialData: emptyVelocity,
   });
 }
 

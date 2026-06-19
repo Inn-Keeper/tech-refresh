@@ -50,7 +50,7 @@ function ConversionRow({ label, value, detail, color }: { label: string; value: 
   );
 }
 
-export function ContactsFunnel({ summary }: { summary: FunnelSummary }) {
+export function QuestFunnel({ summary }: { summary: FunnelSummary }) {
   return (
     <View
       style={{

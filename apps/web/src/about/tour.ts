@@ -91,7 +91,7 @@ export function startTour(onNavigate: (page: string) => void) {
         },
       },
       {
-        element: "[data-tour='nav-contacts']",
+        element: "[data-tour='nav-quest']",
         popover: {
           title: t("tour.questTitle"),
           description: t("tour.questBody"),

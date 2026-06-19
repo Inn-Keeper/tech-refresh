@@ -4,7 +4,7 @@ import { setLocale, t } from "@tech-refresh/core/i18n";
 import { supabase } from "./lib/supabase";
 import { useLocale } from "./lib/useLocale";
 import InterviewPrep from "./interviewPrep/InterviewPrep";
-import Contacts from "./contacts/Contacts";
+import Quest from "./quest/Quest";
 import ArchBoard from "./archBoard/ArchBoard";
 import StoryBank from "./storyBank/StoryBank";
 import Profile from "./profile/Profile";
@@ -18,7 +18,7 @@ const PAGE_DEFS = [
   { id: "prep", icon: "layers", labelKey: "tabs.prep" },
   { id: "stories", icon: "story", labelKey: "tabs.stories" },
   { id: "board", icon: "board", labelKey: "tabs.board" },
-  { id: "contacts", icon: "contact", labelKey: "tabs.contacts" },
+  { id: "quest", icon: "quest", labelKey: "tabs.quest" },
   { id: "profile", icon: "profile", labelKey: "tabs.profile" },
   { id: "about", icon: "spark", labelKey: "tabs.about" },
 ] as const;
@@ -44,8 +44,10 @@ const initialPage = () => {
     return "profile";
   }
   const fromPath = window.location.pathname.replace(/^\//, "");
+  if (fromPath === "contacts") return "quest";
   if (fromPath && (PAGE_IDS as readonly string[]).includes(fromPath)) return fromPath;
   const saved = window.localStorage.getItem(ACTIVE_PAGE_KEY);
+  if (saved === "contacts") return "quest";
   return saved && (PAGE_IDS as readonly string[]).includes(saved) ? saved : DEFAULT_PAGE;
 };
 
@@ -77,7 +79,8 @@ export default function App() {
   useEffect(() => {
     const onPop = () => {
       const fromPath = window.location.pathname.replace(/^\//, "");
-      setPage((PAGE_IDS as readonly string[]).includes(fromPath) ? fromPath : DEFAULT_PAGE);
+      const next = fromPath === "contacts" ? "quest" : fromPath;
+      setPage((PAGE_IDS as readonly string[]).includes(next) ? next : DEFAULT_PAGE);
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
@@ -281,7 +284,7 @@ export default function App() {
             {page === "prep" && <InterviewPrep />}
             {page === "stories" && <StoryBank />}
             {page === "board" && <ArchBoard />}
-            {page === "contacts" && <Contacts />}
+            {page === "quest" && <Quest />}
             {page === "profile" && <Profile githubLinked={githubLinked} onGitHubLinkedSeen={() => setGithubLinked(false)} onSignOut={signOut} onLocaleChange={handleLocaleChange} />}
             {page === "about" && <About onNavigate={selectPage} />}
           </React.Fragment>

@@ -30,7 +30,7 @@ export const sv = {
   "tabs.prep": "Förberedelse",
   "tabs.stories": "Berättelser",
   "tabs.board": "Arch Board",
-  "tabs.contacts": "Quest",
+  "tabs.quest": "Quest",
   "tabs.profile": "Profil",
   "tabs.about": "Tutorial",
 
@@ -263,7 +263,7 @@ export const sv = {
 
   "screen.prepSubtitle": "Flashcards, adaptiva drillar och XP-fart.",
   "screen.storiesSubtitle": "STAR-berättelser och intervjufrågerepetitioner.",
-  "screen.contactsSubtitle": "Pipeline, uppföljningar och intervjuretros.",
+  "screen.questSubtitle": "Pipeline, uppföljningar och intervjuretros.",
   "screen.profileSubtitle": "Privata kontouppgifter och jobbsökningsmål.",
 
   "stories.behavioralPrep": "Beteendeprep",

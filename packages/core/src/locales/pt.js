@@ -30,7 +30,7 @@ export const pt = {
   "tabs.prep": "Prep",
   "tabs.stories": "Histórias",
   "tabs.board": "Arch Board",
-  "tabs.contacts": "Quest",
+  "tabs.quest": "Quest",
   "tabs.profile": "Perfil",
   "tabs.about": "Tutorial",
 
@@ -263,7 +263,7 @@ export const pt = {
 
   "screen.prepSubtitle": "Flashcards, treinos adaptativos e ritmo de XP.",
   "screen.storiesSubtitle": "Histórias STAR e repetições de perguntas de entrevista.",
-  "screen.contactsSubtitle": "Pipeline, acompanhamentos e retros de entrevista.",
+  "screen.questSubtitle": "Pipeline, acompanhamentos e retros de entrevista.",
   "screen.profileSubtitle": "Detalhes privados da conta e metas de busca de emprego.",
 
   "stories.behavioralPrep": "Prep comportamental",

@@ -11,7 +11,7 @@ import { HeaderAction, Screen, ScreenHeader } from "@/components/ui";
 import type { Contact } from "@tech-refresh/core/api";
 import { ContactCard } from "@/components/contacts/ContactCard";
 import { ContactForm, EMPTY_CONTACT_FORM } from "@/components/contacts/ContactForm";
-import { ContactsFunnel } from "@/components/contacts/ContactsFunnel";
+import { QuestFunnel } from "@/components/contacts/QuestFunnel";
 import {
   useAddRetroMutation,
   useContactStoriesQuery,
@@ -22,7 +22,7 @@ import {
   useStatusEventsQuery,
 } from "@/queries/contacts";
 
-export default function ContactsScreen() {
+export default function QuestScreen() {
   const locale = useLocale();
   const insets = useSafeAreaInsets();
   const [editing, setEditing] = useState<Contact | null>(null);
@@ -72,8 +72,8 @@ export default function ContactsScreen() {
   return (
     <Screen key={locale}>
       <ScreenHeader
-        title={t("tabs.contacts")}
-        subtitle={t("screen.contactsSubtitle")}
+        title={t("tabs.quest")}
+        subtitle={t("screen.questSubtitle")}
         right={<HeaderAction icon="contact" label={t("contacts.addContact")} onPress={() => setEditing({ ...EMPTY_CONTACT_FORM, date: todayDDMMYYYY() })} />}
       />
       <FlatList
@@ -84,7 +84,7 @@ export default function ContactsScreen() {
           <View style={{ gap: 12 }}>
             {error && <Text style={{ color: colors.dangerBright, fontSize: 13 }}>{t("contacts.loadError", { message: error.message })}</Text>}
 
-            <ContactsFunnel summary={funnel} />
+            <QuestFunnel summary={funnel} />
 
             {dueCount > 0 && (
               <View

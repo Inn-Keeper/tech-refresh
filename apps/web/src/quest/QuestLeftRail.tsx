@@ -6,7 +6,7 @@ import { BrandIcon } from "../components/BrandIcon";
 import { WorkspacePanel, WorkspaceTitle } from "../components/WorkspaceLayout";
 import type { Contact } from "./types";
 
-export function ContactsLeftRail({
+export function QuestLeftRail({
   canAdd,
   contacts,
   dueCount,

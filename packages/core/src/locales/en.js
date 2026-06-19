@@ -30,7 +30,7 @@ export const en = {
   "tabs.prep": "Prep",
   "tabs.stories": "Stories",
   "tabs.board": "Arch Board",
-  "tabs.contacts": "Quest",
+  "tabs.quest": "Quest",
   "tabs.profile": "Profile",
   "tabs.about": "Tutorial",
 
@@ -263,7 +263,7 @@ export const en = {
 
   "screen.prepSubtitle": "Flashcards, adaptive drills, and XP momentum.",
   "screen.storiesSubtitle": "STAR stories and interview prompt reps.",
-  "screen.contactsSubtitle": "Pipeline, follow-ups, and interview retros.",
+  "screen.questSubtitle": "Pipeline, follow-ups, and interview retros.",
   "screen.profileSubtitle": "Private account details and job-search goals.",
 
   "stories.behavioralPrep": "Behavioral prep",

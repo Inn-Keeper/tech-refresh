@@ -5,8 +5,8 @@ import { colors, tints } from "@tech-refresh/core/tokens";
 import { WorkspaceLayout } from "../components/WorkspaceLayout";
 import { ContactCard } from "./ContactCard";
 import { ContactForm } from "./ContactForm";
-import { ContactsLeftRail } from "./ContactsLeftRail";
-import { ContactsRightRail } from "./ContactsRightRail";
+import { QuestLeftRail } from "./QuestLeftRail";
+import { QuestRightRail } from "./QuestRightRail";
 import { EMPTY_FORM } from "./types";
 import {
   useAddRetroMutation,
@@ -20,14 +20,14 @@ import {
 } from "./queries";
 import type { Contact, Retro } from "./types";
 
-export default function Contacts() {
+export default function Quest() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [retroFor, setRetroFor] = useState<string | null>(null);
 
   const { data: contacts = null, error: loadError } = useContactsQuery();
   const { data: stories = [] } = useContactStoriesQuery();
   const { data: statusEvents = [] } = useStatusEventsQuery();
-  const { data: velocity } = usePipelineVelocityQuery(!!contacts);
+  const { data: velocity, error: velocityError, isFetching: velocityLoading } = usePipelineVelocityQuery();
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
 
   const saveMutation = useSaveContactMutation();
@@ -84,27 +84,35 @@ export default function Contacts() {
 
   return (
     <WorkspaceLayout
-      mainLabel="Hiring contacts"
+      mainLabel="Quest"
       left={
-        <ContactsLeftRail
+        <QuestLeftRail
           canAdd={!!contacts && editingId !== "new"}
           contacts={contacts ?? []}
           dueCount={dueCount}
           onAdd={() => setEditingId("new")}
         />
       }
-      right={<ContactsRightRail dueContacts={dueContacts} funnel={funnel} velocity={velocity} />}
+      right={
+        <QuestRightRail
+          dueContacts={dueContacts}
+          funnel={funnel}
+          velocity={velocity}
+          velocityError={velocityError}
+          velocityLoading={velocityLoading}
+        />
+      }
     >
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
         <h1 style={{ margin: 0, fontSize: 26, fontWeight: 850, color: colors.textBright }}>
-          Hiring Contacts
+          Quest
         </h1>
         <span style={{ marginLeft: "auto", fontSize: 12, color: colors.textFaint, fontWeight: 500 }}>
           {contacts ? `${contacts.length} in pipeline` : "loading..."}
         </span>
       </div>
       <p style={{ margin: "0 0 20px", color: colors.textFaint, fontSize: 13, maxWidth: 760, lineHeight: 1.6 }}>
-        Recruiters contacted and applications submitted. Synced to Supabase.
+        Track contacts, applications, follow-ups, and interview retros. Synced to Supabase.
       </p>
 
       {error && (

@@ -87,7 +87,7 @@ graph TD
     MAIN --> PREP_TAB["🎯 Interview Prep\nInterviewPrep.jsx"]
     MAIN --> STORIES_TAB["📝 Story Bank\nStoryBank.jsx"]
     MAIN --> BOARD_TAB["🏗️ Arch Board\nArchBoard.jsx"]
-    MAIN --> CONTACTS_TAB["👥 Contacts\nContacts.jsx"]
+    MAIN --> QUEST_TAB["🗺️ Quest\nQuest.tsx"]
     MAIN --> PROFILE_TAB["👤 Profile\nProfile.tsx"]
 
     subgraph SHARED_COMPONENTS ["Shared Web Components"]
@@ -115,7 +115,7 @@ graph TD
     LAYOUT --> IDX["🎯 index.tsx\nQuiz / Drill"]
     LAYOUT --> STORIES_M["📝 stories.tsx\nStory Bank"]
     LAYOUT --> BOARD_M["🏗️ board.tsx\nArch Board"]
-    LAYOUT --> CONTACTS_M["👥 contacts.tsx\nHiring Pipeline"]
+    LAYOUT --> QUEST_M["🗺️ quest.tsx\nHiring Pipeline"]
     LAYOUT --> PROFILE_M["👤 profile.tsx\nProfile Form"]
 
     subgraph MOBILE_LIB ["lib/"]
@@ -148,7 +148,7 @@ graph LR
     subgraph API_METHODS ["createApi(supabase) — 23+ methods"]
         direction TB
         Q["Quiz\ngetQuestions()\nrecordAnswer()\ngetScores()\naddXp()\nresetScores()"]
-        C["Contacts\nlistContacts()\nupsertContact()\ndeleteContact()\naddRetro()\ndeleteRetro()"]
+        C["Quest contact data\nlistContacts()\nupsertContact()\ndeleteContact()\naddRetro()\ndeleteRetro()"]
         S["Stories\nlistStories()\nupsertStory()\ndeleteStory()"]
         B["Boards\nlistBoards()\nupsertBoard()\ndeleteBoard()"]
         SC["Scenarios\nlistCustomScenarios()\nupsertCustomScenario()\ndeleteCustomScenario()"]

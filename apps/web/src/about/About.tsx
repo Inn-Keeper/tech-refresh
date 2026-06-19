@@ -120,11 +120,11 @@ const FEATURES: Omit<FeatureCardProps, "index" | "onNavigate">[] = [
     bulletKeys: ["about.board.b1", "about.board.b2", "about.board.b3", "about.board.b4", "about.board.b5"],
   },
   {
-    icon: "contact",
+    icon: "quest",
     color: "#38BDF8",
     titleKey: "about.quest.title",
     taglineKey: "about.quest.tagline",
-    page: "contacts",
+    page: "quest",
     bulletKeys: ["about.quest.b1", "about.quest.b2", "about.quest.b3", "about.quest.b4", "about.quest.b5"],
   },
   {
