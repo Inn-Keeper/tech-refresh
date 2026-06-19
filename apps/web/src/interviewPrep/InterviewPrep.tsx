@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
 import { buildGithubTechCategory, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
+import { mergeTechSignals } from "@tech-refresh/core/cvTechs";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
@@ -95,14 +96,9 @@ export default function InterviewPrep() {
   );
 
   // CV techs (string[], saved on the profile) join GitHub signals into one
-  // "from your profile" category. Dedupe by tech, keeping the higher score.
+  // "from your profile" category — merge/dedupe logic lives in core.
   const cvTechs = profile?.cvTechs ?? [];
-  const signalByTech = new Map<string, number>();
-  for (const { tech, score } of githubTechs) signalByTech.set(tech, score);
-  cvTechs.forEach((tech, i) => {
-    signalByTech.set(tech, Math.max(signalByTech.get(tech) ?? 0, cvTechs.length - i));
-  });
-  const combinedSignals = [...signalByTech.entries()].map(([tech, score]) => ({ tech, score }));
+  const combinedSignals = mergeTechSignals(githubTechs, cvTechs);
 
   const techCategoryLabel =
     cvTechs.length && githubTechs.length

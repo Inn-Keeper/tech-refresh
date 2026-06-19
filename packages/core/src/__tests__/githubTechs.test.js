@@ -36,4 +36,13 @@ describe("GitHub tech helpers", () => {
     expect(buildGithubTechCategory([{ tech: "TypeScript" }], [])).toBeNull();
     expect(buildGithubTechCategory([{ tech: "TypeScript" }], [{ tech: "Rust", score: 20 }])).toBeNull();
   });
+
+  it("allows the category name/emoji to be overridden (CV vs GitHub source)", () => {
+    const category = buildGithubTechCategory(
+      [{ tech: "Docker" }],
+      [{ tech: "Docker", score: 1 }],
+      { name: "From your CV", emoji: "📄" }
+    );
+    expect(category).toMatchObject({ name: "From your CV", emoji: "📄" });
+  });
 });

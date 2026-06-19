@@ -1,4 +1,4 @@
-import { extractTechsFromText } from "../cvTechs.js";
+import { extractTechsFromText, mergeTechSignals } from "../cvTechs.js";
 
 const KNOWN = ["React", "TypeScript", "Node.js", "C++", "Java", "Material UI", "Go"];
 
@@ -35,5 +35,33 @@ describe("extractTechsFromText", () => {
     expect(extractTechsFromText("I write COBOL", KNOWN)).toEqual([]);
     expect(extractTechsFromText("", KNOWN)).toEqual([]);
     expect(extractTechsFromText("React everywhere", [])).toEqual([]);
+  });
+});
+
+describe("mergeTechSignals", () => {
+  it("ranks CV techs by order (earlier = higher score)", () => {
+    expect(mergeTechSignals([], ["React", "Go", "Java"])).toEqual([
+      { tech: "React", score: 3 },
+      { tech: "Go", score: 2 },
+      { tech: "Java", score: 1 },
+    ]);
+  });
+
+  it("dedupes across sources, keeping the higher score", () => {
+    // GitHub gives React a large byte-score; CV order would only give it 2.
+    const merged = mergeTechSignals([{ tech: "React", score: 5000 }], ["Go", "React"]);
+    expect(merged).toContainEqual({ tech: "React", score: 5000 });
+    expect(merged).toContainEqual({ tech: "Go", score: 2 });
+    expect(merged.filter((s) => s.tech === "React")).toHaveLength(1);
+  });
+
+  it("passes GitHub signals through untouched when there's no CV", () => {
+    const github = [{ tech: "TypeScript", score: 900 }];
+    expect(mergeTechSignals(github, [])).toEqual(github);
+  });
+
+  it("handles nullish inputs", () => {
+    expect(mergeTechSignals(null, null)).toEqual([]);
+    expect(mergeTechSignals(undefined, ["Go"])).toEqual([{ tech: "Go", score: 1 }]);
   });
 });

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
 import { buildGithubTechCategory, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
+import { mergeTechSignals } from "@tech-refresh/core/cvTechs";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
@@ -86,14 +87,9 @@ export default function PrepScreen() {
     c.items.map((item) => ({ ...item, category: c.name, color: c.color, emoji: c.emoji }))
   );
   // CV techs (string[], saved on the profile) join GitHub signals into one
-  // "from your profile" category. Dedupe by tech, keeping the higher score.
+  // "from your profile" category — merge/dedupe logic lives in core.
   const cvTechs = profile?.cvTechs ?? [];
-  const signalByTech = new Map<string, number>();
-  for (const { tech, score } of githubTechs) signalByTech.set(tech, score);
-  cvTechs.forEach((tech: string, i: number) => {
-    signalByTech.set(tech, Math.max(signalByTech.get(tech) ?? 0, cvTechs.length - i));
-  });
-  const combinedSignals = [...signalByTech.entries()].map(([tech, score]) => ({ tech, score }));
+  const combinedSignals = mergeTechSignals(githubTechs, cvTechs);
 
   const techCategoryLabel =
     cvTechs.length && githubTechs.length

@@ -35,3 +35,23 @@ export function extractTechsFromText(text, knownTechs, limit = 12) {
     .slice(0, limit)
     .map(([tech, score]) => ({ tech, score }));
 }
+
+/**
+ * Merges GitHub tech signals ({ tech, score }[]) with CV techs (string[]) into a
+ * single deduped signal list for buildGithubTechCategory. Shared by web and
+ * mobile so the prep-personalization logic lives in one place. CV techs have no
+ * intrinsic score, so rank by their order (earlier = stronger); when a tech
+ * appears in both sources, keep the higher score.
+ * @param {{ tech: string, score: number }[]} githubTechs
+ * @param {string[]} cvTechs
+ * @returns {{ tech: string, score: number }[]}
+ */
+export function mergeTechSignals(githubTechs, cvTechs) {
+  const byTech = new Map();
+  for (const { tech, score } of githubTechs ?? []) byTech.set(tech, score);
+  const cv = cvTechs ?? [];
+  cv.forEach((tech, i) => {
+    byTech.set(tech, Math.max(byTech.get(tech) ?? 0, cv.length - i));
+  });
+  return [...byTech.entries()].map(([tech, score]) => ({ tech, score }));
+}

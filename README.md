@@ -16,6 +16,7 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 ### **Prep** tab
 - Quiz cards for 50+ technologies across languages, frontend/mobile, backend, cloud, monitoring, AI, testing, mobile delivery, and databases/CRM
 - Difficulty-aware drills targeting your weakest techs
+- Personalized to your stack: techs detected from your CV and/or GitHub surface as a dedicated prep category
 - Gamified XP and ranks (Intern → Principal)
 - Accuracy timeline: track your growth over time
 
@@ -40,6 +41,7 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 ### **Profile** tab
 - Private profile settings aligned with Supabase Auth
 - Optional identity, goals, location, timezone, and portfolio/social links
+- Import techs from your CV (web: drag-drop or button, PDF/TXT; mobile: button, TXT) to personalize Prep — the CV is parsed in-browser/on-device and never stored, only the detected techs are saved
 - Score reset for local practice data
 
 ## Screenshots
@@ -115,7 +117,6 @@ grip/
 │   └── capture-web-screenshots.mjs
 ├── DESIGN.md                   # Design system & token reference
 ├── PLAN.md                     # Phases, decisions, study-case map
-├── CV-UPLOAD-PLAN.md           # CV extraction & tech filtering roadmap
 ├── package.json                # Workspace root
 ├── pnpm-workspace.yaml         # Monorepo config
 └── pnpm-lock.yaml              # Locked deps (pnpm@10.6.5)
@@ -158,10 +159,13 @@ node scripts/seed-questions.mjs
 
 ```bash
 # Start web dev server (Vite)
-pnpm dev
+pnpm dev                    # alias of dev:web
 
-# Start mobile dev server (Expo Go via LAN)
-pnpm mobile
+# Start mobile dev server (Expo Go / Metro via LAN)
+pnpm dev:mobile
+
+# Mobile native dev client (after a native build — Skia, document picker)
+pnpm dev:mobile:client
 
 # Run all tests
 pnpm test
@@ -172,12 +176,17 @@ pnpm typecheck
 # CI (lint + test + typecheck + build)
 pnpm run ci
 
-# Run iOS simulator (native dev client, Skia support)
-pnpm exec expo run:ios
+# Build + run on iOS simulator (sweeps macOS ._* junk, UTF-8 locale)
+pnpm dev:mobile:ios
 
-# Run Android emulator
-pnpm exec expo run:android
+# Build + run on Android emulator
+pnpm dev:mobile:android
 ```
+
+> Run everything from the repo root. The vocabulary is `dev:web` / `dev:mobile` /
+> `dev:mobile:client` / `dev:mobile:ios` / `dev:mobile:android`, plus `build`,
+> `preview`, and `build:mobile:ios`. Rarely-used package scripts are reachable via
+> `pnpm --filter <web|mobile> <script>` without changing directories.
 
 ### Capture Web Screenshots
 
@@ -291,7 +300,7 @@ status_events(
 
 ## Testing
 
-### Core package (Jest, 102 tests)
+### Core package (Jest, 127 tests)
 ```bash
 pnpm --filter @tech-refresh/core test
 ```
@@ -300,6 +309,7 @@ Tests cover:
 - Arch evaluator, 100-scenario data checks, warnings, and edge detection
 - Date rules (DD-MM-YYYY parsing, due highlighting)
 - Funnel analytics (conversion rates, pace)
+- CV tech extraction (vocabulary matching, word boundaries, special chars) and GitHub tech mapping
 - Profile form mapping and API layer (mocked Supabase client)
 
 ### Mobile (RNTL, 7 tests)
@@ -390,10 +400,9 @@ When adding features:
 
 1. [DESIGN.md](DESIGN.md) — Visual identity and token reference
 2. [PLAN.md](PLAN.md) — Architecture decisions and phases
-3. [CV-UPLOAD-PLAN.md](CV-UPLOAD-PLAN.md) — CV extraction & tech filtering (in progress)
-4. [packages/core/src/tokens.js](packages/core/src/tokens.js) — Design system
-5. [packages/core/src/api.js](packages/core/src/api.js) — Data layer entry point
-6. [apps/mobile/src/app/_layout.tsx](apps/mobile/src/app/_layout.tsx) — Mobile routing
+3. [packages/core/src/tokens.js](packages/core/src/tokens.js) — Design system
+4. [packages/core/src/api.js](packages/core/src/api.js) — Data layer entry point
+5. [apps/mobile/src/app/_layout.tsx](apps/mobile/src/app/_layout.tsx) — Mobile routing
 
 ## License
 
@@ -402,5 +411,5 @@ MIT (personal project, open sourced for learning).
 ---
 
 **Last updated:** June 17, 2026<br>
-**Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked); pipeline analytics live; CV upload planned<br>
+**Status:** Phase 5 in progress (polish & delivery; EAS/OTA parked); pipeline analytics live; CV tech import shipped (web + mobile)<br>
 **Committed:** All phases 0-4 complete; 100+ tests; consolidated CI; refreshed web screenshots; pipeline service integrated (velocity/due)
