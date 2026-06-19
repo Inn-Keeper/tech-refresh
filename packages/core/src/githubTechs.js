@@ -62,8 +62,8 @@ export function buildGithubTechCategory(items, techSignals, options = {}) {
   if (!matched.length) return null;
 
   return {
-    name: "From GitHub techs",
-    emoji: "⌁",
+    name: options.name ?? "From GitHub techs",
+    emoji: options.emoji ?? "⌁",
     color,
     items: matched,
     source: "github",

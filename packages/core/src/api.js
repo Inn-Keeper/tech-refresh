@@ -82,6 +82,7 @@ const QUESTION_FETCH_CAP = 500;
  * @property {string} portfolioUrl
  * @property {string} githubUrl
  * @property {boolean} useGithubTechsForPrep
+ * @property {string[]} cvTechs
  * @property {string} linkedinUrl
  * @property {string} timezone
  * @property {boolean} onboardingCompleted
@@ -453,6 +454,7 @@ export function createApi(supabase) {
       portfolioUrl: row?.portfolio_url ?? "",
       githubUrl: row?.github_url ?? (githubUsername ? `https://github.com/${githubUsername}` : ""),
       useGithubTechsForPrep: row?.use_github_techs_for_prep ?? false,
+      cvTechs: row?.cv_techs ?? [],
       linkedinUrl: row?.linkedin_url ?? "",
       timezone: row?.timezone ?? "",
       onboardingCompleted: row?.onboarding_completed ?? false,
@@ -480,6 +482,7 @@ export function createApi(supabase) {
     }
     if ("onboardingCompleted" in profile) row.onboarding_completed = profile.onboardingCompleted ?? false;
     if ("useGithubTechsForPrep" in profile) row.use_github_techs_for_prep = profile.useGithubTechsForPrep ?? false;
+    if ("cvTechs" in profile) row.cv_techs = profile.cvTechs ?? [];
     return row;
   };
 

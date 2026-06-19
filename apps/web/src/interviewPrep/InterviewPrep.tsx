@@ -93,7 +93,27 @@ export default function InterviewPrep() {
   const allItems = categories.flatMap((c) =>
     c.items.map((item) => ({ ...item, category: c.name, color: c.color, emoji: c.emoji }))
   );
-  const githubCategory = buildGithubTechCategory(allItems, githubTechs, { color: colors.accentBright });
+
+  // CV techs (string[], saved on the profile) join GitHub signals into one
+  // "from your profile" category. Dedupe by tech, keeping the higher score.
+  const cvTechs = profile?.cvTechs ?? [];
+  const signalByTech = new Map<string, number>();
+  for (const { tech, score } of githubTechs) signalByTech.set(tech, score);
+  cvTechs.forEach((tech, i) => {
+    signalByTech.set(tech, Math.max(signalByTech.get(tech) ?? 0, cvTechs.length - i));
+  });
+  const combinedSignals = [...signalByTech.entries()].map(([tech, score]) => ({ tech, score }));
+
+  const techCategoryLabel =
+    cvTechs.length && githubTechs.length
+      ? t("prep.profileTechsCategory")
+      : cvTechs.length
+        ? t("prep.cvTechsCategory")
+        : undefined; // undefined -> keep the GitHub default in core
+  const githubCategory = buildGithubTechCategory(allItems, combinedSignals, {
+    color: colors.accentBright,
+    name: techCategoryLabel,
+  });
   const displayCategories = githubCategory ? [githubCategory, ...categories] : categories;
 
   const filtered = search.trim()

@@ -15,8 +15,10 @@ import {
   useLinkGitHubMutation,
   useProfileQuery,
   useResetScoresMutation,
+  useSaveCvTechsMutation,
   useSaveProfileMutation,
 } from "@/queries/profile";
+import { CvImportError, importCvTechs } from "@/lib/cvImport";
 
 type ProfileForm = Record<string, string>;
 
@@ -37,7 +39,19 @@ export default function ProfileScreen() {
   const saveMutation = useSaveProfileMutation();
   const linkGitHubMutation = useLinkGitHubMutation();
   const githubPrepMutation = useGithubPrepMutation(profile, displayGithubUrl);
+  const cvTechsMutation = useSaveCvTechsMutation();
   const resetMutation = useResetScoresMutation(profile);
+
+  const onImportCv = async () => {
+    try {
+      const result = await importCvTechs();
+      if (result.kind === "techs") cvTechsMutation.mutate(result.techs);
+      else if (result.kind === "empty") Alert.alert(t("profile.cvSection"), t("profile.cvNoTechs"));
+      else if (result.kind === "pdf-unsupported") Alert.alert(t("profile.cvSection"), t("profile.cvPdfMobile"));
+    } catch (err) {
+      Alert.alert(t("profile.cvSection"), err instanceof CvImportError ? t("profile.cvReadError") : t("profile.cvReadError"));
+    }
+  };
 
   useEffect(() => {
     if (!profile) return;
@@ -178,6 +192,45 @@ export default function ProfileScreen() {
               onChange={(checked) => githubPrepMutation.mutate(checked)}
             />
           </View>
+        </View>
+
+        <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: space.lg, gap: space.md }}>
+          <Text style={{ color: colors.textBright, fontSize: font.size.title, fontWeight: "800" }}>{t("profile.cvSection")}</Text>
+          <Text style={{ color: colors.textFaint, fontSize: font.size.small, lineHeight: 18 }}>
+            {t("profile.cvSubtitleMobile")}
+          </Text>
+          <Button
+            label={cvTechsMutation.isPending ? t("profile.cvReading") : t("profile.cvImportButton")}
+            onPress={onImportCv}
+            disabled={cvTechsMutation.isPending || !profile}
+          />
+          {!!profile?.cvTechs?.length && (
+            <View style={{ gap: space.sm }}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Text style={{ color: colors.textBright, fontSize: font.size.small, fontWeight: "800" }}>{t("profile.cvDetected")}</Text>
+                <TouchableOpacity onPress={() => cvTechsMutation.mutate([])} disabled={cvTechsMutation.isPending}>
+                  <Text style={{ color: colors.textFaint, fontSize: font.size.small, fontWeight: "700" }}>{t("profile.cvClear")}</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
+                {profile.cvTechs.map((tech) => (
+                  <View
+                    key={tech}
+                    style={{
+                      paddingHorizontal: space.md,
+                      paddingVertical: space.xs,
+                      borderRadius: radius.pill,
+                      backgroundColor: tints.accentSoft,
+                      borderWidth: 1,
+                      borderColor: colors.accent,
+                    }}
+                  >
+                    <Text style={{ color: colors.accentBright, fontSize: font.size.small, fontWeight: "700" }}>{tech}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
         </View>
 
         <View style={{ backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: space.lg, gap: space.md }}>

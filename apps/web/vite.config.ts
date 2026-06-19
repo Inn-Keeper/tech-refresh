@@ -5,6 +5,11 @@ export default defineConfig({
   build: {
     target: "es2022",
   },
+  optimizeDeps: {
+    esbuildOptions: {
+      target: "es2022",
+    },
+  },
   plugins: [react()],
   server: {
     // Serve index.html for all routes so direct navigation to /prep etc. works.

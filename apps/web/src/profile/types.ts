@@ -16,6 +16,7 @@ export type ProfileRecord = {
   xp?: number;
   githubUrl?: string;
   useGithubTechsForPrep?: boolean;
+  cvTechs?: string[];
 };
 
 export type Rank = { name: string; min: number };

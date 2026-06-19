@@ -3,24 +3,33 @@ import { PROFILE_FIELDS } from "@tech-refresh/core/user";
 import { colors, layout, tints } from "@tech-refresh/core/tokens";
 import { t } from "@tech-refresh/core/i18n";
 import { Field } from "./shared";
+import { CvUpload } from "./CvUpload";
 import { inputStyle } from "./styles";
 import type { ProfileForm, ProfileRecord } from "./types";
 
 export function ProfileFormSection({
+  cvTechs,
+  cvPending,
   error,
   form,
   githubLinked,
   isLoading,
+  onClearCvTechs,
+  onCvTechsExtracted,
   onSave,
   onSetField,
   profile,
   savePending,
   saveSuccess,
 }: {
+  cvTechs: string[];
+  cvPending: boolean;
   error: Error | null;
   form: ProfileForm;
   githubLinked: boolean;
   isLoading: boolean;
+  onClearCvTechs: () => void;
+  onCvTechsExtracted: (techs: string[]) => void;
   onSave: (event: React.FormEvent) => void;
   onSetField: (key: string) => (event: React.ChangeEvent<HTMLInputElement>) => void;
   profile: ProfileRecord | null;
@@ -137,6 +146,14 @@ export function ProfileFormSection({
             </button>
           </div>
         </form>
+
+        <CvUpload
+          cvTechs={cvTechs}
+          disabled={!profile}
+          pending={cvPending}
+          onTechsExtracted={onCvTechsExtracted}
+          onClear={onClearCvTechs}
+        />
       </div>
     </section>
   );

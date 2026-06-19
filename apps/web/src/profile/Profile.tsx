@@ -16,6 +16,7 @@ import {
   useLinkGitHubMutation,
   useProfileQuery,
   useResetScoresMutation,
+  useSaveCvTechsMutation,
   useSaveGithubUrlMutation,
   useSaveProfileMutation,
 } from "./queries";
@@ -60,6 +61,7 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSi
   const saveMutation = useSaveProfileMutation();
   const saveGithubUrlMutation = useSaveGithubUrlMutation();
   const githubPrepMutation = useGithubPrepMutation();
+  const cvTechsMutation = useSaveCvTechsMutation();
   const resetMutation = useResetScoresMutation(profile);
   const linkGitHubMutation = useLinkGitHubMutation();
 
@@ -114,6 +116,7 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSi
     saveMutation.error ||
     saveGithubUrlMutation.error ||
     githubPrepMutation.error ||
+    cvTechsMutation.error ||
     resetMutation.error ||
     linkGitHubMutation.error) as Error | null;
   const completionItems = PROFILE_FIELDS.filter((field) => (form[field.key] ?? "").trim()).length;
@@ -151,10 +154,14 @@ export default function Profile({ githubLinked = false, onGitHubLinkedSeen, onSi
         resetSuccess={resetMutation.isSuccess}
       />
       <ProfileFormSection
+        cvTechs={profile?.cvTechs ?? []}
+        cvPending={cvTechsMutation.isPending}
         error={error}
         form={form}
         githubLinked={githubLinked}
         isLoading={isLoading}
+        onClearCvTechs={() => cvTechsMutation.mutate([])}
+        onCvTechsExtracted={(techs) => cvTechsMutation.mutate(techs)}
         onSave={save}
         onSetField={set}
         profile={profile}
