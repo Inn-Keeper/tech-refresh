@@ -218,6 +218,7 @@ describe("createApi", () => {
         scenarioId: "payment",
         nodes: [{ id: "n1", type: "client", x: 0, y: 0 }],
         edges: [],
+        shareToken: null,
         createdAt: "2026-01-01",
         updatedAt: "2026-01-02",
       },
@@ -330,5 +331,78 @@ describe("createApi", () => {
     const api = createApi(client);
 
     await expect(api.getQuestions({ techs: [], difficulty: "mid" })).resolves.toEqual([]);
+  });
+
+  it("round-trips posting techs and retro struggle tags on contacts", async () => {
+    const { client, calls } = fakeSupabase({
+      contacts: [
+        {
+          id: "c1",
+          name: "Acme",
+          status: "Interviewing",
+          posting_techs: ["React", "Docker"],
+          retros: [
+            { id: "r1", round: "Tech round", struggled_techs: ["Docker"], date: "2026-07-01", created_at: "2026-07-01" },
+          ],
+        },
+      ],
+    });
+    const api = createApi(client);
+
+    const [contact] = await api.listContacts();
+    expect(contact.postingTechs).toEqual(["React", "Docker"]);
+    expect(contact.retros[0].struggledTechs).toEqual(["Docker"]);
+
+    await api.upsertContact({ name: "Acme", status: "Interviewing", postingTechs: ["React"] });
+    expect(calls.inserts[0].rows.posting_techs).toEqual(["React"]);
+
+    await api.addRetro("c1", { round: "Round 2", struggledTechs: ["Kubernetes"] });
+    expect(calls.inserts[1].rows.struggled_techs).toEqual(["Kubernetes"]);
+  });
+
+  it("builds the review queue from answer events", async () => {
+    const { client } = fakeSupabase({
+      answer_events: [{ tech: "React", correct: true, created_at: "2026-01-01T10:00:00Z" }],
+    });
+    const api = createApi(client);
+
+    const queue = await api.getReviewQueue();
+    expect(queue).toEqual([expect.objectContaining({ tech: "React", streak: 1, due: true })]);
+  });
+
+  it("toggles board sharing through the RPC and maps the token", async () => {
+    const { client, calls } = fakeSupabase();
+    const api = createApi(client);
+
+    await api.setBoardSharing("board-1", true);
+    expect(calls.rpcs).toEqual([{ fn: "set_board_sharing", args: { board_id: "board-1", enable: true } }]);
+  });
+
+  it("reads a shared board by token and maps it to the UI shape", async () => {
+    const { client, calls } = fakeSupabase();
+    client.rpc = async (fn, args) => {
+      calls.rpcs.push({ fn, args });
+      return {
+        data: [{ title: "Payment draft", scenario_id: "payment", nodes: [], edges: [], updated_at: "2026-07-01" }],
+        error: null,
+      };
+    };
+    const api = createApi(client);
+
+    await expect(api.getSharedBoard("token-1")).resolves.toEqual({
+      title: "Payment draft",
+      scenarioId: "payment",
+      nodes: [],
+      edges: [],
+      updatedAt: "2026-07-01",
+    });
+    expect(calls.rpcs).toEqual([{ fn: "get_shared_board", args: { token: "token-1" } }]);
+  });
+
+  it("returns null for an unknown share token", async () => {
+    const { client } = fakeSupabase();
+    const api = createApi(client);
+
+    await expect(api.getSharedBoard("nope")).resolves.toBeNull();
   });
 });

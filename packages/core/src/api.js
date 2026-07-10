@@ -1,6 +1,7 @@
 // Data layer: Supabase queries + snake_case<->camelCase and date mapping.
 // UI keeps DD-MM-YYYY strings; Postgres stores real dates.
 import { buildAccuracyTimeline } from "./accuracy.js";
+import { buildReviewQueue } from "./review.js";
 import { CORRECT_XP } from "./gamification.js";
 import { difficultyByKey } from "./difficulty.js";
 import { shuffle } from "./quiz.js";
@@ -17,6 +18,7 @@ const QUESTION_FETCH_CAP = 500;
  * @property {string} questions
  * @property {string} wentWell
  * @property {string} toImprove
+ * @property {string[]} struggledTechs
  * @property {string} date
  */
 
@@ -31,6 +33,7 @@ const QUESTION_FETCH_CAP = 500;
  * @property {string} date
  * @property {string} nextAction
  * @property {string} nextActionDate
+ * @property {string[]} postingTechs
  * @property {Retro[]} [retros]
  */
 
@@ -66,6 +69,7 @@ const QUESTION_FETCH_CAP = 500;
  * @property {string} scenarioId
  * @property {import("./arch.js").BoardNode[]} nodes
  * @property {import("./arch.js").BoardEdge[]} edges
+ * @property {string | null} [shareToken]
  * @property {string} [createdAt]
  * @property {string} [updatedAt]
  */
@@ -123,6 +127,7 @@ const fail = (error) => {
  *   deleteStory(id: string | undefined): Promise<void>,
  *   getScores(): Promise<Scores>,
  *   getAccuracyTimeline(): Promise<AccuracyPoint[]>,
+ *   getReviewQueue(): Promise<import("./review.js").ReviewEntry[]>,
  *   getQuestions(args: { techs: string[], difficulty: string, limit?: number }): Promise<{ id: string, tech: string, category: string, difficulty: string, prompt: string, options: string[], correct: number, explanation: string | null }[]>,
  *   recordAnswer(tech: string, correct: boolean, source?: string, difficulty?: string | null): Promise<void>,
  *   addXp(points: number): Promise<void>,
@@ -130,6 +135,8 @@ const fail = (error) => {
  *   listBoards(): Promise<SavedBoard[]>,
  *   upsertBoard(board: SavedBoard): Promise<SavedBoard>,
  *   deleteBoard(id: string | undefined): Promise<void>,
+ *   setBoardSharing(id: string, enable: boolean): Promise<string | null>,
+ *   getSharedBoard(token: string): Promise<{ title: string, scenarioId: string, nodes: import("./arch.js").BoardNode[], edges: import("./arch.js").BoardEdge[], updatedAt: string } | null>,
  *   listCustomScenarios(): Promise<{ id: string, name: string, brief: string, budget: number, checks: object[] }[]>,
  *   upsertCustomScenario(s: object): Promise<object>,
  *   deleteCustomScenario(id: string): Promise<void>,
@@ -151,6 +158,7 @@ export function createApi(supabase) {
     date: dateToUi(r.date),
     nextAction: r.next_action ?? "",
     nextActionDate: dateToUi(r.next_action_date),
+    postingTechs: r.posting_techs ?? [],
     retros: (r.retros ?? [])
       .sort((a, b) => a.created_at.localeCompare(b.created_at))
       .map((x) => ({
@@ -159,6 +167,7 @@ export function createApi(supabase) {
         questions: x.questions ?? "",
         wentWell: x.went_well ?? "",
         toImprove: x.to_improve ?? "",
+        struggledTechs: x.struggled_techs ?? [],
         date: dateToUi(x.date),
       })),
   });
@@ -172,6 +181,7 @@ export function createApi(supabase) {
     date: dateToDb(c.date),
     next_action: c.nextAction || null,
     next_action_date: dateToDb(c.nextActionDate),
+    posting_techs: c.postingTechs ?? [],
   });
 
   async function listContacts() {
@@ -204,6 +214,7 @@ export function createApi(supabase) {
       questions: retro.questions || null,
       went_well: retro.wentWell || null,
       to_improve: retro.toImprove || null,
+      struggled_techs: retro.struggledTechs ?? [],
     });
     if (error) fail(error);
   }
@@ -262,6 +273,7 @@ export function createApi(supabase) {
     scenarioId: r.scenario_id,
     nodes: r.nodes ?? [],
     edges: r.edges ?? [],
+    shareToken: r.share_token ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   });
@@ -292,6 +304,38 @@ export function createApi(supabase) {
   async function deleteBoard(id) {
     const { error } = await supabase.from("arch_boards").delete().eq("id", id);
     if (error) fail(error);
+  }
+
+  /**
+   * Enables or revokes a board's public share link.
+   * @param {string} id
+   * @param {boolean} enable
+   * @returns {Promise<string | null>} the share token when enabled, null when revoked
+   */
+  async function setBoardSharing(id, enable) {
+    const { data, error } = await supabase.rpc("set_board_sharing", { board_id: id, enable });
+    if (error) fail(error);
+    return data ?? null;
+  }
+
+  /**
+   * Reads a shared board by its token — works signed out (token-scoped RPC,
+   * no open select policy on arch_boards).
+   * @param {string} token
+   * @returns {Promise<{ title: string, scenarioId: string, nodes: object[], edges: object[], updatedAt: string } | null>}
+   */
+  async function getSharedBoard(token) {
+    const { data, error } = await supabase.rpc("get_shared_board", { token });
+    if (error) fail(error);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return null;
+    return {
+      title: row.title,
+      scenarioId: row.scenario_id,
+      nodes: row.nodes ?? [],
+      edges: row.edges ?? [],
+      updatedAt: row.updated_at,
+    };
   }
 
   // ── custom scenarios ──────────────────────────────────────────────────────────
@@ -368,6 +412,16 @@ export function createApi(supabase) {
       .order("created_at");
     if (error) fail(error);
     return buildAccuracyTimeline(data);
+  }
+
+  /** Spaced-review schedule derived from answer_events. */
+  async function getReviewQueue() {
+    const { data, error } = await supabase
+      .from("answer_events")
+      .select("tech, correct, created_at")
+      .order("created_at");
+    if (error) fail(error);
+    return buildReviewQueue(data);
   }
 
   /**
@@ -511,5 +565,5 @@ export function createApi(supabase) {
     return profileToUi(data, auth.data.user);
   }
 
-  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, listCustomScenarios, upsertCustomScenario, deleteCustomScenario, listStatusEvents, getScores, getAccuracyTimeline, getQuestions, recordAnswer, addXp, resetScores, getUser, updateProfile };
+  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, setBoardSharing, getSharedBoard, listCustomScenarios, upsertCustomScenario, deleteCustomScenario, listStatusEvents, getScores, getAccuracyTimeline, getReviewQueue, getQuestions, recordAnswer, addXp, resetScores, getUser, updateProfile };
 }
