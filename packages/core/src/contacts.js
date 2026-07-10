@@ -77,6 +77,24 @@ export function parseDDMMYYYY(s) {
   return new Date(y, m - 1, d);
 }
 
+/**
+ * Techs flagged as interview struggles across the most recent retros, newest
+ * first, deduped. Feeds drill weighting: what tripped you up in a real
+ * interview outranks quiz accuracy.
+ * @param {{ retros?: { date: string, struggledTechs?: string[] }[] }[]} contacts
+ * @param {{ maxRetros?: number }} [opts] how many recent tagged retros to consider
+ * @returns {string[]}
+ */
+export function recentStruggledTechs(contacts, { maxRetros = 5 } = {}) {
+  const tagged = contacts
+    .flatMap((c) => c.retros ?? [])
+    .filter((r) => r.struggledTechs?.length)
+    .sort(
+      (a, b) => (parseDDMMYYYY(b.date)?.getTime() ?? 0) - (parseDDMMYYYY(a.date)?.getTime() ?? 0)
+    );
+  return [...new Set(tagged.slice(0, maxRetros).flatMap((r) => r.struggledTechs))];
+}
+
 // A contact needs attention when its next action is due today or overdue.
 export function isDue(contact) {
   const due = parseDDMMYYYY(contact.nextActionDate);

@@ -100,6 +100,17 @@ describe("selectDrillTechs", () => {
     expect(techs[0]).toBe("t1");
     expect(new Set(techs).size).toBe(4); // no repeats
   });
+
+  it("puts boosted techs ahead of the accuracy ordering", () => {
+    const answers = {
+      t1: { correct: 0, wrong: 3 }, // 0% — normally first
+      t3: { correct: 3, wrong: 0 }, // 100% — but flagged as an interview struggle
+    };
+    const techs = selectDrillTechs(categories, answers, { techCount: 3, boost: ["t3", "t5"] });
+    expect(techs[0]).toBe("t3");
+    expect(techs[1]).toBe("t1");
+    expect(techs[2]).toBe("t5"); // boosted unattempted leads the padding
+  });
 });
 
 describe("buildDrillFromQuestions", () => {

@@ -1,4 +1,4 @@
-import { isDue, parseDDMMYYYY, todayDDMMYYYY } from "../contacts.js";
+import { isDue, parseDDMMYYYY, recentStruggledTechs, todayDDMMYYYY } from "../contacts.js";
 
 const toDDMMYYYY = (date) => {
   const pad = (n) => String(n).padStart(2, "0");
@@ -58,5 +58,28 @@ describe("isDue", () => {
 
   it("is never due without a date", () => {
     expect(isDue(contact())).toBe(false);
+  });
+});
+
+describe("recentStruggledTechs", () => {
+  it("dedupes techs from the newest tagged retros across contacts", () => {
+    const contacts = [
+      { retros: [{ date: "01-06-2026", struggledTechs: ["React", "Docker"] }] },
+      { retros: [{ date: "05-06-2026", struggledTechs: ["Docker", "Kubernetes"] }, { date: "02-06-2026" }] },
+    ];
+    expect(recentStruggledTechs(contacts)).toEqual(["Docker", "Kubernetes", "React"]);
+  });
+
+  it("only considers the most recent tagged retros", () => {
+    const retros = ["05", "04", "03", "02", "01"].map((d) => ({
+      date: `${d}-06-2026`,
+      struggledTechs: [`tech-${d}`],
+    }));
+    const techs = recentStruggledTechs([{ retros }], { maxRetros: 2 });
+    expect(techs).toEqual(["tech-05", "tech-04"]);
+  });
+
+  it("handles contacts without retros or tags", () => {
+    expect(recentStruggledTechs([{}, { retros: [{ date: "01-01-2026" }] }])).toEqual([]);
   });
 });

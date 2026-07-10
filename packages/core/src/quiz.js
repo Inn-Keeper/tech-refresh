@@ -24,18 +24,30 @@ export function shuffleOptions(question) {
 
 // Picks the techs a drill should focus on: weakest attempted first (lowest
 // accuracy), padded with never-attempted techs when there isn't enough data.
+// `boost` techs (e.g. flagged as struggles in an interview retro) jump the
+// accuracy ordering entirely — real-interview signal beats quiz accuracy.
 // Pure and synchronous — shared by the static flip-card drill and the
 // difficulty-tiered DB drill, which differ only in where they source questions.
-export function selectDrillTechs(categories, answers, { techCount = 5 } = {}) {
+/**
+ * @param {{ items: { tech: string }[] }[]} categories
+ * @param {Record<string, { correct: number, wrong: number }>} answers
+ * @param {{ techCount?: number, boost?: string[] }} [opts]
+ */
+export function selectDrillTechs(categories, answers, { techCount = 5, boost = [] } = {}) {
+  const boosted = new Set(boost);
+  const byBoostThenAcc = (a, b) =>
+    (boosted.has(b.tech) ? 1 : 0) - (boosted.has(a.tech) ? 1 : 0) || a.acc - b.acc;
   const allTechs = categories.flatMap((c) => c.items.map((item) => item.tech));
   const attempted = Object.entries(answers)
     .map(([tech, s]) => {
       const total = s.correct + s.wrong;
       return { tech, acc: total > 0 ? s.correct / total : 0 };
     })
-    .sort((a, b) => a.acc - b.acc)
+    .sort(byBoostThenAcc)
     .map((s) => s.tech);
-  const unattempted = shuffle(allTechs.filter((t) => !answers[t]));
+  const unattempted = shuffle(allTechs.filter((t) => !answers[t])).sort(
+    (a, b) => (boosted.has(b) ? 1 : 0) - (boosted.has(a) ? 1 : 0)
+  );
   return [...attempted, ...unattempted].slice(0, techCount);
 }
 
