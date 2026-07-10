@@ -10,6 +10,8 @@ const GITHUB_TECHS_STALE_MS = 1000 * 60 * 15;
 
 export const prepQueryKeys = {
   accuracyTimeline: ["accuracy-timeline"] as const,
+  reviewQueue: ["review-queue"] as const,
+  contacts: ["contacts"] as const, // shared with Quest — read here for retro struggle boosts
   profile: ["profile"] as const,
   githubTechs: (githubUsername: string) => ["github-techs", githubUsername] as const,
   tierQuestions: (difficulty: string, techs: string[]) => ["questions", "v2", difficulty, techs] as const,
@@ -22,6 +24,14 @@ export function useAccuracyTimelineQuery() {
 
 export function usePrepProfileQuery() {
   return useQuery({ queryKey: prepQueryKeys.profile, queryFn: api.getUser });
+}
+
+export function useReviewQueueQuery() {
+  return useQuery({ queryKey: prepQueryKeys.reviewQueue, queryFn: api.getReviewQueue });
+}
+
+export function usePrepContactsQuery() {
+  return useQuery({ queryKey: prepQueryKeys.contacts, queryFn: api.listContacts });
 }
 
 export function useGithubTechsQuery(githubUsername: string, allTechs: string[], enabled: boolean) {

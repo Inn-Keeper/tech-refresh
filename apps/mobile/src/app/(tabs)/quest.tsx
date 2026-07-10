@@ -21,6 +21,7 @@ import {
   useSaveContactMutation,
   useStatusEventsQuery,
 } from "@/queries/contacts";
+import { useScores } from "@/lib/useScores";
 
 export default function QuestScreen() {
   const locale = useLocale();
@@ -36,6 +37,7 @@ export default function QuestScreen() {
 
   const { data: statusEvents = [] } = useStatusEventsQuery();
   const { data: stories = [] } = useContactStoriesQuery();
+  const { scores } = useScores();
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
   const sorted = [...(contacts ?? [])].sort((a, b) => Number(isDue(b)) - Number(isDue(a)));
   const dueCount = funnel.due;
@@ -108,6 +110,7 @@ export default function QuestScreen() {
             <ContactCard
               contact={item}
               stories={stories}
+              answers={scores.answers}
               retroFormOpen={retroFor === item.id}
               onEdit={() => setEditing(item)}
               onDelete={() => confirmDelete(item)}

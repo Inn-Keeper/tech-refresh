@@ -5,6 +5,7 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { categories } from "@tech-refresh/core/prepData";
 import { buildGithubTechCategory, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { mergeTechSignals } from "@tech-refresh/core/cvTechs";
+import { recentStruggledTechs } from "@tech-refresh/core/contacts";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
@@ -13,7 +14,8 @@ import { DEFAULT_QUIZ_SIZE } from "@tech-refresh/core/quizPrefs";
 import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs } from "@tech-refresh/core/quiz";
 import { getQuizSize, setQuizSize } from "@/lib/quizPrefs";
 import { useScores } from "@/lib/useScores";
-import { colors, layout } from "@/theme";
+import { setPrepPlan, usePrepPlan } from "@/lib/uiStore";
+import { colors, layout, tints } from "@/theme";
 import { FlipCard } from "@/components/FlipCard";
 import { StatsBar } from "@/components/StatsBar";
 import { DifficultyPicker } from "@/components/DifficultyPicker";
@@ -26,8 +28,10 @@ import { categoryIconName } from "@/components/BrandIcon";
 import {
   useAccuracyTimelineQuery,
   useGithubTechsQuery,
+  usePrepContactsQuery,
   usePrepProfileQuery,
   usePrepQuestionFetchers,
+  useReviewQueueQuery,
 } from "@/queries/prep";
 
 type Celebration = { title: string; subtitle: string; accent?: string };
@@ -68,6 +72,11 @@ export default function PrepScreen() {
   const previousRank = useRef<ReturnType<typeof rankForXp> | null>(null);
   const { scores, record, addXp } = useScores();
   const { data: accuracy = [] } = useAccuracyTimelineQuery();
+  const { data: reviewQueue = [] } = useReviewQueueQuery();
+  const { data: prepContacts = [] } = usePrepContactsQuery();
+  const prepPlan = usePrepPlan();
+  const reviewDueTechs = reviewQueue.filter((entry) => entry.due).map((entry) => entry.tech);
+  const struggleBoost = recentStruggledTechs(prepContacts);
   const { data: profile = null } = usePrepProfileQuery();
   const githubPrepEnabled = !!profile?.useGithubTechsForPrep;
   const githubUsername = githubPrepEnabled ? githubUsernameFromUrl(profile?.githubUrl) : "";
@@ -116,13 +125,15 @@ export default function PrepScreen() {
     previousRank.current = current;
   }, [scores.xp]);
 
-  const startDrill = async (difficulty: string) => {
+  // Fetches questions for the given techs and opens the drill UI.
+  // `fallbackToAll` widens an empty pool to every tech — wanted for the generic
+  // weakest-drill, wrong for targeted drills (review queue, prep plan).
+  const runDrill = async (difficulty: string, techs: string[], { fallbackToAll = false } = {}) => {
     setDrillLoading(true);
     setDrillError(null);
     try {
-      const weakest = selectDrillTechs(displayCategories, scores.answers, { techCount: 5 });
-      let questions = await fetchTierQuestions(difficulty, weakest);
-      if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
+      let questions = await fetchTierQuestions(difficulty, techs);
+      if (questions.length === 0 && fallbackToAll) questions = await fetchTierQuestions(difficulty, allTechs);
       if (questions.length === 0) {
         setDrillError(`No ${difficultyByKey(difficulty)?.label ?? difficulty} questions yet — more land soon.`);
         return;
@@ -141,6 +152,17 @@ export default function PrepScreen() {
       setDrillLoading(false);
     }
   };
+
+  const startDrill = (difficulty: string) =>
+    runDrill(
+      difficulty,
+      selectDrillTechs(displayCategories, scores.answers, { techCount: 5, boost: struggleBoost }),
+      { fallbackToAll: true }
+    );
+
+  const startReviewDrill = () => runDrill(level, reviewDueTechs);
+
+  const startPlanDrill = () => prepPlan && runDrill(level, prepPlan.techs);
 
   const startCategoryDrill = async () => {
     setDrillLoading(true);
@@ -238,6 +260,66 @@ export default function PrepScreen() {
         contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: insets.bottom + layout.tabBarClearance }}
         ListHeaderComponent={
           <View style={{ gap: 14 }}>
+            {prepPlan && !drill && (
+              <View
+                style={{
+                  padding: 12,
+                  backgroundColor: colors.surface,
+                  borderWidth: 1,
+                  borderColor: `${colors.accent}60`,
+                  borderRadius: 12,
+                  gap: 6,
+                }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: "800", color: colors.textBright }}>
+                  {t("prep.planBanner", { name: prepPlan.name })}
+                </Text>
+                <Text style={{ fontSize: 11.5, color: colors.textDim }}>
+                  {prepPlan.deadline ? t("prep.planDeadline", { date: prepPlan.deadline }) : t("prep.planDeadlineNone")}
+                  {" · "}
+                  {prepPlan.techs.join(", ")}
+                </Text>
+                <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
+                  <TouchableOpacity
+                    onPress={() => setPrepPlan(null)}
+                    style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{t("prep.planDismiss")}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={startPlanDrill}
+                    disabled={drillLoading}
+                    style={{ paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8, backgroundColor: colors.accent, opacity: drillLoading ? 0.5 : 1 }}
+                  >
+                    <Text style={{ fontSize: 12, fontWeight: "700", color: colors.onAccent }}>{t("prep.planStart")}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+            {reviewDueTechs.length > 0 && !drill && (
+              <TouchableOpacity
+                onPress={startReviewDrill}
+                disabled={drillLoading}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: 12,
+                  backgroundColor: tints.warningSoft,
+                  borderWidth: 1,
+                  borderColor: `${colors.warning}60`,
+                  borderRadius: 10,
+                  opacity: drillLoading ? 0.5 : 1,
+                }}
+              >
+                <Text style={{ flex: 1, fontSize: 12.5, fontWeight: "600", color: colors.warningBright }}>
+                  {t("prep.reviewDueSubtitle", { count: reviewDueTechs.length })}
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: "800", color: colors.warningBright }}>
+                  {t("prep.reviewNow")} →
+                </Text>
+              </TouchableOpacity>
+            )}
             <StatsBar scores={scores} onDrill={() => startDrill(level)} drillActive={!!drill || drillLoading} />
             {!drill && (
               <TouchableOpacity

@@ -8,10 +8,12 @@ import { Badge, MiniButton, Section } from "@/components/ui";
 import type { Contact } from "@tech-refresh/core/api";
 import { RetroForm, EMPTY_RETRO } from "./RetroForm";
 import { StoryMatchSection, type StoryItem } from "./StoryMatchSection";
+import { PrepPlanSection } from "./PrepPlanSection";
 
 type ContactCardProps = {
   contact: Contact;
   stories: StoryItem[];
+  answers: Record<string, { correct: number; wrong: number }>;
   retroFormOpen: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -25,6 +27,7 @@ type ContactCardProps = {
 export function ContactCard({
   contact,
   stories,
+  answers,
   retroFormOpen,
   onEdit,
   onDelete,
@@ -98,6 +101,10 @@ export function ContactCard({
         </View>
       )}
 
+      {contact.status === "Interviewing" && contact.postingTechs.length > 0 && (
+        <PrepPlanSection contact={contact} answers={answers} stories={stories} />
+      )}
+
       <StoryMatchSection stories={stories} />
 
       <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
@@ -135,6 +142,7 @@ export function ContactCard({
             <Section label={t("contacts.questionsAsked")} text={retro.questions} />
             <Section label={t("retro.wentWell")} text={retro.wentWell} />
             <Section label={t("retro.toImprove")} text={retro.toImprove} />
+            <Section label={t("retro.struggled")} text={retro.struggledTechs.join(", ")} />
           </View>
         ))}
 

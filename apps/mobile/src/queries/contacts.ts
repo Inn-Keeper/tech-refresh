@@ -8,7 +8,7 @@ export const contactsQueryKeys = {
   statusEvents: ["status-events"] as const,
 };
 
-type RetroDraft = { round: string; questions: string; wentWell: string; toImprove: string };
+type RetroDraft = { round: string; questions: string; wentWell: string; toImprove: string; struggledTechs: string[] };
 
 export function useContactsQuery() {
   return useQuery<Contact[]>({ queryKey: contactsQueryKeys.contacts, queryFn: api.listContacts });
