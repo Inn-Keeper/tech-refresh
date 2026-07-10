@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "../lib/api";
 import { pipeline } from "../lib/api";
+import { archBoardQueryKeys } from "../archBoard/queries";
 import type { Retro } from "./types";
 
 export const contactsQueryKeys = {
@@ -20,6 +21,16 @@ export function useContactStoriesQuery() {
 
 export function useStatusEventsQuery() {
   return useQuery({ queryKey: contactsQueryKeys.statusEvents, queryFn: api.listStatusEvents });
+}
+
+// Shares the Prep tab's ["scores"] cache — readiness reads, never writes.
+export function useScoresQuery() {
+  return useQuery({ queryKey: ["scores"], queryFn: api.getScores });
+}
+
+// Shares the Arch Board cache; feeds saved-board scores into readiness.
+export function useBoardsQuery() {
+  return useQuery({ queryKey: archBoardQueryKeys.boards, queryFn: api.listBoards });
 }
 
 export function usePipelineVelocityQuery() {

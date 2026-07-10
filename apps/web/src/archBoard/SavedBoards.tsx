@@ -1,6 +1,12 @@
+import { useState } from "react";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
+import { useShareBoardMutation } from "./queries";
 import type { AugmentedScenario, SavedBoard } from "./types";
+
+const COPIED_RESET_MS = 1500;
+
+const shareUrl = (token: string) => `${window.location.origin}/share/${token}`;
 
 export function SavedBoards({
   activeBoardId,
@@ -15,6 +21,16 @@ export function SavedBoards({
   onDelete: (id: string) => void;
   onLoad: (board: SavedBoard) => void;
 }) {
+  const shareMutation = useShareBoardMutation();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyLink = async (board: SavedBoard) => {
+    if (!board.shareToken || !board.id) return;
+    await navigator.clipboard.writeText(shareUrl(board.shareToken));
+    setCopiedId(board.id);
+    window.setTimeout(() => setCopiedId((current) => (current === board.id ? null : current)), COPIED_RESET_MS);
+  };
+
   return (
     <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 12 }}>
       {boards.length === 0 ? (
@@ -56,7 +72,58 @@ export function SavedBoards({
                   edges: board.edges.length,
                 })}
               </span>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
+                {board.shareToken ? (
+                  <>
+                    <button
+                      onClick={() => copyLink(board)}
+                      style={{
+                        padding: "3px 10px",
+                        background: "transparent",
+                        border: `1px solid ${colors.success}60`,
+                        borderRadius: 6,
+                        color: colors.successBright,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {copiedId === board.id ? t("board.linkCopied") : t("board.copyLink")}
+                    </button>
+                    <button
+                      onClick={() => board.id && shareMutation.mutate({ id: board.id, enable: false })}
+                      style={{
+                        padding: "3px 10px",
+                        background: "transparent",
+                        border: `1px solid ${colors.border}`,
+                        borderRadius: 6,
+                        color: colors.textDim,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                      }}
+                    >
+                      {t("board.unshare")}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => board.id && shareMutation.mutate({ id: board.id, enable: true })}
+                    disabled={shareMutation.isPending}
+                    style={{
+                      padding: "3px 10px",
+                      background: "transparent",
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: 6,
+                      color: colors.textDim,
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {t("board.share")}
+                  </button>
+                )}
                 <button
                   onClick={() => onLoad(board)}
                   style={{

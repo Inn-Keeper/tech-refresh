@@ -6,6 +6,7 @@ import { useLocale } from "./lib/useLocale";
 import InterviewPrep from "./interviewPrep/InterviewPrep";
 import Quest from "./quest/Quest";
 import ArchBoard from "./archBoard/ArchBoard";
+import { SharedBoardPage } from "./archBoard/SharedBoardPage";
 import StoryBank from "./storyBank/StoryBank";
 import Profile from "./profile/Profile";
 import About from "./about/About";
@@ -86,6 +87,16 @@ export default function App() {
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
+  // Cross-tab hops from feature components (e.g. Quest's "Drill these in Prep").
+  useEffect(() => {
+    const onNavigate = (event: Event) => {
+      const id = (event as CustomEvent<string>).detail;
+      if ((PAGE_IDS as readonly string[]).includes(id)) selectPage(id);
+    };
+    window.addEventListener("grip:navigate", onNavigate);
+    return () => window.removeEventListener("grip:navigate", onNavigate);
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
@@ -118,6 +129,12 @@ export default function App() {
     const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
     window.history.replaceState({}, "", next);
   }, []);
+
+  // Public read-only share links (/share/:token) render standalone — no session.
+  const shareToken = window.location.pathname.startsWith("/share/")
+    ? window.location.pathname.split("/")[2] ?? ""
+    : "";
+  if (shareToken) return <SharedBoardPage token={shareToken} />;
 
   return (
     <div

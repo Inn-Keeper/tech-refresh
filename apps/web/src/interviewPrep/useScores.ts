@@ -37,7 +37,10 @@ export function useScores() {
         },
       })),
     onError: rollback,
-    onSettled: () => queryClient.invalidateQueries({ queryKey: ["accuracy-timeline"] }),
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["accuracy-timeline"] });
+      queryClient.invalidateQueries({ queryKey: ["review-queue"] });
+    },
   });
 
   const xpMutation = useMutation({

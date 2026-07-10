@@ -4,6 +4,7 @@ export type Retro = {
   questions: string;
   wentWell: string;
   toImprove: string;
+  struggledTechs: string[];
   date: string;
 };
 
@@ -17,6 +18,7 @@ export type Contact = {
   date: string;
   nextAction: string;
   nextActionDate: string;
+  postingTechs: string[];
   retros?: Retro[];
 };
 
@@ -29,6 +31,7 @@ export const EMPTY_FORM: Omit<Contact, "id" | "retros"> = {
   date: "",
   nextAction: "",
   nextActionDate: "",
+  postingTechs: [],
 };
 
 export const EMPTY_RETRO: Omit<Retro, "id" | "date"> = {
@@ -36,4 +39,5 @@ export const EMPTY_RETRO: Omit<Retro, "id" | "date"> = {
   questions: "",
   wentWell: "",
   toImprove: "",
+  struggledTechs: [],
 };

@@ -3,6 +3,7 @@ import { categories } from "@tech-refresh/core/prepData";
 import { techLinks } from "@tech-refresh/core/techLinks";
 import { buildGithubTechCategory, githubUsernameFromUrl } from "@tech-refresh/core/githubTechs";
 import { mergeTechSignals } from "@tech-refresh/core/cvTechs";
+import { recentStruggledTechs } from "@tech-refresh/core/contacts";
 import { PERFECT_QUIZ_BONUS, rankForXp } from "@tech-refresh/core/gamification";
 import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, shuffle, shuffleOptions } from "@tech-refresh/core/quiz";
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
@@ -25,14 +26,18 @@ import type {
 import { Card } from "./Card";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DrillSession } from "./DrillSession";
+import { MockLoop } from "./MockLoop";
 import { PrepLeftRail } from "./PrepLeftRail";
 import { PrepRightRail } from "./PrepRightRail";
 import {
   useAccuracyTimelineQuery,
   useGithubTechsQuery,
+  usePrepContactsQuery,
   usePrepProfileQuery,
   usePrepQuestionFetchers,
+  useReviewQueueQuery,
 } from "./queries";
+import { clearPrepPlan, readPrepPlan, type StoredPrepPlan } from "../lib/prepPlanHandoff";
 import { summarizeScores } from "./summarizeScores";
 
 const DRILL_SIZE = 10;
@@ -57,6 +62,10 @@ export default function InterviewPrep() {
   const [drillError, setDrillError] = useState<string | null>(null);
   const [celebration, setCelebration] = useState<CelebrationState | null>(null);
   const [poeCue, setPoeCue] = useState<PoeCue | null>(null);
+  // A drill can run standalone or as round 1 of a mock loop.
+  const [mockActive, setMockActive] = useState(false);
+  // Prep plan handed over from a Quest contact ("Drill these in Prep").
+  const [prepPlan, setPrepPlan] = useState<StoredPrepPlan | null>(() => readPrepPlan());
   // null = use all available questions; number = capped at that value
   const [quizSize, setQuizSizeState] = useState<number | null>(() => getQuizSize());
   // tracks the DB pool size for the most-recently-fetched tech+level combo
@@ -70,7 +79,11 @@ export default function InterviewPrep() {
   const previousRank = useRef<{ name: string; min: number } | null>(null);
   const { scores, scoresReady, record, addXp } = useScores();
   const { data: accuracy = [] } = useAccuracyTimelineQuery();
+  const { data: reviewQueue = [] } = useReviewQueueQuery();
+  const { data: prepContacts = [] } = usePrepContactsQuery();
   const { data: profile = null } = usePrepProfileQuery();
+  const reviewDueTechs = reviewQueue.filter((entry) => entry.due).map((entry) => entry.tech);
+  const struggleBoost = recentStruggledTechs(prepContacts);
   const githubPrepEnabled = !!profile?.useGithubTechsForPrep;
   const githubUsername = githubPrepEnabled ? githubUsernameFromUrl(profile?.githubUrl) : "";
   const { data: githubTechs = [], error: githubError, isFetching: githubLoading } =
@@ -179,26 +192,53 @@ export default function InterviewPrep() {
     });
   };
 
-  const startDrill = async (difficulty: string) => {
+  // Fetches questions for the given techs and opens the drill UI.
+  // `fallbackToAll` widens an empty pool to every tech — wanted for the generic
+  // weakest-drill, wrong for targeted drills (review queue, prep plan).
+  const runDrill = async (difficulty: string, techs: string[], { fallbackToAll = false } = {}) => {
     setDrillLoading(true);
     setDrillError(null);
     try {
-      const weakest = selectDrillTechs(displayCategories, scores.answers, { techCount: 5 });
-      let questions = await fetchTierQuestions(difficulty, weakest);
-      if (questions.length === 0) questions = await fetchTierQuestions(difficulty, allTechs);
+      let questions = await fetchTierQuestions(difficulty, techs);
+      if (questions.length === 0 && fallbackToAll) questions = await fetchTierQuestions(difficulty, allTechs);
       if (questions.length === 0) {
         setDrillError(t("prep.noQuestionsYet", { tier: difficultyByKey(difficulty)?.label ?? difficulty }));
-        return;
+        return false;
       }
       const entries = buildDrillFromQuestions(questions, { colorByTech, fallbackColor: colors.accent, size: DRILL_SIZE }).map(
         (entry) => ({ ...entry, link: techLinks[entry.tech] })
       );
       setDrill({ questions: entries, index: 0, answered: null, correctCount: 0, done: false, difficulty });
+      return true;
     } catch {
       setDrillError(t("prep.drillLoadError"));
+      return false;
     } finally {
       setDrillLoading(false);
     }
+  };
+
+  const weakestTechs = () =>
+    selectDrillTechs(displayCategories, scores.answers, { techCount: 5, boost: struggleBoost });
+
+  const startDrill = (difficulty: string) => runDrill(difficulty, weakestTechs(), { fallbackToAll: true });
+
+  const startReviewDrill = () => runDrill(level, reviewDueTechs);
+
+  const startPlanDrill = () => prepPlan && runDrill(level, prepPlan.techs);
+
+  const dismissPlan = () => {
+    clearPrepPlan();
+    setPrepPlan(null);
+  };
+
+  const startMockLoop = async () => {
+    if (await runDrill(level, weakestTechs(), { fallbackToAll: true })) setMockActive(true);
+  };
+
+  const exitSession = () => {
+    setDrill(null);
+    setMockActive(false);
   };
 
   const startCategoryDrill = async (categoryName: string) => {
@@ -305,6 +345,9 @@ export default function InterviewPrep() {
           level={level}
           onLevel={requestLevel}
           onDrill={() => startDrill(level)}
+          onMockLoop={startMockLoop}
+          onReviewDrill={startReviewDrill}
+          reviewDueCount={reviewDueTechs.length}
           scores={scores}
           summary={summary}
           quizSize={quizSize}
@@ -327,9 +370,55 @@ export default function InterviewPrep() {
         </p>
       </div>
 
+      {prepPlan && !drill && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            flexWrap: "wrap",
+            marginBottom: 16,
+            padding: "12px 16px",
+            background: colors.surface,
+            border: `1px solid ${colors.accent}60`,
+            borderRadius: 12,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 800, color: colors.textBright }}>
+              {t("prep.planBanner", { name: prepPlan.name })}
+            </span>
+            <span style={{ fontSize: 11.5, color: colors.textDim }}>
+              {prepPlan.deadline ? t("prep.planDeadline", { date: prepPlan.deadline }) : t("prep.planDeadlineNone")}
+              {" · "}
+              {prepPlan.techs.join(", ")}
+            </span>
+          </div>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            <button
+              onClick={dismissPlan}
+              style={{ padding: "6px 12px", background: "transparent", border: `1px solid ${colors.border}`, borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer" }}
+            >
+              {t("prep.planDismiss")}
+            </button>
+            <button
+              onClick={startPlanDrill}
+              disabled={drillLoading}
+              style={{ padding: "6px 14px", background: colors.accent, border: "none", borderRadius: 8, color: colors.onAccent, fontSize: 12, fontWeight: 700, cursor: drillLoading ? "default" : "pointer", opacity: drillLoading ? 0.55 : 1 }}
+            >
+              {t("prep.planStart")}
+            </button>
+          </div>
+        </div>
+      )}
+
       {drill ? (
         <div style={{ width: "min(100%, 860px)", paddingBottom: 48 }}>
-          <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={() => setDrill(null)} />
+          {mockActive ? (
+            <MockLoop drill={drill} onAnswer={answerDrill} onNextQuestion={nextDrill} onExit={exitSession} />
+          ) : (
+            <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={exitSession} />
+          )}
         </div>
       ) : visibleItems.length === 0 ? (
         <WorkspacePanel tone="sunken" style={{ textAlign: "center", color: colors.textFaint, padding: 28 }}>

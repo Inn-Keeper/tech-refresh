@@ -20,4 +20,5 @@ export type SavedBoard = {
   scenarioId: string;
   nodes: BoardNode[];
   edges: BoardEdge[];
+  shareToken?: string | null;
 };

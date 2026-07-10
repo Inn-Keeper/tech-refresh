@@ -31,6 +31,14 @@ export function useSaveBoardMutation(onSaved: (board: { id?: string; title: stri
   });
 }
 
+export function useShareBoardMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, enable }: { id: string; enable: boolean }) => api.setBoardSharing(id, enable),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: archBoardQueryKeys.boards }),
+  });
+}
+
 export function useDeleteBoardMutation(onDeleted: (id: string) => void) {
   const queryClient = useQueryClient();
   return useMutation({

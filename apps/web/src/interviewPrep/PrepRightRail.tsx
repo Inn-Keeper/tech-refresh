@@ -10,7 +10,7 @@ import { DifficultyIcon } from "./DifficultyIcon";
 import { LevelSelector } from "./LevelSelector";
 import { QuizSizeSelector } from "./QuizSizeSelector";
 
-export function PrepRightRail({ accuracy, drillActive, drillLoading, drillError, level, onLevel, onDrill, scores, summary, quizSize, poolSize, onQuizSize }: {
+export function PrepRightRail({ accuracy, drillActive, drillLoading, drillError, level, onLevel, onDrill, onMockLoop, onReviewDrill, reviewDueCount, scores, summary, quizSize, poolSize, onQuizSize }: {
   accuracy: AccuracyPoint[];
   drillActive: boolean;
   drillLoading: boolean;
@@ -18,6 +18,9 @@ export function PrepRightRail({ accuracy, drillActive, drillLoading, drillError,
   level: string;
   onLevel: (key: string) => void;
   onDrill: () => void;
+  onMockLoop: () => void;
+  onReviewDrill: () => void;
+  reviewDueCount: number;
   scores: Scores;
   summary: Summary;
   quizSize: number | null;
@@ -78,7 +81,72 @@ export function PrepRightRail({ accuracy, drillActive, drillLoading, drillError,
           <BrandIcon name="drill" color={tier?.color ?? colors.accentBright} size={14} />
           {drillLoading ? t("common.loading") : <>{t("prep.drillWeakest")} · <DifficultyIcon tier={tier} size={13} /> {tier?.label ?? ""}</>}
         </button>
+        <button
+          onClick={onMockLoop}
+          disabled={drillActive || drillLoading}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 7,
+            marginTop: 8,
+            padding: "9px 12px",
+            background: "transparent",
+            border: `1px solid ${colors.border}`,
+            borderRadius: 8,
+            color: colors.textDim,
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: drillActive || drillLoading ? "default" : "pointer",
+            opacity: drillActive || drillLoading ? 0.55 : 1,
+          }}
+        >
+          <BrandIcon name="board" color={colors.textDim} size={14} />
+          {t("mock.start")}
+        </button>
         {drillError && <p style={{ margin: "8px 0 0", fontSize: 11, color: colors.warning }}>{drillError}</p>}
+      </WorkspacePanel>
+
+      <WorkspacePanel>
+        <WorkspaceTitle
+          icon={<BrandIcon name="calendar" color={colors.warningBright} size={17} />}
+          title={t("prep.reviewDue")}
+          subtitle={
+            reviewDueCount > 0 ? t("prep.reviewDueSubtitle", { count: reviewDueCount }) : t("prep.reviewNone")
+          }
+          right={
+            reviewDueCount > 0 ? (
+              <span style={{ color: colors.warningBright, fontSize: 12, fontWeight: 850 }}>{reviewDueCount}</span>
+            ) : undefined
+          }
+        />
+        {reviewDueCount > 0 && (
+          <button
+            onClick={onReviewDrill}
+            disabled={drillActive || drillLoading}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 7,
+              marginTop: 12,
+              padding: "9px 12px",
+              background: `${colors.warning}1F`,
+              border: `1px solid ${colors.warning}60`,
+              borderRadius: 8,
+              color: colors.warningBright,
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: drillActive || drillLoading ? "default" : "pointer",
+              opacity: drillActive || drillLoading ? 0.55 : 1,
+            }}
+          >
+            <BrandIcon name="drill" color={colors.warningBright} size={14} />
+            {t("prep.reviewNow")}
+          </button>
+        )}
       </WorkspacePanel>
 
       <AccuracyChart points={accuracy} compact />

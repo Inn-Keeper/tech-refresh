@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { STATUSES, todayDDMMYYYY, isDue } from "@tech-refresh/core/contacts";
+import { SCENARIOS, evaluate } from "@tech-refresh/core/arch";
 import { buildFunnelSummary } from "@tech-refresh/core/funnel";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { WorkspaceLayout } from "../components/WorkspaceLayout";
@@ -10,12 +11,14 @@ import { QuestRightRail } from "./QuestRightRail";
 import { EMPTY_FORM } from "./types";
 import {
   useAddRetroMutation,
+  useBoardsQuery,
   useContactStoriesQuery,
   useContactsQuery,
   useDeleteContactMutation,
   useDeleteRetroMutation,
   usePipelineVelocityQuery,
   useSaveContactMutation,
+  useScoresQuery,
   useStatusEventsQuery,
 } from "./queries";
 import type { Contact, Retro } from "./types";
@@ -28,7 +31,18 @@ export default function Quest() {
   const { data: stories = [] } = useContactStoriesQuery();
   const { data: statusEvents = [] } = useStatusEventsQuery();
   const { data: velocity, error: velocityError, isFetching: velocityLoading } = usePipelineVelocityQuery();
+  const { data: scores } = useScoresQuery();
+  const { data: boards = [] } = useBoardsQuery();
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
+
+  // Saved boards re-scored against their scenarios feed the readiness meter.
+  // ponytail: default scenarios only — custom-scenario boards are skipped.
+  const boardScores = boards
+    .map((board) => {
+      const scenario = SCENARIOS.find((s: { id: string }) => s.id === board.scenarioId);
+      return scenario ? evaluate(scenario, board.nodes, board.edges).score : null;
+    })
+    .filter((score): score is number => score !== null);
 
   const saveMutation = useSaveContactMutation();
   const deleteMutation = useDeleteContactMutation();
@@ -150,6 +164,8 @@ export default function Quest() {
               key={contact.id}
               contact={contact}
               stories={stories}
+              answers={scores?.answers ?? {}}
+              boardScores={boardScores}
               retroOpen={retroFor === contact.id}
               onEdit={() => setEditingId(contact.id ?? null)}
               onDelete={() => handleDelete(contact)}

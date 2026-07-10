@@ -1,9 +1,16 @@
 import React, { useState } from "react";
+import { extractTechsFromText } from "@tech-refresh/core/cvTechs";
+import { categories } from "@tech-refresh/core/prepData";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { inputStyle, textareaStyle, Field } from "../components/shared";
+import { TechChips } from "./TechChips";
 import type { Retro } from "./types";
 import { EMPTY_RETRO } from "./types";
+
+const ALL_TECHS: string[] = categories.flatMap((c: { items: { tech: string }[] }) =>
+  c.items.map((item) => item.tech)
+);
 
 export function RetroLine({ label, text }: { label: string; text?: string }) {
   if (!text) return null;
@@ -25,8 +32,20 @@ export function RetroForm({
   onCancel: () => void;
 }) {
   const [form, setForm] = useState<Omit<Retro, "id" | "date">>(EMPTY_RETRO);
+  // Techs manually toggled off — struggles are detected from the retro text,
+  // and everything detected counts unless the user opts a tech out.
+  const [excluded, setExcluded] = useState<string[]>([]);
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
+
+  const detected = extractTechsFromText(`${form.questions}\n${form.toImprove}`, ALL_TECHS).map(
+    (d: { tech: string }) => d.tech
+  );
+  const struggledTechs = detected.filter((tech) => !excluded.includes(tech));
+  const toggleTech = (tech: string) =>
+    setExcluded((current) =>
+      current.includes(tech) ? current.filter((item) => item !== tech) : [...current, tech]
+    );
 
   return (
     <div
@@ -61,6 +80,12 @@ export function RetroForm({
           <textarea style={textareaStyle} value={form.toImprove} onChange={set("toImprove")} />
         </Field>
       </div>
+      {detected.length > 0 && (
+        <div>
+          <TechChips label={t("retro.struggled")} techs={detected} dimmed={excluded} onToggle={toggleTech} />
+          <p style={{ margin: "6px 0 0", fontSize: 11, color: colors.textFaint }}>{t("retro.struggledHint")}</p>
+        </div>
+      )}
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button
           onClick={onCancel}
@@ -78,7 +103,7 @@ export function RetroForm({
           {t("common.cancel")}
         </button>
         <button
-          onClick={() => onSave(form)}
+          onClick={() => onSave({ ...form, struggledTechs })}
           style={{
             padding: "6px 14px",
             background: colors.accent,

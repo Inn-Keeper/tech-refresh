@@ -8,10 +8,13 @@ import type { Contact, Retro } from "./types";
 import { RetroForm, RetroLine } from "./RetroForm";
 import { StoryMatchSection } from "./StoryMatchSection";
 import type { Story } from "./StoryMatchSection";
+import { PrepPlanSection } from "./PrepPlanSection";
 
 type ContactCardProps = {
   contact: Contact;
   stories: Story[];
+  answers: Record<string, { correct: number; wrong: number }>;
+  boardScores: number[];
   retroOpen: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -25,6 +28,8 @@ type ContactCardProps = {
 export function ContactCard({
   contact: c,
   stories,
+  answers,
+  boardScores,
   retroOpen,
   onEdit,
   onDelete,
@@ -143,6 +148,10 @@ export function ContactCard({
         </div>
       )}
 
+      {c.status === "Interviewing" && c.postingTechs.length > 0 && (
+        <PrepPlanSection contact={c} answers={answers} stories={stories} boardScores={boardScores} />
+      )}
+
       <StoryMatchSection stories={stories} />
 
       {retros.length > 0 && (
@@ -203,6 +212,7 @@ export function ContactCard({
             <RetroLine label={t("contacts.questionsAsked")} text={r.questions} />
             <RetroLine label={t("retro.wentWell")} text={r.wentWell} />
             <RetroLine label={t("retro.toImprove")} text={r.toImprove} />
+            <RetroLine label={t("retro.struggled")} text={r.struggledTechs.join(", ")} />
           </div>
         ))}
 

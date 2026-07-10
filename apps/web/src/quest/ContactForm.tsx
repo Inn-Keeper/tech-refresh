@@ -1,12 +1,20 @@
 import React, { useState } from "react";
 import { ROLE_POSITIONS, STATUSES, STATUS_STYLES } from "@tech-refresh/core/contacts";
+import { extractTechsFromText } from "@tech-refresh/core/cvTechs";
+import { categories } from "@tech-refresh/core/prepData";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { Combobox } from "../components/Combobox";
 import { DateInput, Field } from "./shared";
-import { inputStyle } from "../components/shared";
+import { inputStyle, textareaStyle } from "../components/shared";
+import { TechChips } from "./TechChips";
 import type { Contact } from "./types";
 import { EMPTY_FORM } from "./types";
+
+const ALL_TECHS: string[] = categories.flatMap((c: { items: { tech: string }[] }) =>
+  c.items.map((item) => item.tech)
+);
+const POSTING_TECH_LIMIT = 12;
 
 export function ContactForm({
   initial,
@@ -18,8 +26,18 @@ export function ContactForm({
   onCancel: () => void;
 }) {
   const [form, setForm] = useState<Omit<Contact, "id" | "retros">>({ ...EMPTY_FORM, ...initial });
+  // The pasted posting is parsed locally and never stored — only detected techs persist.
+  const [posting, setPosting] = useState("");
   const set = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) =>
     setForm((current) => ({ ...current, [field]: event.target.value }));
+
+  const handlePosting = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = event.target.value;
+    setPosting(text);
+    if (!text.trim()) return; // keep saved chips when the paste box is cleared
+    const detected = extractTechsFromText(text, ALL_TECHS, POSTING_TECH_LIMIT);
+    setForm((current) => ({ ...current, postingTechs: detected.map((d: { tech: string }) => d.tech) }));
+  };
 
   return (
     <div
@@ -59,6 +77,26 @@ export function ContactForm({
       <Field label={t("contacts.fieldLink")}>
         <input style={inputStyle} value={form.link} onChange={set("link")} placeholder="https://..." />
       </Field>
+      <Field label={t("contacts.fieldPosting")}>
+        <textarea
+          style={textareaStyle}
+          value={posting}
+          onChange={handlePosting}
+          placeholder={t("contacts.postingPlaceholder")}
+        />
+      </Field>
+      {form.postingTechs.length > 0 && (
+        <TechChips
+          label={t("contacts.postingDetected")}
+          techs={form.postingTechs}
+          onRemove={(tech) =>
+            setForm((current) => ({
+              ...current,
+              postingTechs: current.postingTechs.filter((item) => item !== tech),
+            }))
+          }
+        />
+      )}
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
         <Field label={t("contacts.fieldNote")}>
           <input style={inputStyle} value={form.note} onChange={set("note")} />

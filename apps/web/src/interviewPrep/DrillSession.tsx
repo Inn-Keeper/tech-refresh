@@ -158,6 +158,26 @@ export function DrillSession({ drill, onAnswer, onNext, onExit }: { drill: Drill
                 {t("prep.docs")}
               </a>
             )}
+            {!isCorrect && (
+              // ponytail: static placeholder — becomes a real Poe answer-explainer
+              // once a Claude API key is wired up (parked for the next round).
+              <button
+                disabled
+                title={t("prep.poeSoonHint")}
+                style={{
+                  padding: "3px 10px",
+                  background: "transparent",
+                  border: `1px dashed ${colors.border}`,
+                  borderRadius: 999,
+                  color: colors.textFaint,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: "default",
+                }}
+              >
+                {t("prep.poeSoon")}
+              </button>
+            )}
           </span>
           <button
             onClick={onNext}
