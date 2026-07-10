@@ -123,6 +123,41 @@ playable on the phone.*
 - ✅ **jest-expo + RNTL component tests** — screen-level coverage is wired into
   CI for Prep plus stable drill/chart/stat components.
 
+**Phase 6 — Close the loop (shipped 10-07-2026, except Poe)**
+
+Thesis from the feature review: the tabs are individually strong but mutually deaf —
+every high-leverage upgrade is some form of making them talk to each other. All logic
+lives in `packages/core` (with Jest coverage); web and mobile share it.
+
+1. ✅ **Quest drives Prep** — a posting pasted on a contact is parsed on-device with the
+   CV detector (`extractTechsFromText`; only techs persist, `contacts.posting_techs`).
+   Interviewing contacts show a weakness-ordered plan (`prepPlan.js`) anchored to the
+   next-action date; "Drill these in Prep" hands the plan to the Prep tab (web:
+   localStorage + `grip:navigate`; mobile: uiStore + router).
+2. ✅ **Retro → drill feedback loop** — struggles are auto-detected from retro text into
+   toggleable chips (`retros.struggled_techs`); recent tags boost drill selection ahead
+   of accuracy ordering (`selectDrillTechs` `boost`, `recentStruggledTechs`).
+3. ✅ **Spaced repetition on `answer_events`** — SM-2-lite per tech (`review.js`:
+   doubling 1→32-day intervals keyed on the ending correct-streak); Prep shows the due
+   count with a "Review now" drill on both apps.
+4. ✅ **Mock interview mode** (web) — quiz round + Arch scenario + behavioral prompt
+   scored as one loop (`mockLoop.js`, `MockLoop.tsx`); design round is self-reported
+   (deep-link + auto-score is the upgrade path). Mobile: deferred.
+5. ✅ **Readiness score** — `readiness.js` averages prep accuracy on the posting stack,
+   story coverage, and saved-board evaluation scores (missing parts drop out); shown in
+   the contact's prep-plan section. Mobile shows it without board scores; boards on
+   custom scenarios are skipped.
+6. ⬜ **Poe as real assistant** — parked for the next round (no Claude API key yet).
+   Shipped only a static disabled "Ask Poe why · soon" chip on wrong drill answers;
+   `PoeAssistant` behavior untouched.
+7. ✅ **Shareable Arch Board evaluations** — `arch_boards.share_token` + token-scoped
+   security-definer RPC (no select policy, so no enumeration); web `/share/:token`
+   renders a logged-out read-only SVG snapshot with the evaluation. Share/copy/unshare
+   from Saved boards (web; mobile consumes the same links).
+
+Deliberately skipped: more quiz content, more scenarios, i18n, offline-first hardening —
+all additive, none reframing; content volume is past diminishing returns.
+
 ## Product seed — Arch Board
 
 Market note (11-06-2026): the Arch Board (scenario-driven system-design practice with
