@@ -1,6 +1,6 @@
 # Grip
 
-Get a grip. Buckle up.
+Get a grip. Code up.
 
 ![Pipeline: funnel](https://img.shields.io/badge/pipeline-funnel-14B8A6)
 ![Pipeline: velocity](https://img.shields.io/badge/pipeline-velocity-14B8A6)

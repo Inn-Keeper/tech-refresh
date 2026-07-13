@@ -3,7 +3,7 @@
 A complete brand guide for the interview prep and hiring pipeline tool. Designed for developers leveling up, job hunters, and students facing the "painful period" of job search - serious purpose with playful, encouraging energy.
 
 **Product name:** Grip
-**Tagline:** Get a grip. Buckle up.
+**Tagline:** Get a grip. Code up.
 
 ---
 
