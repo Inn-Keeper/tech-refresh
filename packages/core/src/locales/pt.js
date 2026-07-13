@@ -315,7 +315,7 @@ export const pt = {
   "footer.menu": "Menu",
   "footer.location": "Estocolmo, Suécia",
   "footer.promiseSuffix": "Web e mobile compartilham um único espaço de prática apoiado pelo Supabase para prep, histórias, quests, boards e dados de perfil.",
-  "footer.builtBy": "Feito por InnKeeper Digital Solutions © {year}",
+  "footer.builtBy": "Feito por InnKeeper Forge © {year}",
 
   "about.kicker": "Tutorial",
   "about.title": "Tutorial do Grip",

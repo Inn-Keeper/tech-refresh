@@ -315,7 +315,7 @@ export const sv = {
   "footer.menu": "Meny",
   "footer.location": "Stockholm, Sverige",
   "footer.promiseSuffix": "Webb och mobil delar en enda Supabase-baserad övningsarbetsyta för prep, berättelser, quests, boards och profildata.",
-  "footer.builtBy": "Byggd av InnKeeper Digital Solutions © {year}",
+  "footer.builtBy": "Byggd av InnKeeper Forge © {year}",
 
   "about.kicker": "Tutorial",
   "about.title": "Grip Tutorial",

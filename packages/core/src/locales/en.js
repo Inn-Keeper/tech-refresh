@@ -315,7 +315,7 @@ export const en = {
   "footer.menu": "Menu",
   "footer.location": brand.companyLocation,
   "footer.promiseSuffix": "Web and mobile share one Supabase-backed practice workspace for prep, stories, quests, boards, and profile data.",
-  "footer.builtBy": "Built by InnKeeper Digital Solutions © {year}",
+  "footer.builtBy": "Built by InnKeeper Forge © {year}",
 
   "about.kicker": "Tutorial",
   "about.title": "Grip Tutorial",
