@@ -21,7 +21,7 @@ import {
   useScoresQuery,
   useStatusEventsQuery,
 } from "./queries";
-import type { Contact, Retro } from "./types";
+import type { Contact, Retro, ScoredBoard } from "./types";
 
 export default function Quest() {
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -36,13 +36,19 @@ export default function Quest() {
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
 
   // Saved boards re-scored against their scenarios feed the readiness meter.
+  // Both halves travel together: the diagram's score and the reasoning saved
+  // alongside it, so a board with no talk track can't read as a full round.
   // ponytail: default scenarios only — custom-scenario boards are skipped.
-  const boardScores = boards
+  const scoredBoards = boards
     .map((board) => {
       const scenario = SCENARIOS.find((s: { id: string }) => s.id === board.scenarioId);
-      return scenario ? evaluate(scenario, board.nodes, board.edges).score : null;
+      if (!scenario) return null;
+      return {
+        topology: evaluate(scenario, board.nodes, board.edges).score,
+        talkTrack: board.talkTrack ?? null,
+      };
     })
-    .filter((score): score is number => score !== null);
+    .filter((entry): entry is ScoredBoard => entry !== null);
 
   const saveMutation = useSaveContactMutation();
   const deleteMutation = useDeleteContactMutation();
@@ -165,7 +171,7 @@ export default function Quest() {
               contact={contact}
               stories={stories}
               answers={scores?.answers ?? {}}
-              boardScores={boardScores}
+              boards={scoredBoards}
               retroOpen={retroFor === contact.id}
               onEdit={() => setEditingId(contact.id ?? null)}
               onDelete={() => handleDelete(contact)}

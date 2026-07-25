@@ -4,7 +4,7 @@ import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { writePrepPlan } from "../lib/prepPlanHandoff";
-import type { Contact } from "./types";
+import type { Contact, ScoredBoard } from "./types";
 
 // How many weakest posting techs the plan surfaces and hands to the Prep drill.
 const PLAN_TECH_COUNT = 5;
@@ -24,12 +24,12 @@ export function PrepPlanSection({
   contact,
   answers,
   stories,
-  boardScores,
+  boards,
 }: {
   contact: Contact;
   answers: Record<string, { correct: number; wrong: number }>;
   stories: { competency: string }[];
-  boardScores: number[];
+  boards: ScoredBoard[];
 }) {
   const plan = buildPrepPlan({
     techs: contact.postingTechs,
@@ -40,7 +40,7 @@ export function PrepPlanSection({
     postingTechs: contact.postingTechs,
     answers,
     stories,
-    boardScores,
+    boards,
   });
   const focus = plan.items.slice(0, PLAN_TECH_COUNT);
 
@@ -78,6 +78,19 @@ export function PrepPlanSection({
           <ReadinessStat label={t("plan.readinessPrep")} value={readiness.prep} />
           <ReadinessStat label={t("plan.readinessStories")} value={readiness.stories} />
           <ReadinessStat label={t("plan.readinessBoards")} value={readiness.arch} />
+          {/* The split is the point: a wall of perfect diagrams with no
+              reasoning should read as half a round, and say so. */}
+          {readiness.archTopology !== null && (
+            <span
+              style={{ fontSize: 10.5, color: colors.textFaint }}
+              title={t("plan.readinessBoardsSplitHint")}
+            >
+              {t("plan.readinessBoardsSplit", {
+                design: readiness.archTopology,
+                talk: readiness.archTalk ?? 0,
+              })}
+            </span>
+          )}
         </span>
       </div>
 

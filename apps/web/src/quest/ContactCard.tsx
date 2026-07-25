@@ -4,7 +4,7 @@ import { t } from "@tech-refresh/core/i18n";
 import { colors, tints } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { ActionButton } from "./shared";
-import type { Contact, Retro } from "./types";
+import type { Contact, Retro, ScoredBoard } from "./types";
 import { RetroForm, RetroLine } from "./RetroForm";
 import { StoryMatchSection } from "./StoryMatchSection";
 import type { Story } from "./StoryMatchSection";
@@ -14,7 +14,7 @@ type ContactCardProps = {
   contact: Contact;
   stories: Story[];
   answers: Record<string, { correct: number; wrong: number }>;
-  boardScores: number[];
+  boards: ScoredBoard[];
   retroOpen: boolean;
   onEdit: () => void;
   onDelete: () => void;
@@ -29,7 +29,7 @@ export function ContactCard({
   contact: c,
   stories,
   answers,
-  boardScores,
+  boards,
   retroOpen,
   onEdit,
   onDelete,
@@ -149,7 +149,7 @@ export function ContactCard({
       )}
 
       {c.status === "Interviewing" && c.postingTechs.length > 0 && (
-        <PrepPlanSection contact={c} answers={answers} stories={stories} boardScores={boardScores} />
+        <PrepPlanSection contact={c} answers={answers} stories={stories} boards={boards} />
       )}
 
       <StoryMatchSection stories={stories} />

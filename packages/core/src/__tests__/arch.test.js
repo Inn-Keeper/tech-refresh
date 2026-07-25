@@ -6,7 +6,11 @@ let nextId = 0;
 const node = (type) => ({ id: `n${nextId++}`, type, x: 0, y: 0 });
 const edge = (from, to) => ({ id: `${from.id}->${to.id}`, from: from.id, to: to.id });
 
-/** A reference payment architecture that satisfies every check. */
+/**
+ * A reference payment architecture that satisfies every check. The ledger
+ * declares a partition key because payment stores ~92TB — at that size an
+ * undeclared partitioning strategy is itself a finding.
+ */
 function passingPaymentBoard() {
   const client = node("client");
   const gateway = node("gateway");
@@ -15,17 +19,19 @@ function passingPaymentBoard() {
   const psp = node("psp");
   const queue = node("queue");
   const worker = node("worker");
-  const sql = node("sql");
+  const sql = { ...node("sql"), partitionKey: "account_id", replicas: 3 };
   const monitor = node("monitor");
   const nodes = [client, gateway, auth, service, psp, queue, worker, sql, monitor];
+  // Call semantics are declared: the provider hop blocks the customer, the
+  // ledger write does not. An unlabelled board of this size is itself a finding.
   const edges = [
-    edge(client, gateway),
-    edge(gateway, service),
-    edge(service, psp),
-    edge(psp, service),
-    edge(service, queue),
-    edge(queue, worker),
-    edge(worker, sql),
+    { ...edge(client, gateway), mode: "sync" },
+    { ...edge(gateway, service), mode: "sync" },
+    { ...edge(service, psp), mode: "sync" },
+    { ...edge(psp, service), mode: "sync" },
+    { ...edge(service, queue), mode: "async" },
+    { ...edge(queue, worker), mode: "async" },
+    { ...edge(worker, sql), mode: "sync" },
   ];
   return { nodes, edges };
 }
@@ -37,6 +43,14 @@ describe("evaluate", () => {
     expect(result.score).toBe(100);
     expect(result.warnings).toEqual([]);
     expect(result.checks.every((check) => check.passed)).toBe(true);
+  });
+
+  it("still asks how a 92TB ledger is partitioned, however complete the topology", () => {
+    const { nodes, edges } = passingPaymentBoard();
+    const unpartitioned = nodes.map((n) => (n.type === "sql" ? { ...n, partitionKey: undefined } : n));
+    const result = evaluate(payment, unpartitioned, edges);
+    expect(result.score).toBe(100);
+    expect(result.warnings.some((w) => w.includes("partition"))).toBe(true);
   });
 
   it("scores an empty board at 0%", () => {
@@ -73,6 +87,135 @@ describe("evaluate", () => {
     const result = evaluate(payment, [queue, worker], [edge(worker, queue)]);
     const queueCheck = result.checks.find((check) => check.label.includes("consume from the queue"));
     expect(queueCheck.passed).toBe(true);
+  });
+});
+
+describe("edge mode warnings", () => {
+  const wire = (from, to, extra = {}) => ({ id: `${from.id}->${to.id}`, from: from.id, to: to.id, ...extra });
+
+  it("flags waiting synchronously on a queue", () => {
+    const service = node("service");
+    const queue = node("queue");
+    const worker = node("worker");
+    const result = evaluate(payment, [service, queue, worker], [
+      wire(service, queue, { mode: "sync" }),
+      wire(queue, worker),
+    ]);
+    expect(result.warnings.some((w) => w.includes("slow function call"))).toBe(true);
+  });
+
+  it("accepts an async hand-off to a queue", () => {
+    const service = node("service");
+    const queue = node("queue");
+    const worker = node("worker");
+    const result = evaluate(payment, [service, queue, worker], [
+      wire(service, queue, { mode: "async" }),
+      wire(queue, worker),
+    ]);
+    expect(result.warnings.some((w) => w.includes("slow function call"))).toBe(false);
+  });
+
+  it("asks for call semantics once a board is substantial and none are labelled", () => {
+    const chain = Array.from({ length: 6 }, (_, i) => ({ id: `n${i}`, type: "service", x: 0, y: 0 }));
+    const edges = chain.slice(1).map((n, i) => wire(chain[i], n));
+    expect(evaluate(payment, chain, edges).warnings.some((w) => w.includes("synchronous or asynchronous"))).toBe(true);
+  });
+
+  it("stays quiet about semantics on a small sketch", () => {
+    const a = node("service");
+    const b = node("sql");
+    expect(evaluate(payment, [a, b], [wire(a, b)]).warnings.some((w) => w.includes("synchronous or asynchronous"))).toBe(false);
+  });
+
+  it("stops asking once any connection is labelled", () => {
+    const chain = Array.from({ length: 6 }, (_, i) => ({ id: `n${i}`, type: "service", x: 0, y: 0 }));
+    const edges = chain.slice(1).map((n, i) => wire(chain[i], n));
+    edges[0].mode = "sync";
+    expect(evaluate(payment, chain, edges).warnings.some((w) => w.includes("synchronous or asynchronous"))).toBe(false);
+  });
+});
+
+describe("prop checks", () => {
+  const scenario = (check) => ({ id: "p", name: "p", brief: "", budget: 20, checks: [check] });
+  const store = (props) => ({ id: "s1", type: "sql", x: 0, y: 0, ...props });
+
+  it("passes when a store declares the required property", () => {
+    const s = scenario({ kind: "prop", type: ["sql"], prop: "partitionKey", label: "keyed", points: 100 });
+    expect(evaluate(s, [store({ partitionKey: "user_id" })], []).score).toBe(100);
+  });
+
+  it("fails when the property is missing, blank, or whitespace", () => {
+    const s = scenario({ kind: "prop", type: ["sql"], prop: "partitionKey", label: "keyed", points: 100 });
+    for (const props of [{}, { partitionKey: "" }, { partitionKey: "   " }]) {
+      expect(evaluate(s, [store(props)], []).score).toBe(0);
+    }
+  });
+
+  it("ignores the property on a node of the wrong type", () => {
+    const s = scenario({ kind: "prop", type: ["nosql"], prop: "partitionKey", label: "keyed", points: 100 });
+    expect(evaluate(s, [store({ partitionKey: "user_id" })], []).score).toBe(0);
+  });
+
+  it("honors a numeric minimum for replica counts", () => {
+    const s = scenario({ kind: "prop", type: ["sql"], prop: "replicas", min: 2, label: "replicated", points: 100 });
+    expect(evaluate(s, [store({ replicas: 1 })], []).score).toBe(0);
+    expect(evaluate(s, [store({ replicas: 3 })], []).score).toBe(100);
+  });
+
+  it("passes when any one of several stores satisfies it", () => {
+    const s = scenario({ kind: "prop", type: ["sql"], prop: "partitionKey", label: "keyed", points: 100 });
+    const nodes = [store({ id: "a" }), { id: "b", type: "sql", x: 0, y: 0, partitionKey: "tenant_id" }];
+    expect(evaluate(s, nodes, []).score).toBe(100);
+  });
+});
+
+describe("scale-aware store warnings", () => {
+  const big = { ...payment, scale: { ...payment.scale, dau: 50_000_000, actionsPerUserPerDay: 100, writesPerUserPerDay: 50 } };
+
+  it("flags an unpartitioned store once the scenario is genuinely large", () => {
+    const result = evaluate(big, [node("sql")], []);
+    expect(result.warnings.some((w) => w.includes("partition"))).toBe(true);
+  });
+
+  it("goes quiet once a partition key is declared", () => {
+    const result = evaluate(big, [{ id: "s", type: "sql", x: 0, y: 0, partitionKey: "user_id" }], []);
+    expect(result.warnings.some((w) => w.includes("partition"))).toBe(false);
+  });
+
+  it("does not nag about partitioning on a small scenario", () => {
+    const small = { ...payment, scale: { ...payment.scale, dau: 1000, actionsPerUserPerDay: 2, writesPerUserPerDay: 1 } };
+    expect(evaluate(small, [node("sql")], []).warnings.some((w) => w.includes("partition"))).toBe(false);
+  });
+
+  it("flags a single-instance store carrying real traffic", () => {
+    const result = evaluate(big, [{ id: "s", type: "sql", x: 0, y: 0, partitionKey: "user_id", replicas: 1 }], []);
+    expect(result.warnings.some((w) => w.includes("single instance"))).toBe(true);
+  });
+});
+
+describe("blob storage warning", () => {
+  const heavy = { ...payment, scale: { ...payment.scale, payloadKb: 6000 } };
+
+  it("flags multi-megabyte payloads pushed into a database", () => {
+    const sql = node("sql");
+    const result = evaluate(heavy, [sql], []);
+    expect(result.warnings.some((w) => w.includes("Object storage"))).toBe(true);
+  });
+
+  it("stays quiet once object storage is on the board", () => {
+    const result = evaluate(heavy, [node("sql"), node("blob")], []);
+    expect(result.warnings.some((w) => w.includes("Object storage"))).toBe(false);
+  });
+
+  it("stays quiet for small payloads that belong in a database", () => {
+    const light = { ...payment, scale: { ...payment.scale, payloadKb: 4 } };
+    const result = evaluate(light, [node("sql")], []);
+    expect(result.warnings.some((w) => w.includes("Object storage"))).toBe(false);
+  });
+
+  it("does not fire on a scenario with no scale givens", () => {
+    const custom = { id: "c", name: "c", brief: "", budget: 10, checks: [] };
+    expect(evaluate(custom, [node("sql")], []).warnings.some((w) => w.includes("Object storage"))).toBe(false);
   });
 });
 

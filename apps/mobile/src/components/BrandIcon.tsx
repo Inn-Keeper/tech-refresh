@@ -33,6 +33,7 @@ export type BrandIconName =
   | "rank"
   | "retro"
   | "saved"
+  | "search"
   | "service"
   | "shield"
   | "spark"
@@ -95,6 +96,7 @@ const ICONS: Record<BrandIconName, Piece[]> = {
   rank: [{ x: 5, y: 6, w: 14, h: 11, r: 3 }, { kind: "line", x: 8, y: 5, w: 0, h: 5 }, { kind: "line", x: 16, y: 5, w: 0, h: 5 }, { kind: "line", x: 10, y: 19, w: 4, h: 0 }],
   retro: [{ x: 6, y: 5, w: 12, h: 15, r: 2 }, { kind: "line", x: 9, y: 9, w: 6, h: 0 }, { kind: "line", x: 9, y: 13, w: 6, h: 0 }, { kind: "line", x: 9, y: 17, w: 4, h: 0 }],
   saved: [{ x: 6, y: 4, w: 12, h: 16, r: 2 }, { kind: "line", x: 9, y: 4, w: 0, h: 7 }, { kind: "line", x: 15, y: 4, w: 0, h: 7 }, { kind: "line", x: 9, y: 11, w: 6, h: 5, rotate: "45deg" }],
+  search: [{ x: 4, y: 4, w: 12, h: 12, r: 6 }, { kind: "line", x: 13, y: 16, w: 7, h: 0, rotate: "45deg" }],
   service: [{ x: 7, y: 5, w: 10, h: 14, r: 3 }, { kind: "line", x: 4, y: 9, w: 4, h: 0 }, { kind: "line", x: 16, y: 9, w: 4, h: 0 }, { kind: "line", x: 4, y: 15, w: 4, h: 0 }, { kind: "line", x: 16, y: 15, w: 4, h: 0 }],
   shield: [{ x: 6, y: 4, w: 12, h: 16, r: 6 }, { kind: "line", x: 12, y: 7, w: 0, h: 9 }],
   spark: [{ kind: "line", x: 12, y: 4, w: 0, h: 16 }, { kind: "line", x: 4, y: 12, w: 16, h: 0 }, { kind: "line", x: 7, y: 7, w: 10, h: 10, rotate: "45deg" }],
@@ -117,6 +119,9 @@ export const nodeIconName = (type: string): BrandIconName => {
     cache: "cache",
     sql: "database",
     nosql: "database",
+    blob: "cloud",
+    search: "search",
+    stream: "arrowRight",
     psp: "payment",
     monitor: "monitor",
   };

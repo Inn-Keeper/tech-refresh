@@ -1,6 +1,10 @@
 export const NODE_W = 132;
 export const NODE_H = 54;
 
+// Horizontal padding of the board page. The sticky timer cancels it with equal
+// negative margins to go full-bleed, so the two must stay in step.
+export const PAGE_PADDING_X = 32;
+
 export const CUSTOM_CATEGORY = "My scenarios";
 
 export const SHIP_SCORE = 80;

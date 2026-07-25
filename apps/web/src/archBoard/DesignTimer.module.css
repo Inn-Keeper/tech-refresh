@@ -1,0 +1,49 @@
+/* Live signal for the pinned round clock: a highlight sweeping along the amber
+   edge. Only ever applied while the timer is actually running — a moving light
+   on a paused clock would claim the round is live when it isn't. */
+
+.sweep {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--timer-sweep-color) 45%,
+    var(--timer-sweep-color) 55%,
+    transparent 100%
+  );
+  animation: timerSweep 2.4s linear infinite;
+}
+
+@keyframes timerSweep {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(560%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep::after {
+    animation: none;
+    /* Reduced motion still needs the "live" cue, so hold a steady glow
+       across the edge instead of sliding one along it. */
+    width: 100%;
+    background: var(--timer-sweep-color);
+    opacity: 0.55;
+  }
+}

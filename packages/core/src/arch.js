@@ -1,6 +1,8 @@
 // Arch Board domain: component palette, scenarios, evaluator.
 // Shared by web and mobile — keep free of UI/framework imports.
 
+import { deriveScale } from "./estimation.js";
+
 /**
  * @typedef {object} NodeSpec
  * @property {string} type
@@ -11,23 +13,38 @@
  */
 
 /**
+ * Stateful nodes carry the two properties interviewers actually probe: how the
+ * data is split, and how many copies exist. Both are optional — boards saved
+ * before these existed simply have neither.
+ *
  * @typedef {object} BoardNode
  * @property {string} id
  * @property {string} type
  * @property {number} x
  * @property {number} y
+ * @property {string} [partitionKey]
+ * @property {number} [replicas]
  */
 
 /**
+ * Real whiteboards annotate arrows. `mode` is the one that changes the design
+ * (a synchronous hop couples two services' availability; an async one doesn't);
+ * `protocol` is what an interviewer asks next. Both optional — arrows drawn
+ * before these existed carry neither.
+ *
  * @typedef {object} BoardEdge
  * @property {string} id
  * @property {string} from
  * @property {string} to
+ * @property {"sync" | "async"} [mode]
+ * @property {string} [protocol]
  */
 
 /**
  * @typedef {object} Check
- * @property {"node" | "edge"} kind
+ * @property {"node" | "edge" | "prop"} kind
+ * @property {string} [prop] for kind "prop": the BoardNode field that must be set
+ * @property {number} [min] for numeric props: the smallest passing value
  * @property {string[]} [type]
  * @property {string[]} [from]
  * @property {string[]} [to]
@@ -53,6 +70,8 @@
  * @property {number} budget
  * @property {Check[]} checks
  * @property {WarningRule[]} [warnings]
+ * @property {import("./estimation.js").ScenarioScale} [scale] absent on user-authored scenarios
+ * @property {string} [pushback] interviewer follow-up; absent on user-authored scenarios
  */
 
 /**
@@ -79,6 +98,11 @@ export const NODE_TYPES = [
   { type: "cache", label: "Cache (Redis)", emoji: "⚡", cost: 1, maint: 1 },
   { type: "sql", label: "SQL Database", emoji: "🗄️", cost: 2, maint: 2 },
   { type: "nosql", label: "NoSQL DB", emoji: "📦", cost: 2, maint: 2 },
+  // Blob is cheap per byte and nearly maintenance-free; a search index and an
+  // event log are both operationally heavy, which is the point of the cost gap.
+  { type: "blob", label: "Object Storage", emoji: "🪣", cost: 1, maint: 1 },
+  { type: "search", label: "Search Index", emoji: "🔎", cost: 2, maint: 3 },
+  { type: "stream", label: "Event Stream", emoji: "🌊", cost: 2, maint: 3 },
   { type: "psp", label: "Payment Provider", emoji: "💳", cost: 3, maint: 1 },
   { type: "monitor", label: "Monitoring", emoji: "📊", cost: 1, maint: 1 },
 ];
@@ -90,6 +114,7 @@ export const TYPE_COLORS = {
   client: "#38BDF8", cdn: "#7DD3FC", lb: "#FBBF24", gateway: "#FB923C",
   auth: "#A78BFA", service: "#4ADE80", worker: "#818CF8", queue: "#FACC15",
   cache: "#F472B6", sql: "#94A3B8", nosql: "#A3E635", psp: "#E879F9", monitor: "#C084FC",
+  blob: "#A8A29E", search: "#60A5FA", stream: "#FB7185",
 };
 
 /**
@@ -99,6 +124,28 @@ export const TYPE_COLORS = {
  * @returns {NodeSpec}
  */
 export const meta = (type) => NODE_TYPES.find((t) => t.type === type) ?? NODE_TYPES[0];
+
+/** At roughly a megabyte a row, bytes belong in object storage, not a table. */
+const LARGE_PAYLOAD_KB = 1000;
+
+/** Call semantics an arrow can declare. */
+export const EDGE_MODES = ["sync", "async"];
+
+/** Protocols worth naming out loud; free text is allowed beyond these. */
+export const EDGE_PROTOCOLS = ["REST", "gRPC", "GraphQL", "WebSocket", "Kafka", "SQL"];
+
+/** Below this an unlabelled sketch is fine; past it, silence is a gap. */
+const SEMANTICS_EDGE_FLOOR = 5;
+
+/** Durable stores whose partitioning and replication an interviewer will probe. */
+export const STATEFUL_TYPES = ["sql", "nosql", "search", "stream", "cache", "blob", "queue"];
+
+/**
+ * Below these, one well-provisioned box is a legitimate answer and nagging
+ * about shards would be teaching premature scaling.
+ */
+const SHARDING_QPS = 1000;
+const SHARDING_STORAGE_GB = 1000;
 
 // The 100-scenario default library lives in scenarios.js; re-exported here so
 // both apps keep importing everything board-related from "@tech-refresh/core/arch".
@@ -147,9 +194,26 @@ export function evaluate(scenario, nodes, edges) {
       return (from.includes(a) && to.includes(b)) || (bidi && from.includes(b) && to.includes(a));
     });
 
+  /**
+   * A property counts as declared when at least one node of a matching type
+   * carries it: a non-blank string, or a number at or above `min`.
+   */
+  const hasProp = (types, prop, min) =>
+    nodes.some((n) => {
+      if (!types.includes(n.type)) return false;
+      const value = n[prop];
+      if (typeof value === "number") return Number.isFinite(value) && value >= (min ?? 1);
+      return typeof value === "string" && value.trim() !== "";
+    });
+
   const checks = scenario.checks.map((c) => ({
     ...c,
-    passed: c.kind === "node" ? hasNode(c.type) : hasEdge(c.from, c.to, c.bidi),
+    passed:
+      c.kind === "node"
+        ? hasNode(c.type)
+        : c.kind === "prop"
+          ? hasProp(c.type, c.prop, c.min)
+          : hasEdge(c.from, c.to, c.bidi),
   }));
   const earned = checks.filter((c) => c.passed).reduce((s, c) => s + c.points, 0);
   const totalPts = scenario.checks.reduce((s, c) => s + c.points, 0);
@@ -168,6 +232,48 @@ export function evaluate(scenario, nodes, edges) {
     warnings.push("A cache that nothing reads is pure cost.");
   if (hasNode(["queue"]) && !hasEdge(["queue"], ["worker", "service"], true))
     warnings.push("A queue with no consumer — messages go in and rot.");
+  // Rows this size make backups, replication, and every full scan miserable.
+  if (
+    scenario.scale?.payloadKb >= LARGE_PAYLOAD_KB &&
+    hasNode(["sql", "nosql"]) &&
+    !hasNode(["blob"])
+  )
+    warnings.push(
+      `Writes here are ~${Math.round(scenario.scale.payloadKb / 1000)}MB each and they're going into a database. Object storage holds the bytes; the database should hold the pointer.`
+    );
+  // A buffer you block on gives up the only thing it was bought for.
+  if (
+    edges.some(
+      (e) => e.mode === "sync" && ["queue", "stream"].includes(typeOf[e.to])
+    )
+  )
+    warnings.push(
+      "A connection into the buffer is marked synchronous — if the caller waits for it, that queue is just a slow function call."
+    );
+
+  if (edges.length >= SEMANTICS_EDGE_FLOOR && !edges.some((e) => e.mode))
+    warnings.push(
+      "No connection says whether it's synchronous or asynchronous. That choice decides which failures cascade — say it on every hop that matters."
+    );
+
+  // Sharding and replication only matter once the numbers say they do, so both
+  // of these are gated on the scenario's own scale rather than nagging always.
+  if (scenario.scale) {
+    const { peakQps, storageGb } = deriveScale(scenario.scale);
+    const atScale = peakQps >= SHARDING_QPS || storageGb >= SHARDING_STORAGE_GB;
+    const durable = nodes.filter((n) => n.type === "sql" || n.type === "nosql");
+
+    if (atScale && durable.length > 0 && !durable.some((n) => n.partitionKey?.trim()))
+      warnings.push(
+        "At this volume the data has to be split, but no store declares a partition key. Which column, and what does it make expensive?"
+      );
+
+    if (atScale && durable.some((n) => n.replicas === 1))
+      warnings.push(
+        "A store is on a single instance under real traffic. One machine is one outage and one maintenance window."
+      );
+  }
+
   for (const w of scenario.warnings || []) {
     if (w.when({ hasNode, hasEdge })) warnings.push(w.text);
   }

@@ -21,10 +21,37 @@ A full-stack interview prep and hiring pipeline manager - **web + React Native m
 - Accuracy timeline: track your growth over time
 
 ### **Arch Board** tab
-- System-design practice with interactive node-and-edge board
-- 100 realistic scenarios plus user-authored custom scenarios
-- Instant feedback: design checks, budget vs. cost, deployment complexity
+
+A full system-design round, not just a diagram. The board scores the boxes; the
+rest of the tab scores everything an interviewer actually grades around them.
+
+#### Draw it
+
+- Interactive node-and-edge board, 16 component types (incl. object storage, search index, and an event stream distinct from a queue)
+- 100 realistic scenarios across 10 domains, plus user-authored custom scenarios
+- Stateful nodes carry a **partition key** and **replica count**; arrows carry **call semantics** (sync/async, dashed when async) and a protocol
 - Mobile: Skia canvas + gesture-handler; Web: full edit mode
+
+#### Say it
+
+- **Talk track** — the six beats a round is graded on: requirements, back-of-envelope, API surface, data model, bottleneck, tradeoffs. Saved with the board.
+- **40-minute countdown** split into phases (scope → math → boxes → deep dive → defend), each pointing at the talk-track section it should produce
+
+#### Do the math
+
+- Every scenario ships the numbers an interviewer hands you when you ask: DAU, requests and writes per user per day, payload size, retention
+- Peak QPS and storage are *derived* from those givens, so the target answer can't contradict the question
+- Estimates are graded by **order of magnitude** — within 3× is spot on, within 10× passes, beyond that is off
+
+#### Defend it
+
+- **Interviewer follow-ups** after every evaluation: one question specific to that scenario, plus probes on the components you actually drew
+- Scale-gated warnings that only fire when the numbers justify them — an unpartitioned store at 1000+ req/s, a single-instance database under real traffic, multi-megabyte payloads pushed into a table, a queue someone waits on
+
+#### Scored honestly
+
+- A board reports two halves: **boxes** (topology) and **reasoning** (talk track), averaged
+- A full-marks diagram with no reasoning attached reads as **50%**, not 100% — and the readiness meter says which half is weak
 
 ### **Stories** tab
 - STAR interview prep: Conflict, Failure, Leadership, Impact, Ambiguity, Influence, Mentoring, Delivery
@@ -95,7 +122,14 @@ grip/
 │       │   ├── prepData.js     # 80+ tech quiz content
 │       │   ├── questions.js    # JSON-backed difficulty question bank
 │       │   ├── scenarios.js    # 100 default Arch Board scenarios
+│       │   ├── scenarioScale.js     # Traffic/storage givens per scenario
+│       │   ├── scenarioPushback.js  # One interviewer follow-up per scenario
 │       │   ├── arch.js         # Evaluator, custom checks, node types
+│       │   ├── estimation.js   # Derived QPS/storage, order-of-magnitude grading
+│       │   ├── talkTrack.js    # The six spoken beats of a design round
+│       │   ├── designTimer.js  # 40-min round split into phases
+│       │   ├── pushback.js     # Follow-ups derived from what you drew
+│       │   ├── boardScore.js   # Topology + reasoning, scored as halves
 │       │   ├── stories.js      # STAR competencies, prompts
 │       │   ├── contacts.js     # Pipeline lifecycle, date rules
 │       │   ├── quiz.js         # Shuffle, drill-building

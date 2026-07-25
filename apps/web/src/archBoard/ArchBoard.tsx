@@ -1,15 +1,22 @@
 import React, { useRef, useState } from "react";
-import { TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, evaluate } from "@tech-refresh/core/arch";
+import { TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, STATEFUL_TYPES, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
+import { buildPushback } from "@tech-refresh/core/pushback";
+import { emptyTalkTrack, scoreTalkTrack, TALK_TRACK_SECTIONS } from "@tech-refresh/core/talkTrack";
 import { colors, layout } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { nodeIconName } from "../components/brandIconNames";
 import { Combobox } from "../components/Combobox";
-import { CATEGORY_ICONS, CUSTOM_CATEGORY, NODE_H, NODE_W } from "./constants";
+import { CATEGORY_ICONS, CUSTOM_CATEGORY, NODE_H, NODE_W, PAGE_PADDING_X } from "./constants";
+import { DesignTimer } from "./DesignTimer";
+import { EdgeInspector } from "./EdgeInspector";
 import { EvalResults } from "./EvalResults";
+import { NodeInspector } from "./NodeInspector";
 import { NodePalette } from "./NodePalette";
 import { SavedBoards } from "./SavedBoards";
+import { ScaleBrief } from "./ScaleBrief";
 import { ScenarioForm } from "./ScenarioForm";
+import { TalkTrack } from "./TalkTrack";
 import {
   useCustomScenariosQuery,
   useDeleteBoardMutation,
@@ -26,9 +33,14 @@ export default function ArchBoard() {
   const [nodes, setNodes] = useState<BoardNode[]>([]);
   const [edges, setEdges] = useState<BoardEdge[]>([]);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
+  const [inspectingId, setInspectingId] = useState<string | null>(null);
+  const [inspectingEdgeId, setInspectingEdgeId] = useState<string | null>(null);
   const [connectDrag, setConnectDrag] = useState<ConnectDrag | null>(null);
   const [result, setResult] = useState<ReturnType<typeof evaluate> | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
+  const [talkOpen, setTalkOpen] = useState(false);
+  const [talkSections, setTalkSections] = useState<Record<string, string>>(emptyTalkTrack);
+  const [talkRating, setTalkRating] = useState<number | null>(null);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [activeBoardTitle, setActiveBoardTitle] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -85,6 +97,8 @@ export default function ArchBoard() {
     setScenarioId(board.scenarioId);
     setNodes(board.nodes);
     setEdges(board.edges);
+    setTalkSections({ ...emptyTalkTrack(), ...(board.talkTrack?.sections ?? {}) });
+    setTalkRating(board.talkTrack?.rating ?? null);
     cancelConnection();
     setResult(null);
     setActiveBoardId(board.id ?? null);
@@ -93,11 +107,14 @@ export default function ArchBoard() {
   };
   const liveCost = nodes.reduce((s, n) => s + meta(n.type).cost, 0);
   const liveMaint = nodes.reduce((s, n) => s + meta(n.type).maint, 0);
+  const talkAnswered = scoreTalkTrack({ sections: talkSections, rating: talkRating }).answered.length;
 
   const switchScenario = (id: string) => {
     setScenarioId(id);
     setNodes([]);
     setEdges([]);
+    setTalkSections(emptyTalkTrack());
+    setTalkRating(null);
     cancelConnection();
     setResult(null);
     setActiveBoardId(null);
@@ -117,6 +134,12 @@ export default function ArchBoard() {
     setNodes(nodes.filter((n) => n.id !== id));
     setEdges(edges.filter((e) => e.from !== id && e.to !== id));
     if (connectFrom === id || connectDrag?.from === id) cancelConnection();
+    if (inspectingId === id) setInspectingId(null);
+    setResult(null);
+  };
+
+  const patchNode = (id: string, patch: Partial<BoardNode>) => {
+    setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
     setResult(null);
   };
 
@@ -128,6 +151,12 @@ export default function ArchBoard() {
 
   const removeEdge = (id: string) => {
     setEdges(edges.filter((e) => e.id !== id));
+    if (inspectingEdgeId === id) setInspectingEdgeId(null);
+    setResult(null);
+  };
+
+  const patchEdge = (id: string, patch: Partial<BoardEdge>) => {
+    setEdges((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
     setResult(null);
   };
 
@@ -234,7 +263,14 @@ export default function ArchBoard() {
   };
 
   return (
-    <main style={{ minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`, width: "100%", padding: "32px 32px 56px", boxSizing: "border-box" }}>
+    <main
+      style={{
+        minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`,
+        width: "100%",
+        padding: `32px ${PAGE_PADDING_X}px 56px`,
+        boxSizing: "border-box",
+      }}
+    >
       <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
         Arch Board
       </h1>
@@ -301,6 +337,10 @@ export default function ArchBoard() {
         </div>
       )}
 
+      <ScaleBrief key={scenario.id} scenario={scenario} />
+
+      <DesignTimer />
+
       {/* Live cost ticker + actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, flexWrap: "wrap" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: liveCost > scenario.budget ? colors.danger : colors.textDim }}>
@@ -312,6 +352,19 @@ export default function ArchBoard() {
           Maintenance load {liveMaint}
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <button
+            onClick={() => setTalkOpen((value) => !value)}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "7px 14px", background: "transparent",
+              border: `1px solid ${talkOpen ? colors.accent : colors.border}`,
+              borderRadius: 8, color: talkOpen ? colors.accentBright : colors.textDim,
+              fontSize: 12, fontWeight: 600, cursor: "pointer",
+            }}
+          >
+            <BrandIcon name="spark" color={talkOpen ? colors.accentBright : colors.textDim} size={13} />
+            {t("talk.title")} ({talkAnswered}/{TALK_TRACK_SECTIONS.length})
+          </button>
           <button
             onClick={() => setSavedOpen((value) => !value)}
             style={{
@@ -329,6 +382,7 @@ export default function ArchBoard() {
                 scenarioId: scenario.id,
                 nodes,
                 edges,
+                talkTrack: { sections: talkSections, rating: talkRating },
               })
             }
             disabled={saveBoardMutation.isPending}
@@ -340,7 +394,7 @@ export default function ArchBoard() {
             {saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
           </button>
           <button
-            onClick={() => { setNodes([]); setEdges([]); cancelConnection(); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
+            onClick={() => { setNodes([]); setEdges([]); setTalkSections(emptyTalkTrack()); setTalkRating(null); cancelConnection(); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
             style={{
               padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
               borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
@@ -430,18 +484,40 @@ export default function ArchBoard() {
               const ty = b.y + NODE_H / 2;
               const mx = (sx + tx) / 2;
               const d = `M ${sx} ${sy} C ${mx} ${sy}, ${mx} ${ty}, ${tx} ${ty}`;
+              const selected = inspectingEdgeId === e.id;
+              const modeLabel = e.mode === "sync" ? t("edge.sync") : e.mode === "async" ? t("edge.async") : null;
+              const label = [e.protocol, modeLabel].filter(Boolean).join(" · ");
               return (
                 <g key={e.id}>
-                  <path d={d} fill="none" stroke={colors.textDim} strokeWidth="2" markerEnd="url(#arrow)" />
+                  <path
+                    d={d}
+                    fill="none"
+                    stroke={selected ? colors.accentBright : colors.textDim}
+                    strokeWidth={selected ? 3 : 2}
+                    // Async hops are dashed — the same visual language a
+                    // whiteboard uses for "this one doesn't block".
+                    strokeDasharray={e.mode === "async" ? "6 4" : undefined}
+                    markerEnd="url(#arrow)"
+                  />
+                  {label && (
+                    <text
+                      x={mx}
+                      y={(sy + ty) / 2 - 6}
+                      textAnchor="middle"
+                      style={{ fontSize: 10, fontWeight: 600, fill: colors.textFaint, pointerEvents: "none" }}
+                    >
+                      {label}
+                    </text>
+                  )}
                   <path
                     d={d}
                     fill="none"
                     stroke="transparent"
                     strokeWidth="14"
                     style={{ pointerEvents: "stroke", cursor: "pointer" }}
-                    onClick={() => removeEdge(e.id)}
+                    onClick={() => setInspectingEdgeId((current) => (current === e.id ? null : e.id))}
                   >
-                    <title>Click to remove this connection</title>
+                    <title>{t("edge.clickHint")}</title>
                   </path>
                 </g>
               );
@@ -516,7 +592,45 @@ export default function ArchBoard() {
                 }}
               >
                 <BrandIcon name={nodeIconName(n.type)} color={color} size={18} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: colors.text, lineHeight: 1.2 }}>{spec.label}</span>
+                <span style={{ display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: colors.text, lineHeight: 1.2 }}>{spec.label}</span>
+                  {(n.partitionKey?.trim() || n.replicas) && (
+                    <span
+                      style={{
+                        fontSize: 9.5,
+                        color: colors.textFaint,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {[n.partitionKey?.trim(), n.replicas ? `×${n.replicas}` : null].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </span>
+                {STATEFUL_TYPES.includes(n.type) && (
+                  <button
+                    onPointerDown={(ev) => ev.stopPropagation()}
+                    onClick={(ev) => {
+                      ev.stopPropagation();
+                      setInspectingId((current) => (current === n.id ? null : n.id));
+                    }}
+                    title={t("node.inspect")}
+                    style={{
+                      position: "absolute", bottom: -8, right: -8, width: 18, height: 18,
+                      borderRadius: "50%", border: "none",
+                      background: inspectingId === n.id ? colors.accent : colors.border,
+                      cursor: "pointer", padding: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                    }}
+                  >
+                    <BrandIcon
+                      name="maintenance"
+                      color={inspectingId === n.id ? colors.onAccent : colors.textDim}
+                      size={10}
+                    />
+                  </button>
+                )}
                 <button
                   onPointerDown={(ev) => ev.stopPropagation()}
                   onClick={(ev) => { ev.stopPropagation(); removeNode(n.id); }}
@@ -538,7 +652,38 @@ export default function ArchBoard() {
         </div>
       </div>
 
-      {result && <EvalResults result={result} scenario={scenario} />}
+      {inspectingEdgeId && edges.find((e) => e.id === inspectingEdgeId) && (() => {
+        const edge = edges.find((e) => e.id === inspectingEdgeId)!;
+        return (
+          <EdgeInspector
+            edge={edge}
+            from={nodeById[edge.from]}
+            to={nodeById[edge.to]}
+            onChange={(patch) => patchEdge(edge.id, patch)}
+            onRemove={() => removeEdge(edge.id)}
+            onClose={() => setInspectingEdgeId(null)}
+          />
+        );
+      })()}
+
+      {inspectingId && nodeById[inspectingId] && (
+        <NodeInspector
+          node={nodeById[inspectingId]}
+          onChange={(patch) => patchNode(inspectingId, patch)}
+          onClose={() => setInspectingId(null)}
+        />
+      )}
+
+      {talkOpen && (
+        <TalkTrack
+          sections={talkSections}
+          rating={talkRating}
+          onChangeSection={(id, value) => setTalkSections((prev) => ({ ...prev, [id]: value }))}
+          onChangeRating={setTalkRating}
+        />
+      )}
+
+      {result && <EvalResults result={result} scenario={scenario} pushback={buildPushback(scenario, nodes)} />}
     </main>
   );
 }

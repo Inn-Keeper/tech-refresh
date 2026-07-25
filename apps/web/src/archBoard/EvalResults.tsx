@@ -17,7 +17,15 @@ type EvalResult = {
   warnings: string[];
 };
 
-export function EvalResults({ result, scenario }: { result: EvalResult; scenario: AugmentedScenario }) {
+export function EvalResults({
+  result,
+  scenario,
+  pushback = [],
+}: {
+  result: EvalResult;
+  scenario: AugmentedScenario;
+  pushback?: string[];
+}) {
   return (
     <div
       style={{
@@ -119,6 +127,22 @@ export function EvalResults({ result, scenario }: { result: EvalResult; scenario
           </div>
         )}
       </div>
+
+      {pushback.length > 0 && (
+        <div style={{ marginTop: 18, paddingTop: 16, borderTop: `1px solid ${colors.border}` }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
+            {t("board.pushback").toUpperCase()}
+          </div>
+          <p style={{ margin: "0 0 10px", fontSize: 11.5, color: colors.textFaint }}>{t("board.pushbackHint")}</p>
+          <ol style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+            {pushback.map((question) => (
+              <li key={question} style={{ fontSize: 12.5, lineHeight: 1.55, color: colors.text }}>
+                {question}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
     </div>
   );
 }

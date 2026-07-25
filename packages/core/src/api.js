@@ -4,6 +4,7 @@ import { buildAccuracyTimeline } from "./accuracy.js";
 import { buildReviewQueue } from "./review.js";
 import { CORRECT_XP } from "./gamification.js";
 import { difficultyByKey } from "./difficulty.js";
+import { normalizeTalkTrack } from "./talkTrack.js";
 import { shuffle } from "./quiz.js";
 
 // Upper bound on how many candidate questions we pull for a techs+difficulty
@@ -69,6 +70,7 @@ const QUESTION_FETCH_CAP = 500;
  * @property {string} scenarioId
  * @property {import("./arch.js").BoardNode[]} nodes
  * @property {import("./arch.js").BoardEdge[]} edges
+ * @property {{ sections: Record<string, string>, rating: number | null }} [talkTrack]
  * @property {string | null} [shareToken]
  * @property {string} [createdAt]
  * @property {string} [updatedAt]
@@ -273,6 +275,7 @@ export function createApi(supabase) {
     scenarioId: r.scenario_id,
     nodes: r.nodes ?? [],
     edges: r.edges ?? [],
+    talkTrack: normalizeTalkTrack(r.talk_track),
     shareToken: r.share_token ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -283,6 +286,7 @@ export function createApi(supabase) {
     scenario_id: b.scenarioId,
     nodes: b.nodes ?? [],
     edges: b.edges ?? [],
+    talk_track: normalizeTalkTrack(b.talkTrack),
   });
 
   async function listBoards() {

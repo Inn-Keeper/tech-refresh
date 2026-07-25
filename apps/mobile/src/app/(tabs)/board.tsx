@@ -4,6 +4,8 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { setTabBarHidden } from "@/lib/uiStore";
 import { NODE_TYPES, SCENARIOS, TYPE_COLORS, evaluate, meta } from "@tech-refresh/core/arch";
+import { buildPushback } from "@tech-refresh/core/pushback";
+import { emptyTalkTrack, scoreTalkTrack, TALK_TRACK_SECTIONS } from "@tech-refresh/core/talkTrack";
 import { t } from "@tech-refresh/core/i18n";
 import { useLocale } from "@/lib/useLocale";
 import type { BoardEdge, BoardNode, EvalResult } from "@tech-refresh/core/arch";
@@ -12,7 +14,12 @@ import { colors, layout } from "@/theme";
 import { Button, MiniButton, Screen, ScreenHeader, SegmentedPills } from "@/components/ui";
 import { BrandIcon, nodeIconName } from "@/components/BrandIcon";
 import { BoardCanvas } from "@/components/board/BoardCanvas";
+import { DesignTimerBar, useDesignTimer } from "@/components/board/DesignTimerBar";
 import { ResultSheet } from "@/components/board/ResultSheet";
+import { EdgeInspectorSheet } from "@/components/board/EdgeInspectorSheet";
+import { NodeInspectorSheet } from "@/components/board/NodeInspectorSheet";
+import { ScaleSheet } from "@/components/board/ScaleSheet";
+import { TalkTrackSheet } from "@/components/board/TalkTrackSheet";
 import { useDeleteBoardMutation, useSaveBoardMutation, useSavedBoardsQuery } from "@/queries/board";
 
 export default function BoardScreen() {
@@ -22,7 +29,13 @@ export default function BoardScreen() {
   const [nodes, setNodes] = useState<BoardNode[]>([]);
   const [edges, setEdges] = useState<BoardEdge[]>([]);
   const [result, setResult] = useState<EvalResult | null>(null);
+  const [inspectingEdgeId, setInspectingEdgeId] = useState<string | null>(null);
   const [savedOpen, setSavedOpen] = useState(false);
+  const [talkOpen, setTalkOpen] = useState(false);
+  const [scaleOpen, setScaleOpen] = useState(false);
+  const [inspectingId, setInspectingId] = useState<string | null>(null);
+  const [talkSections, setTalkSections] = useState<Record<string, string>>(emptyTalkTrack);
+  const [talkRating, setTalkRating] = useState<number | null>(null);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [activeBoardTitle, setActiveBoardTitle] = useState<string | null>(null);
   // Chrome levels: full (pills + brief), compact (slim row), zen (board only,
@@ -35,6 +48,7 @@ export default function BoardScreen() {
     return () => setTabBarHidden(false);
   }, [chrome]);
 
+  const timer = useDesignTimer();
   const scenario = SCENARIOS[scenarioIndex];
   const { data: savedBoards = [], error: boardsError } = useSavedBoardsQuery();
   const saveBoardMutation = useSaveBoardMutation(
@@ -56,10 +70,13 @@ export default function BoardScreen() {
   const liveCost = nodes.reduce((sum, node) => sum + meta(node.type).cost, 0);
   const liveMaint = nodes.reduce((sum, node) => sum + meta(node.type).maint, 0);
   const overBudget = liveCost > scenario.budget;
+  const talkAnswered = scoreTalkTrack({ sections: talkSections, rating: talkRating }).answered.length;
 
   const clearBoard = () => {
     setNodes([]);
     setEdges([]);
+    setTalkSections(emptyTalkTrack());
+    setTalkRating(null);
     setResult(null);
     setActiveBoardId(null);
     setActiveBoardTitle(null);
@@ -85,6 +102,12 @@ export default function BoardScreen() {
   const removeNode = (id: string) => {
     setNodes((current) => current.filter((node) => node.id !== id));
     setEdges((current) => current.filter((edge) => edge.from !== id && edge.to !== id));
+    if (inspectingId === id) setInspectingId(null);
+    setResult(null);
+  };
+
+  const patchNode = (id: string, patch: Partial<BoardNode>) => {
+    setNodes((current) => current.map((node) => (node.id === id ? { ...node, ...patch } : node)));
     setResult(null);
   };
 
@@ -97,6 +120,8 @@ export default function BoardScreen() {
     setScenarioIndex(nextScenarioIndex);
     setNodes(board.nodes);
     setEdges(board.edges);
+    setTalkSections({ ...emptyTalkTrack(), ...(board.talkTrack?.sections ?? {}) });
+    setTalkRating(board.talkTrack?.rating ?? null);
     setResult(null);
     setActiveBoardId(board.id ?? null);
     setActiveBoardTitle(board.title);
@@ -122,15 +147,18 @@ export default function BoardScreen() {
     setResult(null);
   };
 
-  const confirmRemoveEdge = (id: string) =>
-    Alert.alert(t("board.removeConnectionTitle"), t("board.removeConnectionMessage"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("common.delete"),
-        style: "destructive",
-        onPress: () => setEdges((current) => current.filter((edge) => edge.id !== id)),
-      },
-    ]);
+  // Tapping an arrow opens its inspector (label it, or remove it from there)
+  // rather than deleting on contact.
+  const removeEdge = (id: string) => {
+    setEdges((current) => current.filter((edge) => edge.id !== id));
+    setInspectingEdgeId(null);
+    setResult(null);
+  };
+
+  const patchEdge = (id: string, patch: Partial<BoardEdge>) => {
+    setEdges((current) => current.map((edge) => (edge.id === id ? { ...edge, ...patch } : edge)));
+    setResult(null);
+  };
 
   return (
     <Screen key={locale}>
@@ -155,6 +183,8 @@ export default function BoardScreen() {
           paddingBottom: chrome === "zen" ? insets.bottom + 4 : insets.bottom + layout.tabBarClearance,
         }}
       >
+      {chrome !== "zen" && <DesignTimerBar timer={timer} />}
+
       {chrome !== "zen" && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <MiniButton
@@ -179,6 +209,16 @@ export default function BoardScreen() {
             <Text style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>{liveMaint}</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 8, marginLeft: "auto", alignItems: "center" }}>
+            <MiniButton
+              label={t("scale.check")}
+              color={scaleOpen ? colors.accent : colors.textDim}
+              onPress={() => setScaleOpen(true)}
+            />
+            <MiniButton
+              label={`${t("talk.title")} ${talkAnswered}/${TALK_TRACK_SECTIONS.length}`}
+              color={talkOpen ? colors.accent : colors.textDim}
+              onPress={() => setTalkOpen(true)}
+            />
             <MiniButton label={t("board.saved")} color={savedOpen ? colors.accent : colors.textDim} onPress={() => setSavedOpen((value) => !value)} />
             <MiniButton
               label={saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
@@ -190,6 +230,7 @@ export default function BoardScreen() {
                   scenarioId: scenario.id,
                   nodes,
                   edges,
+                  talkTrack: { sections: talkSections, rating: talkRating },
                 })
               }
             />
@@ -216,7 +257,8 @@ export default function BoardScreen() {
           onMoveNode={moveNode}
           onRemoveNode={removeNode}
           onAddEdge={addEdge}
-          onTapEdge={confirmRemoveEdge}
+          onTapEdge={setInspectingEdgeId}
+          onInspectNode={(id) => setInspectingId(id)}
         />
 
         {chrome === "zen" && (
@@ -235,6 +277,7 @@ export default function BoardScreen() {
             >
               <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: "600", color: colors.textDim }}>
                 {scenario.name} · {liveCost}/{scenario.budget}
+                {timer.started ? ` · ${timer.clock}` : ""}
               </Text>
             </View>
             <TouchableOpacity
@@ -297,7 +340,38 @@ export default function BoardScreen() {
         </View>
       </View>
 
-        <ResultSheet result={result} scenario={scenario} onClose={() => setResult(null)} />
+        <EdgeInspectorSheet
+          edge={edges.find((edge) => edge.id === inspectingEdgeId) ?? null}
+          from={nodes.find((n) => n.id === edges.find((e) => e.id === inspectingEdgeId)?.from)}
+          to={nodes.find((n) => n.id === edges.find((e) => e.id === inspectingEdgeId)?.to)}
+          onChange={(patch) => inspectingEdgeId && patchEdge(inspectingEdgeId, patch)}
+          onRemove={() => inspectingEdgeId && removeEdge(inspectingEdgeId)}
+          onClose={() => setInspectingEdgeId(null)}
+        />
+
+        <NodeInspectorSheet
+          node={nodes.find((node) => node.id === inspectingId) ?? null}
+          onChange={(patch) => inspectingId && patchNode(inspectingId, patch)}
+          onClose={() => setInspectingId(null)}
+        />
+
+        <ScaleSheet key={scenario.id} visible={scaleOpen} scale={scenario.scale} onClose={() => setScaleOpen(false)} />
+
+        <TalkTrackSheet
+          visible={talkOpen}
+          sections={talkSections}
+          rating={talkRating}
+          onChangeSection={(id, value) => setTalkSections((prev) => ({ ...prev, [id]: value }))}
+          onChangeRating={setTalkRating}
+          onClose={() => setTalkOpen(false)}
+        />
+
+        <ResultSheet
+          result={result}
+          scenario={scenario}
+          pushback={buildPushback(scenario, nodes)}
+          onClose={() => setResult(null)}
+        />
       </View>
     </Screen>
   );

@@ -1,4 +1,6 @@
 import { SCENARIOS, SCENARIO_CATEGORIES, NODE_TYPES, buildCustomChecks, evaluate } from "../arch.js";
+import { SCENARIO_SCALE } from "../scenarioScale.js";
+import { ESTIMATE_TARGETS, deriveScale } from "../estimation.js";
 
 // The scenario library is hand-authored data; these invariants are what the
 // evaluator and the scenario pickers in both apps rely on.
@@ -41,6 +43,95 @@ describe("scenario library", () => {
         expect(c.label.trim()).not.toBe("");
       }
     }
+  });
+
+  it("gives every scenario scale givens with sane magnitudes", () => {
+    for (const s of SCENARIOS) {
+      if (!s.scale) throw new Error(`Scenario "${s.id}" has no scale entry in scenarioScale.js`);
+      const { dau, actionsPerUserPerDay, writesPerUserPerDay, payloadKb, retentionDays } = s.scale;
+      expect(dau).toBeGreaterThan(0);
+      expect(actionsPerUserPerDay).toBeGreaterThan(0);
+      expect(writesPerUserPerDay).toBeGreaterThan(0);
+      expect(payloadKb).toBeGreaterThan(0);
+      expect(Number.isInteger(retentionDays)).toBe(true);
+      expect(retentionDays).toBeGreaterThan(0);
+      // A write is a request too, so it can never outnumber total requests.
+      if (writesPerUserPerDay > actionsPerUserPerDay) {
+        throw new Error(`Scenario "${s.id}" writes more often than it receives requests`);
+      }
+    }
+  });
+
+  it("has no scale rows for scenarios that no longer exist", () => {
+    const ids = new Set(SCENARIOS.map((s) => s.id));
+    const orphans = Object.keys(SCENARIO_SCALE).filter((id) => !ids.has(id));
+    expect(orphans).toEqual([]);
+  });
+
+  it("derives estimation targets that are finite and positive for every scenario", () => {
+    for (const s of SCENARIOS) {
+      const derived = deriveScale(s.scale);
+      for (const target of ESTIMATE_TARGETS) {
+        const value = target.valueOf(derived);
+        if (!Number.isFinite(value) || value <= 0) {
+          throw new Error(`Scenario "${s.id}" derives a bad ${target.id}: ${value}`);
+        }
+      }
+    }
+  });
+
+  it("scores every scenario out of exactly 100", () => {
+    // Boards are compared across scenarios and stored as percentages, so the
+    // denominator has to stay fixed. Adding a check means taking points from
+    // another one, not growing the total.
+    for (const s of SCENARIOS) {
+      const total = s.checks.reduce((sum, c) => sum + c.points, 0);
+      if (total !== 100) throw new Error(`Scenario "${s.id}" sums to ${total}, not 100`);
+    }
+  });
+
+  it("accepts object storage where the payload is bytes, not rows", () => {
+    // Drawing blob instead of a database must satisfy the storage check —
+    // otherwise the correct answer for a media platform scores as a miss.
+    const mediaUpload = SCENARIOS.find((s) => s.id === "media-upload");
+    const storage = mediaUpload.checks.find((c) => c.kind === "edge" && c.to.includes("blob"));
+    expect(storage).toBeDefined();
+  });
+
+  it("accepts an event stream where a queue was the only option before", () => {
+    // Kafka-shaped answers are correct for high-throughput ingest; before the
+    // palette grew, they were unexpressible and scored zero.
+    for (const id of ["clickstream", "log-pipeline", "game-telemetry"]) {
+      const scenario = SCENARIOS.find((s) => s.id === id);
+      const accepts = scenario.checks.some((c) =>
+        (c.kind === "node" ? c.type : [...c.from, ...c.to]).includes("stream")
+      );
+      if (!accepts) throw new Error(`Scenario "${id}" still refuses an event stream`);
+    }
+  });
+
+  it("scores a stream-based ingest board the same as a queue-based one", () => {
+    const clickstream = SCENARIOS.find((s) => s.id === "clickstream");
+    const build = (bufferType) => {
+      const nodes = [
+        { id: "c", type: "client", x: 0, y: 0 },
+        { id: "g", type: "gateway", x: 0, y: 0 },
+        { id: "s", type: "service", x: 0, y: 0 },
+        { id: "b", type: bufferType, x: 0, y: 0 },
+        { id: "w", type: "worker", x: 0, y: 0 },
+        { id: "d", type: "nosql", x: 0, y: 0 },
+        { id: "m", type: "monitor", x: 0, y: 0 },
+      ];
+      const edges = [
+        { id: "1", from: "c", to: "g" },
+        { id: "2", from: "g", to: "s" },
+        { id: "3", from: "s", to: "b" },
+        { id: "4", from: "b", to: "w" },
+        { id: "5", from: "w", to: "d" },
+      ];
+      return evaluate(clickstream, nodes, edges).score;
+    };
+    expect(build("stream")).toBe(build("queue"));
   });
 
   it("keeps warning rules callable", () => {

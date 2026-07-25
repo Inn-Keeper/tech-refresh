@@ -32,6 +32,8 @@ type Props = {
   onConnectTap: (id: string) => void;
   /** Tap on the node body: completes a connection when one is armed. */
   onBodyTap: (id: string) => void;
+  /** Long press on the node body: opens the sharding & replication inspector. */
+  onInspect: (id: string) => void;
   onConnectStart: (id: string) => void;
   onConnectMove: (x: number, y: number) => void;
   onConnectEnd: (x: number, y: number) => void;
@@ -46,6 +48,7 @@ export function NodeView({
   onRemove,
   onConnectTap,
   onBodyTap,
+  onInspect,
   onConnectStart,
   onConnectMove,
   onConnectEnd,
@@ -88,7 +91,13 @@ export function NodeView({
   const bodyTap = Gesture.Tap().onEnd(() => {
     runOnJS(onBodyTap)(node.id);
   });
-  const body = Gesture.Race(drag, bodyTap);
+  // Holding still opens the inspector; drag needs 4px so the two never fight.
+  const inspect = Gesture.LongPress()
+    .minDuration(400)
+    .onStart(() => {
+      runOnJS(onInspect)(node.id);
+    });
+  const body = Gesture.Race(drag, bodyTap, inspect);
 
   // Handle ●: a tap arms tap-to-connect; a pull draws the dashed pending
   // edge, and release snaps to the nearest node.

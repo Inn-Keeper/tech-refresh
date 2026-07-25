@@ -8,6 +8,7 @@ import { Button } from "@/components/ui";
 type Props = {
   result: EvalResult | null;
   scenario: Scenario;
+  pushback?: string[];
   onClose: () => void;
 };
 
@@ -17,7 +18,7 @@ function verdict(score: number): { label: string; color: string } {
   return { label: t("board.verdictWhiteboard"), color: colors.danger };
 }
 
-export function ResultSheet({ result, scenario, onClose }: Props) {
+export function ResultSheet({ result, scenario, pushback = [], onClose }: Props) {
   if (!result) return null;
   const { label, color } = verdict(result.score);
   const maintLabel = result.maint <= 8 ? "lean" : result.maint <= 14 ? "moderate" : "heavy";
@@ -77,6 +78,23 @@ export function ResultSheet({ result, scenario, onClose }: Props) {
                 <View key={warning} style={{ flexDirection: "row", alignItems: "flex-start", gap: 7 }}>
                   <BrandIcon name="warning" color={colors.warningBright} size={14} />
                   <Text style={{ flex: 1, fontSize: 12.5, lineHeight: 18, color: colors.warningBright }}>{warning}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {pushback.length > 0 && (
+            <View style={{ gap: 6 }}>
+              <Text style={{ fontSize: 11, fontWeight: "700", color: colors.textDim, letterSpacing: 0.6 }}>
+                {t("board.pushback")}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.textFaint }}>{t("board.pushbackHint")}</Text>
+              {pushback.map((question, index) => (
+                <View key={question} style={{ flexDirection: "row", alignItems: "flex-start", gap: 7 }}>
+                  <Text style={{ fontSize: 12.5, lineHeight: 18, color: colors.textFaint, fontWeight: "700" }}>
+                    {index + 1}.
+                  </Text>
+                  <Text style={{ flex: 1, fontSize: 12.5, lineHeight: 18, color: colors.text }}>{question}</Text>
                 </View>
               ))}
             </View>

@@ -1,6 +1,7 @@
 import { createApi, dateToDb, dateToUi } from "../api.js";
 import { CORRECT_XP } from "../gamification.js";
 import { difficultyByKey } from "../difficulty.js";
+import { emptyTalkTrack } from "../talkTrack.js";
 
 describe("date mapping", () => {
   it("converts ISO to DD-MM-YYYY and back", () => {
@@ -218,11 +219,47 @@ describe("createApi", () => {
         scenarioId: "payment",
         nodes: [{ id: "n1", type: "client", x: 0, y: 0 }],
         edges: [],
+        talkTrack: { sections: emptyTalkTrack(), rating: null },
         shareToken: null,
         createdAt: "2026-01-01",
         updatedAt: "2026-01-02",
       },
     ]);
+  });
+
+  it("round-trips a talk track through the board mapping", async () => {
+    const sections = { ...emptyTalkTrack(), requirements: "Reads dominate 100:1; 99.9% availability." };
+    const { client, calls } = fakeSupabase();
+    const api = createApi(client);
+
+    await api.upsertBoard({
+      title: "Catalog board",
+      scenarioId: "catalog",
+      nodes: [],
+      edges: [],
+      talkTrack: { sections, rating: 4 },
+    });
+
+    expect(calls.inserts[0].rows.talk_track).toEqual({ sections, rating: 4 });
+  });
+
+  it("normalizes a legacy board with no talk_track into blank sections", async () => {
+    const { client } = fakeSupabase({
+      arch_boards: [{ id: "board-1", title: "Old", scenario_id: "catalog", nodes: [], edges: [] }],
+    });
+    const api = createApi(client);
+
+    const [board] = await api.listBoards();
+    expect(board.talkTrack).toEqual({ sections: emptyTalkTrack(), rating: null });
+  });
+
+  it("rejects an out-of-range self-rating on the way to the database", async () => {
+    const { client, calls } = fakeSupabase();
+    const api = createApi(client);
+
+    await api.upsertBoard({ title: "T", scenarioId: "catalog", nodes: [], edges: [], talkTrack: { rating: 99 } });
+
+    expect(calls.inserts[0].rows.talk_track.rating).toBeNull();
   });
 
   it("saves a new board snapshot", async () => {

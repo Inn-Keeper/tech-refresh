@@ -11,6 +11,9 @@ export const nodeIconName = (type: string): string => {
     cache: "cache",
     sql: "database",
     nosql: "database",
+    blob: "cloud",
+    search: "search",
+    stream: "arrowRight",
     psp: "payment",
     monitor: "monitor",
   };

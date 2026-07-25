@@ -37,6 +37,7 @@ type Props = {
   onRemoveNode: (id: string) => void;
   onAddEdge: (fromId: string, toId: string) => void;
   onTapEdge: (id: string) => void;
+  onInspectNode: (id: string) => void;
 };
 
 type EdgeGeometry = { sx: number; sy: number; tx: number; ty: number; mx: number };
@@ -74,7 +75,7 @@ function distanceToEdge(geometry: EdgeGeometry, px: number, py: number, samples 
   return min;
 }
 
-export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge, onTapEdge }: Props) {
+export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge, onTapEdge, onInspectNode }: Props) {
   const [boardSize, setBoardSize] = useState({ width: 0, height: 0 });
   const [pending, setPending] = useState<PendingEdge | null>(null);
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
@@ -265,7 +266,10 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
               const geometry = edgeGeometry(a, b);
               return (
                 <Group key={edge.id}>
-                  <Path path={bezierPath(geometry)} color={EDGE_COLOR} style="stroke" strokeWidth={2} />
+                  {/* Async hops are dashed — "this one doesn't block" at a glance. */}
+                  <Path path={bezierPath(geometry)} color={EDGE_COLOR} style="stroke" strokeWidth={2}>
+                    {edge.mode === "async" && <DashPathEffect intervals={[6, 4]} />}
+                  </Path>
                   <Path path={arrowheadPath(geometry)} color={EDGE_COLOR} />
                 </Group>
               );
@@ -288,6 +292,7 @@ export function BoardCanvas({ nodes, edges, onMoveNode, onRemoveNode, onAddEdge,
               onRemove={onRemoveNode}
               onConnectTap={handleConnectTap}
               onBodyTap={handleBodyTap}
+              onInspect={onInspectNode}
               onConnectStart={(fromId) => setPending({ fromId, x: 0, y: 0 })}
               onConnectMove={(x, y) => setPending((current) => (current ? { ...current, x, y } : current))}
               onConnectEnd={handleConnectEnd}
