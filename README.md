@@ -183,6 +183,10 @@ cd supabase
 # Run migrations manually via Supabase dashboard, or use:
 # supabase db push (requires supabase-cli)
 
+# Existing linked projects created before the migration files were renumbered
+# must reconcile their migration history before `supabase db push`. Do not mark
+# versions as applied until you have compared them with the remote schema.
+
 # 5. Seed the database (optional — prepopulate the question table)
 SUPABASE_URL=https://your-project.supabase.co \
 SUPABASE_SERVICE_ROLE_KEY=... \

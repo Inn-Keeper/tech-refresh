@@ -2,8 +2,6 @@
 // UI keeps DD-MM-YYYY strings; Postgres stores real dates.
 import { buildAccuracyTimeline } from "./accuracy.js";
 import { buildReviewQueue } from "./review.js";
-import { CORRECT_XP } from "./gamification.js";
-import { difficultyByKey } from "./difficulty.js";
 import { normalizeTalkTrack } from "./talkTrack.js";
 import { shuffle } from "./quiz.js";
 
@@ -131,7 +129,7 @@ const fail = (error) => {
  *   getAccuracyTimeline(): Promise<AccuracyPoint[]>,
  *   getReviewQueue(): Promise<import("./review.js").ReviewEntry[]>,
  *   getQuestions(args: { techs: string[], difficulty: string, limit?: number }): Promise<{ id: string, tech: string, category: string, difficulty: string, prompt: string, options: string[], correct: number, explanation: string | null }[]>,
- *   recordAnswer(tech: string, correct: boolean, source?: string, difficulty?: string | null): Promise<void>,
+ *   recordAnswer(tech: string, correct: boolean, source: string, difficulty: string | null, requestId: string): Promise<void>,
  *   addXp(points: number): Promise<void>,
  *   resetScores(): Promise<Scores>,
  *   listBoards(): Promise<SavedBoard[]>,
@@ -459,25 +457,21 @@ export function createApi(supabase) {
     return shuffle(data).slice(0, limit);
   }
 
-  // `difficulty` is optional: tiered drills pass a tier (scaled XP), while the
-  // flip cards omit it and fall back to the flat CORRECT_XP reward.
-  // Not atomic: the answer row is written before XP is awarded. If addXp throws
-  // we surface it, but the event is already recorded — a manual retry would
-  // double-count the answer. Acceptable until both move into a single RPC.
-  async function recordAnswer(tech, correct, source = "card", difficulty = null) {
-    const { error } = await supabase
-      .from("answer_events")
-      .insert({ tech, correct, source, difficulty });
+  async function recordAnswer(
+    tech,
+    correct,
+    source = "card",
+    difficulty = null,
+    requestId
+  ) {
+    const { error } = await supabase.rpc("record_answer", {
+      p_request_id: requestId,
+      p_tech: tech,
+      p_correct: correct,
+      p_source: source,
+      p_difficulty: difficulty,
+    });
     if (error) fail(error);
-    if (correct) {
-      const points = difficultyByKey(difficulty)?.xp ?? CORRECT_XP;
-      try {
-        await addXp(points);
-      } catch (err) {
-        console.error("Failed to award XP after recording answer:", err);
-        throw err;
-      }
-    }
   }
 
   async function addXp(points) {
@@ -486,17 +480,8 @@ export function createApi(supabase) {
   }
 
   async function resetScores() {
-    const auth = await supabase.auth.getUser();
-    if (auth.error) fail(auth.error);
-    if (!auth.data.user) throw new Error("No signed-in user.");
-
-    const answers = await supabase.from("answer_events").delete().eq("user_id", auth.data.user.id);
-    if (answers.error) fail(answers.error);
-
-    const profile = await supabase
-      .from("profiles")
-      .upsert({ user_id: auth.data.user.id, email: auth.data.user.email, xp: 0 });
-    if (profile.error) fail(profile.error);
+    const { error } = await supabase.rpc("reset_scores");
+    if (error) fail(error);
 
     return { xp: 0, answers: {} };
   }

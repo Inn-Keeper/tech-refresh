@@ -1,6 +1,4 @@
 import { createApi, dateToDb, dateToUi } from "../api.js";
-import { CORRECT_XP } from "../gamification.js";
-import { difficultyByKey } from "../difficulty.js";
 import { emptyTalkTrack } from "../talkTrack.js";
 
 describe("date mapping", () => {
@@ -361,35 +359,57 @@ describe("createApi", () => {
     expect(queue).toEqual([expect.objectContaining({ tech: "React", streak: 0 })]);
   });
 
-  it("records a correct answer as an event plus an XP increment", async () => {
+  it("records a correct answer and XP through one retry-safe RPC", async () => {
     const { client, calls } = fakeSupabase();
     const api = createApi(client);
 
-    await api.recordAnswer("Kubernetes", true, "drill");
-    expect(calls.inserts).toEqual([
-      { table: "answer_events", rows: { tech: "Kubernetes", correct: true, source: "drill", difficulty: null } },
+    await api.recordAnswer("Kubernetes", true, "drill", null, "attempt-1");
+    expect(calls.inserts).toHaveLength(0);
+    expect(calls.rpcs).toEqual([
+      {
+        fn: "record_answer",
+        args: {
+          p_request_id: "attempt-1",
+          p_tech: "Kubernetes",
+          p_correct: true,
+          p_source: "drill",
+          p_difficulty: null,
+        },
+      },
     ]);
-    expect(calls.rpcs).toEqual([{ fn: "add_xp", args: { points: CORRECT_XP } }]);
   });
 
-  it("records a wrong answer without awarding XP", async () => {
+  it("records a wrong answer through the same atomic boundary", async () => {
     const { client, calls } = fakeSupabase();
     const api = createApi(client);
 
-    await api.recordAnswer("Kubernetes", false);
-    expect(calls.inserts).toHaveLength(1);
-    expect(calls.rpcs).toHaveLength(0);
+    await api.recordAnswer("Kubernetes", false, "card", null, "attempt-2");
+    expect(calls.inserts).toHaveLength(0);
+    expect(calls.rpcs).toEqual([
+      {
+        fn: "record_answer",
+        args: {
+          p_request_id: "attempt-2",
+          p_tech: "Kubernetes",
+          p_correct: false,
+          p_source: "card",
+          p_difficulty: null,
+        },
+      },
+    ]);
   });
 
-  it("stores the tier and awards scaled XP for a tiered answer", async () => {
+  it("sends the tier to the transactional answer RPC", async () => {
     const { client, calls } = fakeSupabase();
     const api = createApi(client);
 
-    await api.recordAnswer("TypeScript", true, "drill", "ultra");
-    expect(calls.inserts).toEqual([
-      { table: "answer_events", rows: { tech: "TypeScript", correct: true, source: "drill", difficulty: "ultra" } },
-    ]);
-    expect(calls.rpcs).toEqual([{ fn: "add_xp", args: { points: difficultyByKey("ultra").xp } }]);
+    await api.recordAnswer("TypeScript", true, "drill", "ultra", "attempt-3");
+    expect(calls.rpcs[0]).toEqual(
+      expect.objectContaining({
+        fn: "record_answer",
+        args: expect.objectContaining({ p_request_id: "attempt-3", p_difficulty: "ultra" }),
+      })
+    );
   });
 
   it("resets XP and answer history for the signed-in user", async () => {
@@ -400,11 +420,9 @@ describe("createApi", () => {
     const api = createApi(client);
 
     await expect(api.resetScores()).resolves.toEqual({ xp: 0, answers: {} });
-    expect(calls.deletes).toEqual([{ table: "answer_events" }]);
-    expect(calls.updates[0]).toMatchObject({
-      table: "profiles",
-      rows: { user_id: "user-1", email: "auth@example.com", xp: 0 },
-    });
+    expect(calls.deletes).toHaveLength(0);
+    expect(calls.updates).toHaveLength(0);
+    expect(calls.rpcs).toEqual([{ fn: "reset_scores", args: undefined }]);
   });
 
   it("fetches tiered questions for the given techs", async () => {

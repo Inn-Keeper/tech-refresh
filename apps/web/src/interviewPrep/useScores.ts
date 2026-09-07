@@ -8,7 +8,7 @@ type ScoreState = {
   answers: Record<string, { correct: number; wrong: number }> 
 };
 type RecordArgs = { 
-  tech: string; isCorrect: boolean; source: string; difficulty: string | null };
+  requestId: string; tech: string; isCorrect: boolean; source: string; difficulty: string | null };
 
 const EMPTY: ScoreState = { xp: 0, answers: {} };
 
@@ -24,7 +24,8 @@ export function useScores() {
   const rollback = () => queryClient.invalidateQueries({ queryKey: ["scores"] });
 
   const recordMutation = useMutation({
-    mutationFn: ({ tech, isCorrect, source, difficulty }: RecordArgs) => recordAnswer(tech, isCorrect, source, difficulty),
+    mutationFn: ({ requestId, tech, isCorrect, source, difficulty }: RecordArgs) =>
+      recordAnswer(tech, isCorrect, source, difficulty, requestId),
     onMutate: ({ tech, isCorrect, difficulty }: RecordArgs) =>
       patch((s) => ({
         xp: s.xp + (isCorrect ? (difficultyByKey(difficulty ?? "")?.xp ?? CORRECT_XP) : 0),
@@ -53,7 +54,13 @@ export function useScores() {
     scores,
     scoresReady: isFetched,
     record: (tech: string, isCorrect: boolean, source = "card", difficulty: string | null = null) =>
-      recordMutation.mutate({ tech, isCorrect, source, difficulty }),
+      recordMutation.mutate({
+        requestId: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`,
+        tech,
+        isCorrect,
+        source,
+        difficulty,
+      }),
     addXp: (points: number) => xpMutation.mutate(points),
   };
 }
