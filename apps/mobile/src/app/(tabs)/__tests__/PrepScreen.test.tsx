@@ -12,6 +12,8 @@ jest.mock("@/lib/api", () => ({
       { date: "2026-06-11", accuracy: 0.75, total: 4 },
     ]),
     getUser: jest.fn(async () => null),
+    getReviewQueue: jest.fn(async () => []),
+    listContacts: jest.fn(async () => []),
     getQuestions: jest.fn(async () => [
       { id: "q1", tech: "TypeScript", category: "Languages", difficulty: "easy", prompt: "Sample?", options: ["a", "b", "c", "d"], correct: 0, explanation: null },
     ]),
