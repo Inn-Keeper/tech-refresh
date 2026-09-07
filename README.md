@@ -174,10 +174,24 @@ pnpm install
 # Set up Supabase
 # 1. Create a Supabase project at https://supabase.com
 # 2. Copy your project URL and anon key
-# 3. Create a .env file in apps/web and apps/mobile:
+# 3. Configure each client with the same project credentials
+```
+
+`apps/web/.env`:
+
+```dotenv
 VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGc...
+```
 
+`apps/mobile/.env`:
+
+```dotenv
+EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...
+```
+
+```bash
 # 4. Run migrations (one-time)
 cd supabase
 # Run migrations manually via Supabase dashboard, or use:
@@ -186,6 +200,10 @@ cd supabase
 # Existing linked projects created before the migration files were renumbered
 # must reconcile their migration history before `supabase db push`. Do not mark
 # versions as applied until you have compared them with the remote schema.
+
+# For a fresh local Supabase instance only:
+# supabase start
+# supabase db reset
 
 # 5. Seed the database (optional — prepopulate the question table)
 SUPABASE_URL=https://your-project.supabase.co \
