@@ -392,16 +392,32 @@ export function createApi(supabase) {
 
   // ── scores ────────────────────────────────────────────────────────────────────
 
+  async function listAllAnswerEvents(columns) {
+    const rows = [];
+    let start = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from("answer_events")
+        .select(columns)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(start, start + 999);
+      if (error) fail(error);
+      if (!data.length) return rows;
+      rows.push(...data);
+      start += data.length;
+    }
+  }
+
   async function getScores() {
     const [profile, events] = await Promise.all([
       supabase.from("profiles").select("xp").maybeSingle(),
-      supabase.from("answer_events").select("tech, correct"),
+      listAllAnswerEvents("tech, correct"),
     ]);
     if (profile.error) fail(profile.error);
-    if (events.error) fail(events.error);
 
     const answers = {};
-    for (const e of events.data) {
+    for (const e of events) {
       const a = (answers[e.tech] ??= { correct: 0, wrong: 0 });
       if (e.correct) a.correct += 1;
       else a.wrong += 1;
@@ -410,22 +426,14 @@ export function createApi(supabase) {
   }
 
   async function getAccuracyTimeline() {
-    const { data, error } = await supabase
-      .from("answer_events")
-      .select("correct, created_at")
-      .order("created_at");
-    if (error) fail(error);
-    return buildAccuracyTimeline(data);
+    return buildAccuracyTimeline(await listAllAnswerEvents("correct, created_at"));
   }
 
   /** Spaced-review schedule derived from answer_events. */
   async function getReviewQueue() {
-    const { data, error } = await supabase
-      .from("answer_events")
-      .select("tech, correct, created_at")
-      .order("created_at");
-    if (error) fail(error);
-    return buildReviewQueue(data);
+    return buildReviewQueue(
+      await listAllAnswerEvents("tech, correct, created_at")
+    );
   }
 
   /**

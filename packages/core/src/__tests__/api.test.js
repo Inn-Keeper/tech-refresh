@@ -20,17 +20,27 @@ describe("date mapping", () => {
  * Minimal chainable stand-in for the Supabase client: every query resolves
  * with the table's rows, and writes are recorded for assertions.
  */
-function fakeSupabase(tables = {}, authUser = null) {
-  const calls = { inserts: [], updates: [], deletes: [], rpcs: [] };
+function fakeSupabase(tables = {}, authUser = null, options = {}) {
+  const serverCap = options.serverCap ?? Infinity;
+  const calls = { inserts: [], updates: [], deletes: [], rpcs: [], orders: [], ranges: [] };
   const client = {
     auth: {
       getUser: async () => ({ data: { user: authUser }, error: null }),
     },
     from(table) {
-      const result = { data: tables[table] ?? [], error: null };
+      const tableRows = tables[table] ?? [];
+      const result = { data: tableRows.slice(0, serverCap), error: null };
       const query = {
         select: () => query,
-        order: () => query,
+        order: (column, orderOptions) => {
+          calls.orders.push({ table, column, options: orderOptions });
+          return query;
+        },
+        range: (start, end) => {
+          calls.ranges.push({ table, start, end });
+          result.data = tableRows.slice(start, Math.min(end + 1, start + serverCap));
+          return query;
+        },
         eq: (column, value) => {
           query._eq = { column, value };
           return query;
@@ -104,6 +114,34 @@ describe("createApi", () => {
 
     const scores = await api.getScores();
     expect(scores).toEqual({ xp: 0, answers: {} });
+  });
+
+  it("reads every score event when Supabase caps each response", async () => {
+    const events = [
+      { id: "1", tech: "React", correct: true, created_at: "2026-01-01T10:00:00Z" },
+      { id: "2", tech: "React", correct: false, created_at: "2026-01-02T10:00:00Z" },
+      { id: "3", tech: "React", correct: true, created_at: "2026-01-03T10:00:00Z" },
+    ];
+    const { client, calls } = fakeSupabase(
+      { profiles: [], answer_events: events },
+      null,
+      { serverCap: 2 }
+    );
+
+    const scores = await createApi(client).getScores();
+
+    expect(scores.answers.React).toEqual({ correct: 2, wrong: 1 });
+    expect(calls.ranges).toEqual([
+      { table: "answer_events", start: 0, end: 999 },
+      { table: "answer_events", start: 2, end: 1001 },
+      { table: "answer_events", start: 3, end: 1002 },
+    ]);
+    expect(calls.orders).toEqual(
+      expect.arrayContaining([
+        { table: "answer_events", column: "created_at", options: { ascending: true } },
+        { table: "answer_events", column: "id", options: { ascending: true } },
+      ])
+    );
   });
 
   it("merges auth identity with the app profile row", async () => {
@@ -305,6 +343,22 @@ describe("createApi", () => {
       { date: "2026-01-01", accuracy: 1, correct: 1, total: 1 },
       { date: "2026-01-02", accuracy: 0.5, correct: 1, total: 2 },
     ]);
+  });
+
+  it("includes capped later events in accuracy and review calculations", async () => {
+    const events = [
+      { id: "1", tech: "React", correct: true, created_at: "2026-01-01T10:00:00Z" },
+      { id: "2", tech: "React", correct: true, created_at: "2026-01-02T10:00:00Z" },
+      { id: "3", tech: "React", correct: false, created_at: "2026-01-03T10:00:00Z" },
+    ];
+    const { client } = fakeSupabase({ answer_events: events }, null, { serverCap: 2 });
+    const api = createApi(client);
+
+    const timeline = await api.getAccuracyTimeline();
+    const queue = await api.getReviewQueue();
+
+    expect(timeline.at(-1)).toMatchObject({ date: "2026-01-03", correct: 2, total: 3 });
+    expect(queue).toEqual([expect.objectContaining({ tech: "React", streak: 0 })]);
   });
 
   it("records a correct answer as an event plus an XP increment", async () => {
