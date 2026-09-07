@@ -6,6 +6,7 @@
   "exports": {
     "./api": "./src/api.js",
     "./auth": "./src/auth.js",
+    "./authCache": "./src/authCache.js",
     "./quiz": "./src/quiz.js",
     "./quizPrefs": "./src/quizPrefs.js",
     "./difficulty": "./src/difficulty.js",

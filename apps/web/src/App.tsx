@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
+import { identityChanged } from "@tech-refresh/core/authCache";
 import { setLocale, t } from "@tech-refresh/core/i18n";
 import { supabase } from "./lib/supabase";
 import { useLocale } from "./lib/useLocale";
@@ -53,6 +55,7 @@ const initialPage = () => {
 };
 
 export default function App() {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(initialPage);
   const locale = useLocale();
   const [githubLinked, setGithubLinked] = useState(() => {
@@ -61,6 +64,7 @@ export default function App() {
   });
   // undefined = loading, null = signed out, Session = signed in
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const previousUserId = useRef<string | null | undefined>(undefined);
   const navRef = useRef<HTMLElement | null>(null);
 
   const pages = PAGE_DEFS.map((p) => ({ ...p, label: t(p.labelKey as Parameters<typeof t>[0]) }));
@@ -98,10 +102,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const applySession = (nextSession: Session | null) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      if (identityChanged(previousUserId.current, nextUserId)) queryClient.clear();
+      previousUserId.current = nextUserId;
+      setSession(nextSession);
+    };
+    supabase.auth.getSession().then(({ data }) => applySession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) =>
+      applySession(nextSession)
+    );
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [queryClient]);
 
   useEffect(() => {
     navRef.current?.querySelector<HTMLElement>("[aria-current='page']")?.scrollIntoView({ block: "nearest", inline: "nearest" });
@@ -113,6 +125,7 @@ export default function App() {
   }, [locale, page, pages]);
 
   const signOut = () => {
+    queryClient.clear();
     window.localStorage.removeItem(GITHUB_LINK_PENDING_KEY);
     window.localStorage.removeItem(GITHUB_LINKED_KEY);
     window.localStorage.removeItem(ACTIVE_PAGE_KEY);

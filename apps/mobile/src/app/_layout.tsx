@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Stack } from "expo-router";
@@ -8,6 +8,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 import type { Session } from "@supabase/supabase-js";
+import { identityChanged } from "@tech-refresh/core/authCache";
 import { supabase } from "@/lib/supabase";
 import { restoreLocale } from "@/lib/useLocale";
 import { SignIn } from "@/components/SignIn";
@@ -26,10 +27,22 @@ const persister = createAsyncStoragePersister({ storage: AsyncStorage });
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null | undefined>(undefined);
+  const previousUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => setSession(s));
+    const applySession = (nextSession: Session | null) => {
+      const nextUserId = nextSession?.user.id ?? null;
+      if (identityChanged(previousUserId.current, nextUserId)) {
+        queryClient.clear();
+        void persister.removeClient();
+      }
+      previousUserId.current = nextUserId;
+      setSession(nextSession);
+    };
+    supabase.auth.getSession().then(({ data }) => applySession(data.session));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) =>
+      applySession(nextSession)
+    );
     return () => sub.subscription.unsubscribe();
   }, []);
 
@@ -39,21 +52,24 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <PersistQueryClientProvider client={queryClient} persistOptions={{ persister, maxAge: CACHE_TTL }}>
-        <StatusBar style="light" />
-        {session === undefined && (
-          <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ color: colors.textFaint }}>Loading…</Text>
-          </View>
-        )}
-        {session === null && <SignIn />}
-        {session && (
+      <StatusBar style="light" />
+      {session === undefined && (
+        <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ color: colors.textFaint }}>Loading…</Text>
+        </View>
+      )}
+      {session === null && <SignIn />}
+      {session && (
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister, maxAge: CACHE_TTL, buster: session.user.id }}
+        >
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="about" />
           </Stack>
-        )}
-      </PersistQueryClientProvider>
+        </PersistQueryClientProvider>
+      )}
     </GestureHandlerRootView>
   );
 }
