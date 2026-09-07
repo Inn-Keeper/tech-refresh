@@ -46,5 +46,6 @@ export type SavedBoard = {
   nodes: BoardNode[];
   edges: BoardEdge[];
   talkTrack?: TalkTrackData;
+  talkGrade?: number | null;
   shareToken?: string | null;
 };

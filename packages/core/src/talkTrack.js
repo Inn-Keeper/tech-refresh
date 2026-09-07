@@ -90,10 +90,9 @@ export function normalizeTalkTrack(raw) {
 }
 
 /**
- * Scores a talk track. `completion` is structural (did you cover all six
- * beats), `rating` is the candidate's own quality call. The overall score
- * averages whichever parts exist — an unrated track scores on completion alone,
- * the same "missing parts drop out" convention used by readiness.js.
+ * Reports talk-track coverage. `completion` is structural (did you cover all
+ * six beats), while `rating` remains the candidate's own confidence note.
+ * Neither is evidence of reasoning quality, so this function does not score it.
  *
  * @param {unknown} raw a talk track in stored shape
  * @returns {{
@@ -102,7 +101,6 @@ export function normalizeTalkTrack(raw) {
  *   answered: string[],
  *   missing: string[],
  *   completion: number,
- *   score: number,
  * }}
  */
 export function scoreTalkTrack(raw) {
@@ -112,11 +110,7 @@ export function scoreTalkTrack(raw) {
   const missing = SECTION_IDS.filter((id) => !answered.includes(id));
   const completion = Math.round((answered.length / SECTION_IDS.length) * 100);
 
-  const ratingPct = rating === null ? null : Math.round((rating / SELF_RATING_MAX) * 100);
-  const parts = [completion, ratingPct].filter((v) => v !== null);
-  const score = Math.round(parts.reduce((sum, v) => sum + v, 0) / parts.length);
-
-  return { sections, rating, answered, missing, completion, score };
+  return { sections, rating, answered, missing, completion };
 }
 
 /**

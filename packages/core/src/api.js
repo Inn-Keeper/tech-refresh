@@ -69,6 +69,7 @@ const QUESTION_FETCH_CAP = 500;
  * @property {import("./arch.js").BoardNode[]} nodes
  * @property {import("./arch.js").BoardEdge[]} edges
  * @property {{ sections: Record<string, string>, rating: number | null }} [talkTrack]
+ * @property {number | null} [talkGrade]
  * @property {string | null} [shareToken]
  * @property {string} [createdAt]
  * @property {string} [updatedAt]
@@ -274,6 +275,7 @@ export function createApi(supabase) {
     nodes: r.nodes ?? [],
     edges: r.edges ?? [],
     talkTrack: normalizeTalkTrack(r.talk_track),
+    talkGrade: Number.isFinite(r.talk_grade) ? r.talk_grade : null,
     shareToken: r.share_token ?? null,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -285,6 +287,9 @@ export function createApi(supabase) {
     nodes: b.nodes ?? [],
     edges: b.edges ?? [],
     talk_track: normalizeTalkTrack(b.talkTrack),
+    talk_grade: Number.isFinite(b.talkGrade) && b.talkGrade >= 0 && b.talkGrade <= 100
+      ? Math.round(b.talkGrade)
+      : null,
   });
 
   async function listBoards() {

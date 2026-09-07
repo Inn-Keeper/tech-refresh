@@ -78,8 +78,6 @@ export function PrepPlanSection({
           <ReadinessStat label={t("plan.readinessPrep")} value={readiness.prep} />
           <ReadinessStat label={t("plan.readinessStories")} value={readiness.stories} />
           <ReadinessStat label={t("plan.readinessBoards")} value={readiness.arch} />
-          {/* The split is the point: a wall of perfect diagrams with no
-              reasoning should read as half a round, and say so. */}
           {readiness.archTopology !== null && (
             <span
               style={{ fontSize: 10.5, color: colors.textFaint }}
@@ -87,7 +85,7 @@ export function PrepPlanSection({
             >
               {t("plan.readinessBoardsSplit", {
                 design: readiness.archTopology,
-                talk: readiness.archTalk ?? 0,
+                talk: readiness.archTalk === null ? "--" : `${readiness.archTalk}%`,
               })}
             </span>
           )}

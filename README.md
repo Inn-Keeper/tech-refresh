@@ -51,7 +51,7 @@ rest of the tab scores everything an interviewer actually grades around them.
 #### Scored honestly
 
 - A board reports two halves: **boxes** (topology) and **reasoning** (talk track), averaged
-- A full-marks diagram with no reasoning attached reads as **50%**, not 100% — and the readiness meter says which half is weak
+- Diagram topology is shown immediately; design readiness stays unassessed until reasoning receives a separate grade
 
 ### **Stories** tab
 - STAR interview prep: Conflict, Failure, Leadership, Impact, Ambiguity, Influence, Mentoring, Delivery

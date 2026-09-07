@@ -13,8 +13,7 @@ const avg = (values) => values.reduce((sum, v) => sum + v, 0) / values.length;
  * @param {string[]} [args.postingTechs] the role's stack (posting-detected techs)
  * @param {Record<string, { correct: number, wrong: number }>} [args.answers]
  * @param {{ competency: string }[]} [args.stories]
- * @param {{ topology: number, talkTrack?: unknown }[]} [args.boards] saved boards,
- *   each scored on both its diagram and the reasoning written alongside it
+ * @param {{ topology: number, talkGrade?: number | null }[]} [args.boards] saved boards
  * @returns {{
  *   overall: number | null,
  *   prep: number | null,
@@ -41,12 +40,12 @@ export function computeReadiness({ postingTechs = [], answers = {}, stories = []
   const covered = new Set(stories.map((s) => s.competency).filter((c) => COMPETENCIES.includes(c)));
   const storyCoverage = Math.round((covered.size / COMPETENCIES.length) * 100);
 
-  // Boards report their halves separately so the meter can say *which* half is
-  // weak — a wall of perfect diagrams with no reasoning reads as 50, not 100.
   const scored = boards.map(scoreBoard);
-  const arch = scored.length ? Math.round(avg(scored.map((b) => b.overall))) : null;
+  const assessed = scored.filter((b) => b.overall !== null);
+  const arch = assessed.length ? Math.round(avg(assessed.map((b) => b.overall))) : null;
   const archTopology = scored.length ? Math.round(avg(scored.map((b) => b.topology))) : null;
-  const archTalk = scored.length ? Math.round(avg(scored.map((b) => b.talk))) : null;
+  const talkGrades = scored.map((b) => b.talk).filter((v) => v !== null);
+  const archTalk = talkGrades.length ? Math.round(avg(talkGrades)) : null;
 
   const parts = [prep, storyCoverage, arch].filter((v) => v !== null);
   const overall = parts.length ? Math.round(avg(parts)) : null;

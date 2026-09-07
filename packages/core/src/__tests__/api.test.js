@@ -241,6 +241,7 @@ describe("createApi", () => {
           scenario_id: "payment",
           nodes: [{ id: "n1", type: "client", x: 0, y: 0 }],
           edges: [],
+          talk_grade: 72,
           created_at: "2026-01-01",
           updated_at: "2026-01-02",
         },
@@ -256,6 +257,7 @@ describe("createApi", () => {
         nodes: [{ id: "n1", type: "client", x: 0, y: 0 }],
         edges: [],
         talkTrack: { sections: emptyTalkTrack(), rating: null },
+        talkGrade: 72,
         shareToken: null,
         createdAt: "2026-01-01",
         updatedAt: "2026-01-02",
@@ -274,9 +276,11 @@ describe("createApi", () => {
       nodes: [],
       edges: [],
       talkTrack: { sections, rating: 4 },
+      talkGrade: 72,
     });
 
     expect(calls.inserts[0].rows.talk_track).toEqual({ sections, rating: 4 });
+    expect(calls.inserts[0].rows.talk_grade).toBe(72);
   });
 
   it("normalizes a legacy board with no talk_track into blank sections", async () => {
@@ -287,6 +291,7 @@ describe("createApi", () => {
 
     const [board] = await api.listBoards();
     expect(board.talkTrack).toEqual({ sections: emptyTalkTrack(), rating: null });
+    expect(board.talkGrade).toBeNull();
   });
 
   it("rejects an out-of-range self-rating on the way to the database", async () => {

@@ -1,6 +1,5 @@
 import { computeReadiness } from "../readiness.js";
 import { COMPETENCIES } from "../stories.js";
-import { SUBSTANTIVE_CHARS, TALK_TRACK_SECTIONS } from "../talkTrack.js";
 
 describe("computeReadiness", () => {
   it("averages prep accuracy over the posting stack, counting unattempted as 0", () => {
@@ -26,17 +25,15 @@ describe("computeReadiness", () => {
     const r = computeReadiness({
       stories: [{ competency: COMPETENCIES[0] }],
       boards: [
-        { topology: 80, talkTrack: null },
-        { topology: 100, talkTrack: null },
+        { topology: 80, talkGrade: null },
+        { topology: 100, talkGrade: null },
       ],
     });
     expect(r.prep).toBeNull();
-    // Topology averages 90, but neither board has reasoning attached, so the
-    // design signal is half that.
     expect(r.archTopology).toBe(90);
-    expect(r.archTalk).toBe(0);
-    expect(r.arch).toBe(45);
-    expect(r.overall).toBe(Math.round((r.stories + 45) / 2));
+    expect(r.archTalk).toBeNull();
+    expect(r.arch).toBeNull();
+    expect(r.overall).toBe(r.stories);
   });
 
   it("is honest about a cold start", () => {
@@ -44,32 +41,29 @@ describe("computeReadiness", () => {
     expect(r).toEqual({ overall: 0, prep: null, stories: 0, arch: null, archTopology: null, archTalk: null });
   });
 
-  it("does not call a wall of perfect diagrams readiness on its own", () => {
-    const boards = Array.from({ length: 5 }, () => ({ topology: 100, talkTrack: null }));
+  it("shows topology without calling unassessed diagrams design readiness", () => {
+    const boards = Array.from({ length: 5 }, () => ({ topology: 100, talkGrade: null }));
     const r = computeReadiness({ boards });
     expect(r.archTopology).toBe(100);
+    expect(r.archTalk).toBeNull();
+    expect(r.arch).toBeNull();
+  });
+
+  it("uses assessed reasoning grades for design readiness", () => {
+    const r = computeReadiness({ boards: [{ topology: 100, talkGrade: 60 }] });
+    expect(r.arch).toBe(80);
+    expect(r.archTalk).toBe(60);
+  });
+
+  it("averages only graded boards while keeping topology visible for all", () => {
+    const r = computeReadiness({
+      boards: [
+        { topology: 100, talkGrade: null },
+        { topology: 40, talkGrade: 60 },
+      ],
+    });
+    expect(r.archTopology).toBe(70);
+    expect(r.archTalk).toBe(60);
     expect(r.arch).toBe(50);
-  });
-
-  it("reaches full design readiness once the reasoning is there too", () => {
-    const sentence = "x".repeat(SUBSTANTIVE_CHARS);
-    const talkTrack = {
-      sections: Object.fromEntries(TALK_TRACK_SECTIONS.map((s) => [s.id, sentence])),
-      rating: 5,
-    };
-    const r = computeReadiness({ boards: [{ topology: 100, talkTrack }] });
-    expect(r.arch).toBe(100);
-    expect(r.archTalk).toBe(100);
-  });
-
-  it("surfaces the weaker half so you know which one to work on", () => {
-    const sentence = "x".repeat(SUBSTANTIVE_CHARS);
-    const talkTrack = {
-      sections: Object.fromEntries(TALK_TRACK_SECTIONS.map((s) => [s.id, sentence])),
-      rating: 5,
-    };
-    const r = computeReadiness({ boards: [{ topology: 30, talkTrack }] });
-    expect(r.archTopology).toBe(30);
-    expect(r.archTalk).toBe(100);
   });
 });

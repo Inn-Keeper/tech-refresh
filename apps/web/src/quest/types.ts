@@ -44,9 +44,9 @@ export const EMPTY_RETRO: Omit<Retro, "id" | "date"> = {
 
 /**
  * A saved board reduced to the two halves readiness cares about: the diagram's
- * score and the reasoning written alongside it.
+ * score and a separate assessed reasoning grade.
  */
 export type ScoredBoard = {
   topology: number;
-  talkTrack: { sections: Record<string, string>; rating: number | null } | null;
+  talkGrade: number | null;
 };

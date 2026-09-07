@@ -485,8 +485,8 @@ export const pt = {
   "plan.readinessPrep": "Prep",
   "plan.readinessStories": "Histórias",
   "plan.readinessBoards": "Design",
-  "plan.readinessBoardsSplit": "(caixas {design}% · raciocínio {talk}%)",
-  "plan.readinessBoardsSplitHint": "Um diagrama sem roteiro falado conta como meia rodada. Escreva o raciocínio para mudar isso.",
+  "plan.readinessBoardsSplit": "(caixas {design}% · raciocínio avaliado {talk})",
+  "plan.readinessBoardsSplitHint": "A conclusão do roteiro e a autoavaliação são notas de prática. A prontidão de raciocínio aparece após uma avaliação separada.",
   "plan.never": "novo",
 
   "retro.struggled": "Dificuldade com",

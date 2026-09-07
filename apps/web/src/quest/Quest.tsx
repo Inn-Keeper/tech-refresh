@@ -36,8 +36,8 @@ export default function Quest() {
   const funnel = buildFunnelSummary(contacts ?? [], statusEvents);
 
   // Saved boards re-scored against their scenarios feed the readiness meter.
-  // Both halves travel together: the diagram's score and the reasoning saved
-  // alongside it, so a board with no talk track can't read as a full round.
+  // The deterministic topology score remains visible for every board. Design
+  // readiness is computed only when a separate reasoning assessment exists.
   // ponytail: default scenarios only — custom-scenario boards are skipped.
   const scoredBoards = boards
     .map((board) => {
@@ -45,7 +45,7 @@ export default function Quest() {
       if (!scenario) return null;
       return {
         topology: evaluate(scenario, board.nodes, board.edges).score,
-        talkTrack: board.talkTrack ?? null,
+        talkGrade: board.talkGrade ?? null,
       };
     })
     .filter((entry): entry is ScoredBoard => entry !== null);

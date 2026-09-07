@@ -485,8 +485,8 @@ export const sv = {
   "plan.readinessPrep": "Prep",
   "plan.readinessStories": "Berättelser",
   "plan.readinessBoards": "Design",
-  "plan.readinessBoardsSplit": "(lådor {design}% · resonemang {talk}%)",
-  "plan.readinessBoardsSplitHint": "Ett diagram utan talmanus räknas som en halv runda. Skriv resonemanget för att ändra det.",
+  "plan.readinessBoardsSplit": "(lådor {design}% · bedömt resonemang {talk})",
+  "plan.readinessBoardsSplitHint": "Talmanusets täckning och självskattning är övningsanteckningar. Resonemangsberedskap visas efter en separat bedömning.",
   "plan.never": "ny",
 
   "retro.struggled": "Kämpade med",

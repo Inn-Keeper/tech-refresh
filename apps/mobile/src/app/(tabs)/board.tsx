@@ -36,6 +36,7 @@ export default function BoardScreen() {
   const [inspectingId, setInspectingId] = useState<string | null>(null);
   const [talkSections, setTalkSections] = useState<Record<string, string>>(emptyTalkTrack);
   const [talkRating, setTalkRating] = useState<number | null>(null);
+  const [talkGrade, setTalkGrade] = useState<number | null>(null);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [activeBoardTitle, setActiveBoardTitle] = useState<string | null>(null);
   // Chrome levels: full (pills + brief), compact (slim row), zen (board only,
@@ -77,6 +78,7 @@ export default function BoardScreen() {
     setEdges([]);
     setTalkSections(emptyTalkTrack());
     setTalkRating(null);
+    setTalkGrade(null);
     setResult(null);
     setActiveBoardId(null);
     setActiveBoardTitle(null);
@@ -122,6 +124,7 @@ export default function BoardScreen() {
     setEdges(board.edges);
     setTalkSections({ ...emptyTalkTrack(), ...(board.talkTrack?.sections ?? {}) });
     setTalkRating(board.talkTrack?.rating ?? null);
+    setTalkGrade(board.talkGrade ?? null);
     setResult(null);
     setActiveBoardId(board.id ?? null);
     setActiveBoardTitle(board.title);
@@ -231,6 +234,7 @@ export default function BoardScreen() {
                   nodes,
                   edges,
                   talkTrack: { sections: talkSections, rating: talkRating },
+                  talkGrade,
                 })
               }
             />
@@ -361,8 +365,14 @@ export default function BoardScreen() {
           visible={talkOpen}
           sections={talkSections}
           rating={talkRating}
-          onChangeSection={(id, value) => setTalkSections((prev) => ({ ...prev, [id]: value }))}
-          onChangeRating={setTalkRating}
+          onChangeSection={(id, value) => {
+            setTalkSections((prev) => ({ ...prev, [id]: value }));
+            setTalkGrade(null);
+          }}
+          onChangeRating={(value) => {
+            setTalkRating(value);
+            setTalkGrade(null);
+          }}
           onClose={() => setTalkOpen(false)}
         />
 

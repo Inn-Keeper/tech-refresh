@@ -60,10 +60,10 @@ describe("normalizeTalkTrack", () => {
 });
 
 describe("scoreTalkTrack", () => {
-  it("scores an empty track at 0% with every section missing", () => {
+  it("reports an empty track at 0% completion with every section missing", () => {
     const result = scoreTalkTrack(null);
     expect(result.completion).toBe(0);
-    expect(result.score).toBe(0);
+    expect(result).not.toHaveProperty("score");
     expect(result.missing).toHaveLength(6);
   });
 
@@ -82,24 +82,22 @@ describe("scoreTalkTrack", () => {
     expect(padded.answered).toEqual([]);
   });
 
-  it("scores a complete, unrated track on completion alone", () => {
+  it("reports complete arbitrary text as coverage rather than quality", () => {
     const result = scoreTalkTrack({ sections: full() });
     expect(result.completion).toBe(100);
     expect(result.rating).toBeNull();
-    expect(result.score).toBe(100);
+    expect(result).not.toHaveProperty("score");
   });
 
-  it("averages completion with the self-rating when one is given", () => {
-    // Full coverage (100) rated 3/5 (60) averages to 80.
-    const result = scoreTalkTrack({ sections: full(), rating: 3 });
-    expect(result.score).toBe(80);
+  it("keeps self-rating separate from completion", () => {
+    expect(scoreTalkTrack({ sections: full(), rating: 1 }).completion).toBe(100);
+    expect(scoreTalkTrack({ sections: full(), rating: 5 }).completion).toBe(100);
   });
 
   it("does not let a high self-rating hide skipped sections", () => {
     const half = { requirements: sentence, scale: sentence, api: sentence };
     const result = scoreTalkTrack({ sections: half, rating: SELF_RATING_MAX });
     expect(result.completion).toBe(50);
-    expect(result.score).toBe(75);
     expect(result.missing).toEqual(["dataModel", "bottleneck", "tradeoff"]);
   });
 });

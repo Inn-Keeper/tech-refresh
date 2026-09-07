@@ -41,6 +41,7 @@ export default function ArchBoard() {
   const [talkOpen, setTalkOpen] = useState(false);
   const [talkSections, setTalkSections] = useState<Record<string, string>>(emptyTalkTrack);
   const [talkRating, setTalkRating] = useState<number | null>(null);
+  const [talkGrade, setTalkGrade] = useState<number | null>(null);
   const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
   const [activeBoardTitle, setActiveBoardTitle] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -99,6 +100,7 @@ export default function ArchBoard() {
     setEdges(board.edges);
     setTalkSections({ ...emptyTalkTrack(), ...(board.talkTrack?.sections ?? {}) });
     setTalkRating(board.talkTrack?.rating ?? null);
+    setTalkGrade(board.talkGrade ?? null);
     cancelConnection();
     setResult(null);
     setActiveBoardId(board.id ?? null);
@@ -115,6 +117,7 @@ export default function ArchBoard() {
     setEdges([]);
     setTalkSections(emptyTalkTrack());
     setTalkRating(null);
+    setTalkGrade(null);
     cancelConnection();
     setResult(null);
     setActiveBoardId(null);
@@ -383,6 +386,7 @@ export default function ArchBoard() {
                 nodes,
                 edges,
                 talkTrack: { sections: talkSections, rating: talkRating },
+                talkGrade,
               })
             }
             disabled={saveBoardMutation.isPending}
@@ -394,7 +398,7 @@ export default function ArchBoard() {
             {saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
           </button>
           <button
-            onClick={() => { setNodes([]); setEdges([]); setTalkSections(emptyTalkTrack()); setTalkRating(null); cancelConnection(); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
+            onClick={() => { setNodes([]); setEdges([]); setTalkSections(emptyTalkTrack()); setTalkRating(null); setTalkGrade(null); cancelConnection(); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
             style={{
               padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
               borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
@@ -678,8 +682,14 @@ export default function ArchBoard() {
         <TalkTrack
           sections={talkSections}
           rating={talkRating}
-          onChangeSection={(id, value) => setTalkSections((prev) => ({ ...prev, [id]: value }))}
-          onChangeRating={setTalkRating}
+          onChangeSection={(id, value) => {
+            setTalkSections((prev) => ({ ...prev, [id]: value }));
+            setTalkGrade(null);
+          }}
+          onChangeRating={(value) => {
+            setTalkRating(value);
+            setTalkGrade(null);
+          }}
         />
       )}
 

@@ -485,8 +485,8 @@ export const en = {
   "plan.readinessPrep": "Prep",
   "plan.readinessStories": "Stories",
   "plan.readinessBoards": "Design",
-  "plan.readinessBoardsSplit": "(boxes {design}% · reasoning {talk}%)",
-  "plan.readinessBoardsSplitHint": "A diagram with no talk track counts as half a round. Write the reasoning to move this.",
+  "plan.readinessBoardsSplit": "(boxes {design}% · assessed reasoning {talk})",
+  "plan.readinessBoardsSplitHint": "Talk-track completion and self-rating are practice notes. Reasoning readiness appears after a separate assessment.",
   "plan.never": "new",
 
   "retro.struggled": "Struggled with",
