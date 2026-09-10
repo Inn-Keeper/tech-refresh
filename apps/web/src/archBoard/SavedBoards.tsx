@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
+import { ghostChip } from "./buttonStyles";
 import { useShareBoardMutation } from "./queries";
 import type { AugmentedScenario, BoardSummary } from "./types";
 
@@ -85,31 +86,13 @@ export function SavedBoards({
                   <>
                     <button
                       onClick={() => copyLink(board)}
-                      style={{
-                        padding: "3px 10px",
-                        background: "transparent",
-                        border: `1px solid ${colors.success}60`,
-                        borderRadius: 6,
-                        color: colors.successBright,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
+                      style={ghostChip(colors.successBright, `${colors.success}60`)}
                     >
                       {copiedId === board.id ? t("board.linkCopied") : t("board.copyLink")}
                     </button>
                     <button
                       onClick={() => board.id && shareMutation.mutate({ id: board.id, enable: false })}
-                      style={{
-                        padding: "3px 10px",
-                        background: "transparent",
-                        border: `1px solid ${colors.border}`,
-                        borderRadius: 6,
-                        color: colors.textDim,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
+                      style={ghostChip()}
                     >
                       {t("board.unshare")}
                     </button>
@@ -118,47 +101,20 @@ export function SavedBoards({
                   <button
                     onClick={() => board.id && shareMutation.mutate({ id: board.id, enable: true })}
                     disabled={shareMutation.isPending}
-                    style={{
-                      padding: "3px 10px",
-                      background: "transparent",
-                      border: `1px solid ${colors.border}`,
-                      borderRadius: 6,
-                      color: colors.textDim,
-                      fontSize: 11,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
+                    style={ghostChip()}
                   >
                     {t("board.share")}
                   </button>
                 )}
                 <button
                   onClick={() => onLoad(board)}
-                  style={{
-                    padding: "3px 10px",
-                    background: "transparent",
-                    border: `1px solid ${colors.accent}60`,
-                    borderRadius: 6,
-                    color: colors.accentBright,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
+                  style={ghostChip(colors.accentBright, `${colors.accent}60`)}
                 >
                   {t("common.load")}
                 </button>
                 <button
                   onClick={() => board.id && window.confirm(t("board.deleteMessage", { title: board.title })) && onDelete(board.id)}
-                  style={{
-                    padding: "3px 10px",
-                    background: "transparent",
-                    border: `1px solid ${colors.danger}50`,
-                    borderRadius: 6,
-                    color: colors.dangerBright,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
+                  style={ghostChip(colors.dangerBright, `${colors.danger}50`)}
                 >
                   {t("common.delete")}
                 </button>

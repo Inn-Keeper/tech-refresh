@@ -2,6 +2,7 @@ import { EDGE_MODES, EDGE_PROTOCOLS, meta } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import type { BoardEdge, BoardNode } from "./types";
+import { ghostAction } from "./buttonStyles";
 
 export function EdgeInspector({
   edge,
@@ -85,31 +86,13 @@ export function EdgeInspector({
       <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={onRemove}
-          style={{
-            padding: "7px 14px",
-            background: "transparent",
-            border: `1px solid ${colors.danger}50`,
-            borderRadius: 8,
-            color: colors.dangerBright,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
+          style={ghostAction(colors.dangerBright, `${colors.danger}50`)}
         >
           {t("board.removeConnection")}
         </button>
         <button
           onClick={onClose}
-          style={{
-            padding: "7px 14px",
-            background: "transparent",
-            border: `1px solid ${colors.border}`,
-            borderRadius: 8,
-            color: colors.textDim,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
+          style={ghostAction()}
         >
           {t("common.close")}
         </button>

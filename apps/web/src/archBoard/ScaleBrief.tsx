@@ -4,6 +4,7 @@ import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import type { AugmentedScenario } from "./types";
+import { ghostAction } from "./buttonStyles";
 
 const DAYS_PER_YEAR = 365;
 
@@ -116,17 +117,7 @@ export function ScaleBrief({ scenario }: { scenario: AugmentedScenario }) {
 
       <button
         onClick={() => setChecked(true)}
-        style={{
-          marginTop: 12,
-          padding: "7px 16px",
-          background: "transparent",
-          border: `1px solid ${colors.accent}`,
-          borderRadius: 8,
-          color: colors.accentBright,
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
+        style={{ ...ghostAction(colors.accentBright, colors.accent), marginTop: 12, padding: "7px 16px" }}
       >
         {t("scale.check")}
       </button>

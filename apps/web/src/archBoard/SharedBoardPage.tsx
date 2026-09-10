@@ -5,10 +5,9 @@ import { brand, colors } from "@tech-refresh/core/tokens";
 import { getSharedBoard } from "../lib/api";
 import { BrandIcon } from "../components/BrandIcon";
 import { EvalResults } from "./EvalResults";
+import { NODE_H, NODE_W } from "./constants";
 import type { AugmentedScenario, BoardEdge, BoardNode } from "./types";
 
-const NODE_W = 96;
-const NODE_H = 44;
 const CANVAS_PAD = 40;
 
 // Read-only SVG snapshot of a board — no gestures, no editing, no auth.
@@ -61,12 +60,12 @@ function BoardSnapshot({ nodes, edges }: { nodes: BoardNode[]; edges: BoardEdge[
               stroke={color}
               strokeWidth={1.5}
             />
-            <text x={node.x + NODE_W / 2} y={node.y + 19} textAnchor="middle" fontSize={13}>
+            <text x={node.x + NODE_W / 2} y={node.y + 20} textAnchor="middle" fontSize={13}>
               {spec.emoji}
             </text>
             <text
               x={node.x + NODE_W / 2}
-              y={node.y + 34}
+              y={node.y + 35}
               textAnchor="middle"
               fontSize={9}
               fontWeight={700}

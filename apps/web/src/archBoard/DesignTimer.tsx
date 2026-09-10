@@ -12,6 +12,7 @@ import { colors, layout } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { PAGE_PADDING_X } from "./constants";
 import styles from "./DesignTimer.module.css";
+import { ghostAction } from "./buttonStyles";
 
 // One tick per second is all a MM:SS clock can show.
 const TICK_MS = 1000;
@@ -181,10 +182,7 @@ export function DesignTimer() {
         {started && (
           <button
             onClick={reset}
-            style={{
-              padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
-              borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
-            }}
+            style={ghostAction()}
           >
             {t("timer.reset")}
           </button>

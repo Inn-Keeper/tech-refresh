@@ -6,6 +6,7 @@ import { BrandIcon } from "../components/BrandIcon";
 import { nodeIconName } from "../components/brandIconNames";
 import { Combobox } from "../components/Combobox";
 import { inputStyle } from "../components/shared";
+import { ghostAction } from "./buttonStyles";
 
 type ScenarioFormProps = {
   onSave: (form: object) => void;
@@ -174,16 +175,7 @@ export function ScenarioForm({ onSave, onCancel, saving, error }: ScenarioFormPr
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
         <button
           onClick={onCancel}
-          style={{
-            padding: "7px 14px",
-            background: "transparent",
-            border: `1px solid ${colors.border}`,
-            borderRadius: 8,
-            color: colors.textDim,
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
+          style={ghostAction()}
         >
           {t("common.cancel")}
         </button>

@@ -4,6 +4,7 @@ import { colors } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { nodeIconName } from "../components/brandIconNames";
 import type { BoardNode } from "./types";
+import { ghostAction } from "./buttonStyles";
 
 /** Replica counts an interviewer would recognise; beyond 5 the number stops mattering. */
 const REPLICA_CHOICES = [1, 2, 3, 5];
@@ -87,16 +88,7 @@ export function NodeInspector({
 
       <button
         onClick={onClose}
-        style={{
-          padding: "7px 14px",
-          background: "transparent",
-          border: `1px solid ${colors.border}`,
-          borderRadius: 8,
-          color: colors.textDim,
-          fontSize: 12,
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
+        style={ghostAction()}
       >
         {t("common.close")}
       </button>

@@ -39,6 +39,26 @@ export type AugmentedScenario = {
 
 export type TalkTrackData = { sections: Record<string, string>; rating: number | null };
 
+/**
+ * Everything undo restores and the dirty check compares. Built in exactly one
+ * place — `snapshot()` in useArchBoard — so a new editable field only has to be
+ * added here and there.
+ */
+export type BoardSnapshot = {
+  scenarioId: string;
+  nodes: BoardNode[];
+  edges: BoardEdge[];
+  talkSections: Record<string, string>;
+  talkRating: number | null;
+  talkGrade: number | null;
+};
+
+export type BoardHistory = {
+  past: BoardSnapshot[];
+  present: BoardSnapshot;
+  future: BoardSnapshot[];
+};
+
 export type SavedBoard = {
   id?: string;
   title: string;
