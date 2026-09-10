@@ -9,6 +9,8 @@ import { buildDrillFromQuestions, selectCategoryDrillTechs, selectDrillTechs, sh
 import { difficultyByKey } from "@tech-refresh/core/difficulty";
 import { t } from "@tech-refresh/core/i18n";
 import { useScores } from "./useScores";
+import { advanceCard, answerCard, emptyCard, flipFront, openBack, openQuiz } from "./cardState.js";
+import { advanceDrill, answerDrill } from "./drillState.js";
 import { CelebrationOverlay } from "../components/CelebrationOverlay";
 import { colors } from "@tech-refresh/core/tokens";
 import { WorkspaceLayout, WorkspacePanel } from "../components/WorkspaceLayout";
@@ -138,58 +140,38 @@ export default function InterviewPrep() {
   const visibleItems: PrepItem[] = filtered ?? (displayCategory.items as PrepItem[]).map((item: PrepItem) => ({ ...item, color: item.color ?? displayCategory.color, emoji: displayCategory.emoji }));
   const activeTitle = filtered ? t("prep.searchResults") : displayCategory.name;
 
-  const getState = (key: string): CardState =>
-    cardState[key] ?? { phase: "front", quizIndex: 0, answered: null, runCorrect: 0, shuffled: null };
+  const getState = (key: string): CardState => cardState[key] ?? emptyCard();
 
   const handleFlip = async (key: string, item: PrepItem) => {
-    const s = cardState[key] ?? { phase: "front" as const };
-    if (s.phase === "front") {
-      setCardState((prev) => ({ ...prev, [key]: { ...(prev[key] ?? {}), phase: "back" as const, quizIndex: 0, answered: null, runCorrect: 0, shuffled: null } }));
+    const current = getState(key);
+    if (current.phase === "front") {
+      setCardState((prev) => ({ ...prev, [key]: openBack(prev[key] ?? emptyCard()) }));
       return;
     }
-    if (s.phase === "back") {
+    if (current.phase === "back") {
       const fetched = await fetchCardQuestions(item.tech);
       const shuffled = fetched ?? (shuffle(item.quiz) as QuizQuestion[]).map(shuffleOptions as (q: QuizQuestion) => QuizQuestion);
-      setCardState((prev) => ({
-        ...prev,
-        [key]: { ...(prev[key] ?? {}), phase: "quiz" as const, quizIndex: 0, answered: null, runCorrect: 0, shuffled },
-      }));
+      setCardState((prev) => ({ ...prev, [key]: openQuiz(prev[key] ?? emptyCard(), shuffled) }));
     }
   };
 
   const handleAnswer = (key: string, tech: string, optionIndex: number) => {
-    const s = cardState[key];
-    if (!s || s.answered !== null) return;
-    const isCorrect = optionIndex === s.shuffled![s.quizIndex]!.correct;
-    setCardState((prev) => ({
-      ...prev,
-      [key]: { ...s, answered: optionIndex, runCorrect: s.runCorrect + (isCorrect ? 1 : 0) },
-    }));
-    setPoeCue({ type: isCorrect ? "correct" : "wrong", id: Date.now() });
-    record(tech, isCorrect, "card", level);
+    const next = answerCard(cardState[key], optionIndex);
+    if (!next) return;
+    setCardState((prev) => ({ ...prev, [key]: next.state }));
+    setPoeCue({ type: next.isCorrect ? "correct" : "wrong", id: Date.now() });
+    record(tech, next.isCorrect, "card", level);
   };
 
   const handleNextQuestion = (key: string) => {
-    const s = cardState[key];
-    if (!s || !s.shuffled) return;
-    const nextIndex = s.quizIndex + 1;
-    if (nextIndex >= s.shuffled.length) {
-      if (s.runCorrect === s.shuffled.length) addXp(PERFECT_QUIZ_BONUS);
-      setCardState((prev) => ({
-        ...prev,
-        [key]: { ...s, phase: "front" as const, quizIndex: 0, answered: null, runCorrect: 0, shuffled: null },
-      }));
-    } else {
-      setCardState((prev) => ({ ...prev, [key]: { ...s, quizIndex: nextIndex, answered: null } }));
-    }
+    const next = advanceCard(cardState[key]);
+    if (!next) return;
+    if (next.perfect) addXp(PERFECT_QUIZ_BONUS);
+    setCardState((prev) => ({ ...prev, [key]: next.state }));
   };
 
   const handleFlipBack = (key: string) => {
-    setCardState((prev) => {
-      const s = prev[key];
-      if (!s) return prev;
-      return { ...prev, [key]: { ...s, phase: "front" as const } };
-    });
+    setCardState((prev) => (prev[key] ? { ...prev, [key]: flipFront(prev[key]) } : prev));
   };
 
   // Fetches questions for the given techs and opens the drill UI.
@@ -242,28 +224,10 @@ export default function InterviewPrep() {
   };
 
   const startCategoryDrill = async (categoryName: string) => {
-    const cat = displayCategories.find((c) => c.name === categoryName);
-    if (!cat) return;
-    setDrillLoading(true);
-    setDrillError(null);
-    try {
-      const techs = selectCategoryDrillTechs(cat.items, scores.answers, { techCount: cat.items.length });
-      let questions = await fetchTierQuestions(level, techs);
-      if (questions.length === 0) questions = await fetchTierQuestions(level, Object.keys(colorByTech));
-      if (questions.length === 0) {
-        setDrillError(t("prep.noQuestionsYet", { tier: difficultyByKey(level)?.label ?? level }));
-        return;
-      }
-      const entries = buildDrillFromQuestions(questions, { colorByTech, fallbackColor: colors.accent, size: DRILL_SIZE }).map(
-        (entry) => ({ ...entry, link: techLinks[entry.tech] })
-      );
-      setActiveCategoryName(categoryName);
-      setDrill({ questions: entries, index: 0, answered: null, correctCount: 0, done: false, difficulty: level });
-    } catch {
-      setDrillError(t("prep.drillLoadError"));
-    } finally {
-      setDrillLoading(false);
-    }
+    const category = displayCategories.find((c) => c.name === categoryName);
+    if (!category) return;
+    const techs = selectCategoryDrillTechs(category.items, scores.answers, { techCount: category.items.length });
+    if (await runDrill(level, techs, { fallbackToAll: true })) setActiveCategoryName(categoryName);
   };
 
   const applyLevel = (key: string) => {
@@ -281,33 +245,27 @@ export default function InterviewPrep() {
     else applyLevel(key);
   };
 
-  const answerDrill = (optionIndex: number) => {
-    if (!drill || drill.answered !== null) return;
-    const cur = drill.questions[drill.index];
-    if (!cur) return;
-    const isCorrect = optionIndex === cur.q.correct;
-    setDrill({ ...drill, answered: optionIndex, correctCount: drill.correctCount + (isCorrect ? 1 : 0) });
-    setPoeCue({ type: isCorrect ? "correct" : "wrong", id: Date.now() });
-    record(cur.tech, isCorrect, "drill", drill.difficulty);
+  const handleDrillAnswer = (optionIndex: number) => {
+    const next = answerDrill(drill, optionIndex);
+    if (!next) return;
+    setDrill(next.drill);
+    setPoeCue({ type: next.isCorrect ? "correct" : "wrong", id: Date.now() });
+    record(next.tech, next.isCorrect, "drill", next.drill.difficulty);
   };
 
-  const nextDrill = () => {
-    if (!drill) return;
-    const nextIndex = drill.index + 1;
-    if (nextIndex >= drill.questions.length) {
-      if (drill.correctCount === drill.questions.length) {
-        addXp(PERFECT_QUIZ_BONUS);
-        setCelebration({
-          title: t("celebration.perfectTitle"),
-          subtitle: t("celebration.perfectSubtitle", { bonus: PERFECT_QUIZ_BONUS }),
-          accent: colors.success ?? "",
-        });
-        setPoeCue({ type: "levelUp", id: Date.now() });
-      }
-      setDrill({ ...drill, done: true });
-    } else {
-      setDrill({ ...drill, index: nextIndex, answered: null });
+  const handleDrillNext = () => {
+    const next = advanceDrill(drill);
+    if (!next) return;
+    if (next.perfect) {
+      addXp(PERFECT_QUIZ_BONUS);
+      setCelebration({
+        title: t("celebration.perfectTitle"),
+        subtitle: t("celebration.perfectSubtitle", { bonus: PERFECT_QUIZ_BONUS }),
+        accent: colors.success ?? "",
+      });
+      setPoeCue({ type: "levelUp", id: Date.now() });
     }
+    setDrill(next.drill);
   };
 
   return (
@@ -415,9 +373,9 @@ export default function InterviewPrep() {
       {drill ? (
         <div style={{ width: "min(100%, 860px)", paddingBottom: 48 }}>
           {mockActive ? (
-            <MockLoop drill={drill} onAnswer={answerDrill} onNextQuestion={nextDrill} onExit={exitSession} />
+            <MockLoop drill={drill} onAnswer={handleDrillAnswer} onNextQuestion={handleDrillNext} onExit={exitSession} />
           ) : (
-            <DrillSession drill={drill} onAnswer={answerDrill} onNext={nextDrill} onExit={exitSession} />
+            <DrillSession drill={drill} onAnswer={handleDrillAnswer} onNext={handleDrillNext} onExit={exitSession} />
           )}
         </div>
       ) : visibleItems.length === 0 ? (
