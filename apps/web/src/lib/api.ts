@@ -21,6 +21,8 @@ const api = createApi(supabase);
 export { dateToUi, dateToDb, pipeline };
 export const {
   listBoards,
+  listBoardSummaries,
+  getBoard,
   upsertBoard,
   deleteBoard,
   setBoardSharing,

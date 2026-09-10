@@ -1,0 +1,48 @@
+.page { width: 100%; padding: 32px 32px 56px; box-sizing: border-box; }
+.actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.editor { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: stretch; }
+.toolbarButton {
+  padding: 7px 14px;
+  border: 1px solid var(--arch-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--arch-text-dim);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.toolbarButton:disabled { cursor: not-allowed; opacity: .45; }
+.connectionSelect {
+  min-height: 32px;
+  padding: 5px 30px 5px 9px;
+  border: 1px solid var(--arch-border);
+  border-radius: 7px;
+  background: var(--arch-surface);
+  color: var(--arch-text);
+  font: inherit;
+  font-size: 12px;
+  color-scheme: dark;
+}
+.connectionRow { display: block; min-height: 32px; margin-bottom: 10px; font-size: 12px; }
+.workflow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 0 10px; }
+.workflowStep { min-height: 54px; padding: 8px 10px; border: 1px solid var(--arch-border); border-radius: 8px; color: var(--arch-text-dim); }
+.workflowStep strong { display: block; margin-bottom: 2px; color: var(--arch-text); font-size: 12px; }
+.workflowStep span { font-size: 11px; line-height: 1.35; }
+.workflowActive { border-color: var(--arch-accent); background: color-mix(in srgb, var(--arch-accent) 8%, transparent); }
+.handle::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 2px solid var(--arch-canvas);
+  border-radius: 50%;
+  background: var(--node-color);
+}
+.toolbarButton:focus-visible, .connectionSelect:focus-visible,
+.node:focus-visible, .handle:focus-visible { outline: 3px solid var(--arch-accent); outline-offset: 3px; }
+@media (max-width: 760px) {
+  .page { padding: 20px 12px 40px; }
+  .editor { grid-template-columns: 1fr; }
+  .actions { margin-left: 0; width: 100%; }
+  .workflow { grid-template-columns: 1fr; }
+}

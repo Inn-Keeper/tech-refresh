@@ -44,14 +44,10 @@ export function EvalResults({
             color: result.score >= SHIP_SCORE ? colors.success : result.score >= REVIEW_SCORE ? colors.warning : colors.danger,
           }}
         >
-          {result.score}%
+          {result.score}% <span style={{ fontSize: 12, color: colors.textDim }}>checklist coverage</span>
         </span>
         <span style={{ fontSize: 14, fontWeight: 600, color: colors.textBright }}>
-          {result.score >= SHIP_SCORE
-            ? t("board.verdictShip")
-            : result.score >= REVIEW_SCORE
-              ? t("board.verdictReview")
-              : t("board.verdictWhiteboard")}
+          {result.score >= SHIP_SCORE ? "Checklist complete" : "Checklist partially complete"}
         </span>
         <span
           style={{
@@ -64,12 +60,15 @@ export function EvalResults({
           }}
         >
           <BrandIcon name="cost" color={colors.textDim} size={14} />
-          {result.cost}/{scenario.budget} ·
+          cost units {result.cost}/{scenario.budget} ·
           <BrandIcon name="maintenance" color={colors.textDim} size={14} />
           maint {result.maint} (
           {result.maint <= MAINT_LEAN_MAX ? "lean" : result.maint <= MAINT_MODERATE_MAX ? "moderate" : "heavy"})
         </span>
       </div>
+      <p style={{ margin: "-6px 0 14px", fontSize: 12, color: colors.textFaint }}>
+        Checks matched for this scenario; review the warnings and explain your trade-offs.
+      </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 18 }}>
         <div>
@@ -104,7 +103,7 @@ export function EvalResults({
         {result.warnings.length > 0 && (
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: colors.textDim, marginBottom: 8, letterSpacing: "0.04em" }}>
-              MEETING NOTES
+              DESIGN WARNINGS ({result.warnings.length})
             </div>
             <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>
               {result.warnings.map((warning) => (

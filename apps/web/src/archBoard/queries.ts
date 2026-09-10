@@ -1,8 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "../lib/api";
+import type { BoardSummary, SavedBoard } from "./types";
 
 export const archBoardQueryKeys = {
-  boards: ["arch-boards"] as const,
+  boards: ["arch-board-summaries"] as const,
+  board: (id: string) => ["arch-board", id] as const,
   customScenarios: ["custom-scenarios"] as const,
 };
 
@@ -13,20 +15,32 @@ export function useCustomScenariosQuery() {
   });
 }
 
-export function useSavedBoardsQuery() {
+export function useSavedBoardsQuery(enabled = true) {
   return useQuery({
     queryKey: archBoardQueryKeys.boards,
-    queryFn: api.listBoards,
+    queryFn: api.listBoardSummaries,
+    enabled,
   });
 }
 
-export function useSaveBoardMutation(onSaved: (board: { id?: string; title: string }) => void) {
+export function useLoadBoard() {
+  const queryClient = useQueryClient();
+  return (id: string) => queryClient.fetchQuery({ queryKey: archBoardQueryKeys.board(id), queryFn: () => api.getBoard(id), staleTime: 0 });
+}
+
+export function useSaveBoardMutation(onSaved: (board: SavedBoard) => void) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: api.upsertBoard,
-    onSuccess: (board: { id?: string; title: string }) => {
+    onSuccess: (board: SavedBoard) => {
       onSaved(board);
-      queryClient.invalidateQueries({ queryKey: archBoardQueryKeys.boards });
+      if (board.id) queryClient.setQueryData(archBoardQueryKeys.board(board.id), board);
+      queryClient.setQueryData<BoardSummary[]>(archBoardQueryKeys.boards, (current) => {
+        if (!current || !board.id) return current;
+        const summary: BoardSummary = { id: board.id, title: board.title, scenarioId: board.scenarioId,
+          shareToken: board.shareToken ?? null, createdAt: board.createdAt ?? new Date().toISOString(), updatedAt: board.updatedAt ?? new Date().toISOString() };
+        return [summary, ...current.filter((item) => item.id !== board.id)];
+      });
     },
   });
 }
@@ -35,7 +49,8 @@ export function useShareBoardMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, enable }: { id: string; enable: boolean }) => api.setBoardSharing(id, enable),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: archBoardQueryKeys.boards }),
+    onSuccess: (token, variables) => queryClient.setQueryData<BoardSummary[]>(archBoardQueryKeys.boards,
+      (current) => current?.map((item) => item.id === variables.id ? { ...item, shareToken: token } : item)),
   });
 }
 
@@ -45,7 +60,8 @@ export function useDeleteBoardMutation(onDeleted: (id: string) => void) {
     mutationFn: api.deleteBoard,
     onSuccess: (_data: unknown, id: string) => {
       onDeleted(id);
-      queryClient.invalidateQueries({ queryKey: archBoardQueryKeys.boards });
+      queryClient.removeQueries({ queryKey: archBoardQueryKeys.board(id) });
+      queryClient.setQueryData<BoardSummary[]>(archBoardQueryKeys.boards, (current) => current?.filter((item) => item.id !== id));
     },
   });
 }

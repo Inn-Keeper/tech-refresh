@@ -1,5 +1,5 @@
-export const NODE_W = 132;
-export const NODE_H = 54;
+export const NODE_W = 112;
+export const NODE_H = 46;
 
 // Horizontal padding of the board page. The sticky timer cancels it with equal
 // negative margins to go full-bleed, so the two must stay in step.

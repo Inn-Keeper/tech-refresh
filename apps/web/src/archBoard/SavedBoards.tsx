@@ -2,7 +2,7 @@ import { useState } from "react";
 import { t } from "@tech-refresh/core/i18n";
 import { colors } from "@tech-refresh/core/tokens";
 import { useShareBoardMutation } from "./queries";
-import type { AugmentedScenario, SavedBoard } from "./types";
+import type { AugmentedScenario, BoardSummary } from "./types";
 
 const COPIED_RESET_MS = 1500;
 
@@ -17,18 +17,24 @@ export function SavedBoards({
 }: {
   activeBoardId: string | null;
   allScenarios: AugmentedScenario[];
-  boards: SavedBoard[];
+  boards: BoardSummary[];
   onDelete: (id: string) => void;
-  onLoad: (board: SavedBoard) => void;
+  onLoad: (board: BoardSummary) => void;
 }) {
   const shareMutation = useShareBoardMutation();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyErrorId, setCopyErrorId] = useState<string | null>(null);
 
-  const copyLink = async (board: SavedBoard) => {
+  const copyLink = async (board: BoardSummary) => {
     if (!board.shareToken || !board.id) return;
-    await navigator.clipboard.writeText(shareUrl(board.shareToken));
-    setCopiedId(board.id);
-    window.setTimeout(() => setCopiedId((current) => (current === board.id ? null : current)), COPIED_RESET_MS);
+    setCopyErrorId(null);
+    try {
+      await navigator.clipboard.writeText(shareUrl(board.shareToken));
+      setCopiedId(board.id);
+      window.setTimeout(() => setCopiedId((current) => (current === board.id ? null : current)), COPIED_RESET_MS);
+    } catch {
+      setCopyErrorId(board.id);
+    }
   };
 
   return (
@@ -66,12 +72,14 @@ export function SavedBoards({
                 {board.title}
               </span>
               <span style={{ fontSize: 10.5, color: colors.textFaint }}>
-                {t("board.boardMeta", {
-                  scenario: boardScenario?.name ?? board.scenarioId,
-                  nodes: board.nodes.length,
-                  edges: board.edges.length,
-                })}
+                {boardScenario?.name ?? board.scenarioId} · updated {new Date(board.updatedAt).toLocaleDateString()}
               </span>
+              {copyErrorId === board.id && board.shareToken && (
+                <p role="alert" style={{ margin: 0, fontSize: 11, color: colors.dangerBright }}>
+                  Copy failed. Copy this link: <span style={{ userSelect: "all" }}>{shareUrl(board.shareToken)}</span>
+                </p>
+              )}
+              {shareMutation.error && shareMutation.variables?.id === board.id && <p role="alert" style={{ margin: 0, fontSize: 11, color: colors.dangerBright }}>{shareMutation.error.message}</p>}
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
                 {board.shareToken ? (
                   <>

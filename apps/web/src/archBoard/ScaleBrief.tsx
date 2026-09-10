@@ -36,7 +36,7 @@ export function ScaleBrief({ scenario }: { scenario: AugmentedScenario }) {
   ];
 
   return (
-    <section
+    <details open
       style={{
         padding: "14px 16px",
         marginBottom: 14,
@@ -45,6 +45,9 @@ export function ScaleBrief({ scenario }: { scenario: AugmentedScenario }) {
         borderRadius: 10,
       }}
     >
+      <summary style={{ cursor: "pointer", fontSize: 13, fontWeight: 700, color: colors.textBright, marginBottom: 10 }}>
+        {t("scale.title")}
+      </summary>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
         <BrandIcon name="accuracy" color={colors.accentBright} size={15} />
         <h2 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: colors.textBright }}>{t("scale.title")}</h2>
@@ -127,6 +130,6 @@ export function ScaleBrief({ scenario }: { scenario: AugmentedScenario }) {
       >
         {t("scale.check")}
       </button>
-    </section>
+    </details>
   );
 }
