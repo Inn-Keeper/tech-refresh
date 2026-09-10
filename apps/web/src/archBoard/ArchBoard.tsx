@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { TYPE_COLORS, meta, SCENARIOS, SCENARIO_CATEGORIES, STATEFUL_TYPES, evaluate } from "@tech-refresh/core/arch";
 import { t } from "@tech-refresh/core/i18n";
 import { buildPushback } from "@tech-refresh/core/pushback";
@@ -7,7 +7,7 @@ import { colors, layout } from "@tech-refresh/core/tokens";
 import { BrandIcon } from "../components/BrandIcon";
 import { nodeIconName } from "../components/brandIconNames";
 import { Combobox } from "../components/Combobox";
-import { CATEGORY_ICONS, CUSTOM_CATEGORY, NODE_H, NODE_W, PAGE_PADDING_X } from "./constants";
+import { CATEGORY_ICONS, CUSTOM_CATEGORY, NODE_H, NODE_W } from "./constants";
 import { DesignTimer } from "./DesignTimer";
 import { EdgeInspector } from "./EdgeInspector";
 import { EvalResults } from "./EvalResults";
@@ -17,15 +17,21 @@ import { SavedBoards } from "./SavedBoards";
 import { ScaleBrief } from "./ScaleBrief";
 import { ScenarioForm } from "./ScenarioForm";
 import { TalkTrack } from "./TalkTrack";
+import { activateConnection } from "./connectionState.js";
+import { findPlacement, pointerToBoard } from "./boardGeometry.js";
+import { commitSnapshot, createHistory, redo, sameSnapshot, undo } from "./editorState.js";
+import { workflowStep } from "./workflowState.js";
+import styles from "./ArchBoard.module.css";
 import {
   useCustomScenariosQuery,
   useDeleteBoardMutation,
   useDeleteScenarioMutation,
   useSaveBoardMutation,
   useSavedBoardsQuery,
+  useLoadBoard,
   useSaveScenarioMutation,
 } from "./queries";
-import type { AugmentedScenario, BoardEdge, BoardNode, ConnectDrag, DragRef, SavedBoard } from "./types";
+import type { AugmentedScenario, BoardEdge, BoardNode, BoardSummary, ConnectDrag, DragRef, SavedBoard } from "./types";
 
 export default function ArchBoard() {
   const [scenarioId, setScenarioId] = useState<string>((SCENARIOS[0] as AugmentedScenario).id);
@@ -48,27 +54,66 @@ export default function ArchBoard() {
   const dragRef = useRef<DragRef | null>(null);
   const connectDragRef = useRef<ConnectDrag | null>(null);
   const suppressClickRef = useRef(false);
+  const dragFrameRef = useRef<number | null>(null);
+  const pendingNodesRef = useRef<BoardNode[] | null>(null);
+  const historyRef = useRef<any>(null);
+  const savedSnapshotRef = useRef<any>(null);
+  const submittedSnapshotRef = useRef<any>(null);
+  const [, renderHistory] = useState(0);
 
-  const { data: customScenarios = [] } = useCustomScenariosQuery();
-  const allScenarios: AugmentedScenario[] = [
+  const { data: customScenarios = [], error: scenariosError } = useCustomScenariosQuery();
+  const allScenarios: AugmentedScenario[] = useMemo(() => [
     ...(SCENARIOS as AugmentedScenario[]),
     ...customScenarios.map((s) => ({ ...s, category: CUSTOM_CATEGORY, custom: true })),
-  ];
-  const scenarioOptions = [...SCENARIO_CATEGORIES, CUSTOM_CATEGORY]
+  ], [customScenarios]);
+  const scenarioOptions = useMemo(() => [...SCENARIO_CATEGORIES, CUSTOM_CATEGORY]
     .map((category) => ({
       label: category,
       options: allScenarios
         .filter((s) => s.category === category)
         .map((s) => ({ value: s.id, label: s.name })),
     }))
-    .filter((group) => group.options.length > 0);
+    .filter((group) => group.options.length > 0), [allScenarios]);
   const scenario: AugmentedScenario = allScenarios.find((s) => s.id === scenarioId) ?? (SCENARIOS[0] as AugmentedScenario);
   const nodeById = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const snapshot = () => ({ scenarioId, nodes, edges, talkSections, talkRating, talkGrade });
+  if (!historyRef.current) {
+    historyRef.current = createHistory(snapshot());
+    savedSnapshotRef.current = snapshot();
+  }
+  const isDirty = !sameSnapshot(snapshot(), savedSnapshotRef.current);
+  const activeWorkflowStep = workflowStep(nodes.length, edges.length);
 
-  const { data: savedBoards = [], error: boardsError } = useSavedBoardsQuery();
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    const guardNavigation = (event: Event) => { if (!window.confirm("Discard unsaved changes?")) event.preventDefault(); };
+    window.addEventListener("beforeunload", warn);
+    window.addEventListener("grip:navigate", guardNavigation);
+    return () => { window.removeEventListener("beforeunload", warn); window.removeEventListener("grip:navigate", guardNavigation); };
+  }, [isDirty]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const editable = event.target instanceof HTMLElement && (event.target.isContentEditable || /INPUT|TEXTAREA|SELECT/.test(event.target.tagName));
+      if (editable) return;
+      if (event.key === "Escape") cancelConnection();
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+        event.preventDefault();
+        applyHistory(event.shiftKey ? redo(historyRef.current) : undo(historyRef.current));
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  });
+
+  const { data: savedBoards = [], error: boardsError, isLoading: boardsLoading, refetch: retryBoards } = useSavedBoardsQuery(savedOpen);
+  const fetchBoard = useLoadBoard();
   const saveBoardMutation = useSaveBoardMutation((board) => {
     setActiveBoardId(board.id ?? null);
     setActiveBoardTitle(board.title);
+    savedSnapshotRef.current = submittedSnapshotRef.current;
+    renderHistory((value) => value + 1);
   });
   const deleteBoardMutation = useDeleteBoardMutation((id) => {
     if (id === activeBoardId) {
@@ -90,7 +135,19 @@ export default function ArchBoard() {
     setConnectFrom(null);
   };
 
-  const loadBoard = (board: SavedBoard) => {
+  const applySnapshot = (value: any) => {
+    setScenarioId(value.scenarioId); setNodes(value.nodes); setEdges(value.edges);
+    setTalkSections(value.talkSections); setTalkRating(value.talkRating); setTalkGrade(value.talkGrade);
+    setResult(null); cancelConnection();
+  };
+  const applyHistory = (history: any) => {
+    historyRef.current = history; applySnapshot(history.present); renderHistory((value) => value + 1);
+  };
+  const commit = (next: any) => applyHistory(commitSnapshot({ ...historyRef.current, present: snapshot() }, next));
+  const mayDiscard = () => !isDirty || window.confirm("Discard unsaved changes?");
+
+  const loadBoard = (board: SavedBoard, discardConfirmed = false) => {
+    if (!discardConfirmed && !mayDiscard()) return;
     if (!allScenarios.some((item) => item.id === board.scenarioId)) {
       window.alert(t("board.unknownScenarioMessage", { scenarioId: board.scenarioId }));
       return;
@@ -105,13 +162,23 @@ export default function ArchBoard() {
     setResult(null);
     setActiveBoardId(board.id ?? null);
     setActiveBoardTitle(board.title);
+    const loaded = { scenarioId: board.scenarioId, nodes: board.nodes, edges: board.edges,
+      talkSections: { ...emptyTalkTrack(), ...(board.talkTrack?.sections ?? {}) },
+      talkRating: board.talkTrack?.rating ?? null, talkGrade: board.talkGrade ?? null };
+    historyRef.current = createHistory(loaded);
+    savedSnapshotRef.current = loaded;
     setSavedOpen(false);
+  };
+  const requestBoard = async (summary: BoardSummary) => {
+    if (!mayDiscard()) return;
+    try { loadBoard(await fetchBoard(summary.id), true); } catch (error) { window.alert((error as Error).message); }
   };
   const liveCost = nodes.reduce((s, n) => s + meta(n.type).cost, 0);
   const liveMaint = nodes.reduce((s, n) => s + meta(n.type).maint, 0);
   const talkAnswered = scoreTalkTrack({ sections: talkSections, rating: talkRating }).answered.length;
 
   const switchScenario = (id: string) => {
+    if (!mayDiscard()) return;
     setScenarioId(id);
     setNodes([]);
     setEdges([]);
@@ -122,51 +189,46 @@ export default function ArchBoard() {
     setResult(null);
     setActiveBoardId(null);
     setActiveBoardTitle(null);
+    const next = { scenarioId: id, nodes: [], edges: [], talkSections: emptyTalkTrack(), talkRating: null, talkGrade: null };
+    historyRef.current = createHistory(next); savedSnapshotRef.current = next;
   };
 
   const addNode = (type: string) => {
-    const i = nodes.length;
-    setNodes([
-      ...nodes,
-      { id: crypto.randomUUID(), type, x: 30 + (i % 5) * 155, y: 30 + Math.floor(i / 5) * 95 },
-    ]);
-    setResult(null);
+    const width = canvasRef.current?.clientWidth ?? 480;
+    const point = findPlacement(nodes, { width, height: canvasRef.current?.clientHeight ?? 560 }, { width: NODE_W, height: NODE_H });
+    commit({ ...snapshot(), nodes: [...nodes, { id: crypto.randomUUID(), type, ...point }] });
   };
 
   const removeNode = (id: string) => {
-    setNodes(nodes.filter((n) => n.id !== id));
-    setEdges(edges.filter((e) => e.from !== id && e.to !== id));
+    commit({ ...snapshot(), nodes: nodes.filter((n) => n.id !== id), edges: edges.filter((e) => e.from !== id && e.to !== id) });
     if (connectFrom === id || connectDrag?.from === id) cancelConnection();
     if (inspectingId === id) setInspectingId(null);
     setResult(null);
   };
 
   const patchNode = (id: string, patch: Partial<BoardNode>) => {
-    setNodes((prev) => prev.map((n) => (n.id === id ? { ...n, ...patch } : n)));
-    setResult(null);
+    commit({ ...snapshot(), nodes: nodes.map((n) => (n.id === id ? { ...n, ...patch } : n)) });
   };
 
   const addEdge = (from: string, to: string) => {
     if (from === to || edges.some((e) => e.from === from && e.to === to)) return;
-    setEdges([...edges, { id: crypto.randomUUID(), from, to }]);
-    setResult(null);
+    commit({ ...snapshot(), edges: [...edges, { id: crypto.randomUUID(), from, to }] });
   };
 
   const removeEdge = (id: string) => {
-    setEdges(edges.filter((e) => e.id !== id));
+    commit({ ...snapshot(), edges: edges.filter((e) => e.id !== id) });
     if (inspectingEdgeId === id) setInspectingEdgeId(null);
     setResult(null);
   };
 
   const patchEdge = (id: string, patch: Partial<BoardEdge>) => {
-    setEdges((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)));
-    setResult(null);
+    commit({ ...snapshot(), edges: edges.map((e) => (e.id === id ? { ...e, ...patch } : e)) });
   };
 
   const canvasPoint = (e: React.PointerEvent) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return null;
-    return { x: e.clientX - rect.left, y: e.clientY - rect.top, rect };
+    return { ...pointerToBoard({ x: e.clientX, y: e.clientY }, rect, { left: canvasRef.current?.scrollLeft ?? 0, top: canvasRef.current?.scrollTop ?? 0 }), rect };
   };
 
   const nodeAtPoint = (x: number, y: number, sourceId: string) =>
@@ -240,7 +302,12 @@ export default function ArchBoard() {
     const x = Math.max(0, Math.min(point.rect.width - NODE_W, point.x - d.dx));
     const y = Math.max(0, Math.min(point.rect.height - NODE_H, point.y - d.dy));
     d.moved = true;
-    setNodes((prev) => prev.map((n) => (n.id === d.id ? { ...n, x, y } : n)));
+    const source = pendingNodesRef.current ?? nodes;
+    pendingNodesRef.current = source.map((n) => (n.id === d.id ? { ...n, x, y } : n));
+    if (dragFrameRef.current === null) dragFrameRef.current = window.requestAnimationFrame(() => {
+      if (pendingNodesRef.current) setNodes(pendingNodesRef.current);
+      dragFrameRef.current = null;
+    });
   };
 
   const onNodePointerUp = (e: React.PointerEvent) => {
@@ -248,7 +315,16 @@ export default function ArchBoard() {
       finishConnectionDrag(e);
       return;
     }
-    if (dragRef.current?.moved) suppressClickRef.current = true;
+    if (dragRef.current?.moved) {
+      suppressClickRef.current = true;
+      if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+      const finalNodes = pendingNodesRef.current ?? nodes;
+      setNodes(finalNodes);
+      historyRef.current = commitSnapshot(historyRef.current, { ...snapshot(), nodes: finalNodes });
+      renderHistory((value) => value + 1);
+    }
+    dragFrameRef.current = null;
+    pendingNodesRef.current = null;
     dragRef.current = null;
   };
 
@@ -257,29 +333,27 @@ export default function ArchBoard() {
       suppressClickRef.current = false;
       return;
     }
-    if (connectFrom && connectFrom !== n.id) {
-      addEdge(connectFrom, n.id);
-      cancelConnection();
-    } else if (connectFrom === n.id) {
-      cancelConnection();
-    }
+    const next = activateConnection(connectFrom, n.id);
+    if (next.edge) addEdge(next.edge.from, next.edge.to);
+    setConnectFrom(next.sourceId);
   };
 
   return (
-    <main
-      style={{
-        minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`,
-        width: "100%",
-        padding: `32px ${PAGE_PADDING_X}px 56px`,
-        boxSizing: "border-box",
-      }}
-    >
+    <main className={styles.page} style={{
+      minHeight: `calc(100vh - ${layout.webHeaderHeight}px)`,
+      ["--arch-border" as string]: colors.border,
+      ["--arch-text-dim" as string]: colors.textDim,
+      ["--arch-surface" as string]: colors.surface,
+      ["--arch-canvas" as string]: colors.bgDeep,
+      ["--arch-text" as string]: colors.text,
+      ["--arch-accent" as string]: colors.accentBright,
+    }}>
       <h1 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 700, letterSpacing: "-0.5px", color: colors.textBright }}>
         Arch Board
       </h1>
       <p style={{ margin: "0 0 16px", color: colors.textFaint, fontSize: 13 }}>
-        Pick a scenario, drag components onto the canvas, then wire them with arrows. Click a node's side axis handle
-        then a target, or hold Shift and drag from one node axis to another.
+        Pick a scenario, click components to add them, then move and connect them on the canvas. Select a node handle
+        and a target, or hold Shift and drag between handles.
       </p>
 
       {/* Scenario picker */}
@@ -346,6 +420,9 @@ export default function ArchBoard() {
 
       {/* Live cost ticker + actions */}
       <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 10, flexWrap: "wrap" }}>
+        <span aria-live="polite" style={{ fontSize: 12, color: isDirty ? colors.warningBright : colors.successBright }}>
+          {saveBoardMutation.isPending ? "Saving…" : isDirty ? "Unsaved changes" : activeBoardId ? "Saved" : "New board"}
+        </span>
         <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: liveCost > scenario.budget ? colors.danger : colors.textDim }}>
           <BrandIcon name="cost" color={liveCost > scenario.budget ? colors.danger : colors.textDim} size={14} />
           Cost {liveCost} / budget {scenario.budget}
@@ -354,7 +431,10 @@ export default function ArchBoard() {
           <BrandIcon name="maintenance" color={colors.textDim} size={14} />
           Maintenance load {liveMaint}
         </span>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div className={styles.actions}>
+          <button className={styles.toolbarButton} onClick={() => applyHistory(undo(historyRef.current))} disabled={!historyRef.current.past.length}>Undo</button>
+          <button className={styles.toolbarButton} onClick={() => applyHistory(redo(historyRef.current))} disabled={!historyRef.current.future.length}>Redo</button>
+          <button className={styles.toolbarButton} onClick={() => canvasRef.current?.scrollTo({ left: 0, top: 0, behavior: "smooth" })}>Reset view</button>
           <button
             onClick={() => setTalkOpen((value) => !value)}
             style={{
@@ -375,10 +455,11 @@ export default function ArchBoard() {
               borderRadius: 8, color: savedOpen ? colors.accentBright : colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
             }}
           >
-            {t("board.saved")} ({savedBoards.length})
+            {t("board.saved")}{savedOpen && !boardsLoading ? ` (${savedBoards.length})` : ""}
           </button>
           <button
-            onClick={() =>
+            onClick={() => {
+              submittedSnapshotRef.current = snapshot();
               saveBoardMutation.mutate({
                 id: activeBoardId ?? undefined,
                 title: activeBoardTitle ?? t("board.draftTitle", { scenario: scenario.name }),
@@ -387,8 +468,8 @@ export default function ArchBoard() {
                 edges,
                 talkTrack: { sections: talkSections, rating: talkRating },
                 talkGrade,
-              })
-            }
+              });
+            }}
             disabled={saveBoardMutation.isPending}
             style={{
               padding: "7px 14px", background: "transparent", border: `1px solid ${colors.success}60`,
@@ -398,7 +479,7 @@ export default function ArchBoard() {
             {saveBoardMutation.isPending ? t("common.saving") : t("common.save")}
           </button>
           <button
-            onClick={() => { setNodes([]); setEdges([]); setTalkSections(emptyTalkTrack()); setTalkRating(null); setTalkGrade(null); cancelConnection(); setResult(null); setActiveBoardId(null); setActiveBoardTitle(null); }}
+            onClick={() => commit({ ...snapshot(), nodes: [], edges: [], talkSections: emptyTalkTrack(), talkRating: null, talkGrade: null })}
             style={{
               padding: "7px 14px", background: "transparent", border: `1px solid ${colors.border}`,
               borderRadius: 8, color: colors.textDim, fontSize: 12, fontWeight: 600, cursor: "pointer",
@@ -434,16 +515,37 @@ export default function ArchBoard() {
       )}
 
       {savedOpen && (
-        <SavedBoards
+        boardsLoading ? <p style={{ color: colors.textFaint }}>Loading saved boards…</p> : boardsError ?
+        <p role="alert" style={{ color: colors.dangerBright }}>Could not load saved boards. <button onClick={() => retryBoards()}>Retry</button></p> : <SavedBoards
           activeBoardId={activeBoardId}
           allScenarios={allScenarios}
           boards={savedBoards}
           onDelete={(id) => deleteBoardMutation.mutate(id)}
-          onLoad={loadBoard}
+          onLoad={requestBoard}
         />
       )}
 
-      <div style={{ display: "flex", gap: 14, alignItems: "stretch", flexWrap: "wrap" }}>
+      <div className={styles.workflow} aria-label="Design workflow">
+        <div className={`${styles.workflowStep} ${activeWorkflowStep === 1 ? styles.workflowActive : ""}`}>
+          <strong>1. Add components</strong><span>Choose the building blocks from the palette.</span>
+        </div>
+        <div className={`${styles.workflowStep} ${activeWorkflowStep === 2 ? styles.workflowActive : ""}`}>
+          <strong>2. Connect nodes</strong>
+          <span aria-live="polite">{connectFrom ? `Now choose a target for ${meta(nodeById[connectFrom]?.type ?? "client").label}, or press Escape.` : "Select a node handle, then choose another node."}</span>
+        </div>
+        <div className={`${styles.workflowStep} ${activeWorkflowStep === 3 ? styles.workflowActive : ""}`}>
+          <strong>3. Describe the arrow</strong><span>Click an arrow or use “Edit arrow” to set its mode and protocol.</span>
+        </div>
+      </div>
+      {scenariosError && <p role="alert" style={{ color: colors.dangerBright }}>Custom scenarios could not be loaded.</p>}
+        <label className={styles.connectionRow} style={{ color: colors.textDim }}>
+          Edit arrow{" "}
+          <select className={styles.connectionSelect} disabled={edges.length === 0} value={inspectingEdgeId ?? ""} onChange={(event) => setInspectingEdgeId(event.target.value || null)}>
+            <option value="">{edges.length === 0 ? "Connect two nodes first" : "Select an arrow to edit"}</option>
+            {edges.map((edge) => <option key={edge.id} value={edge.id}>{meta(nodeById[edge.from]?.type ?? "client").label} → {meta(nodeById[edge.to]?.type ?? "client").label}{edge.protocol ? ` · ${edge.protocol}` : ""}</option>)}
+          </select>
+        </label>
+      <div className={styles.editor}>
         <NodePalette onAddNode={addNode} />
 
         {/* Canvas */}
@@ -451,13 +553,17 @@ export default function ArchBoard() {
           ref={canvasRef}
           onPointerMove={(e) => { if (connectDragRef.current) updateConnectionDrag(e); }}
           onPointerUp={(e) => { if (connectDragRef.current) finishConnectionDrag(e); }}
+          onPointerCancel={() => {
+            if (dragFrameRef.current !== null) window.cancelAnimationFrame(dragFrameRef.current);
+            dragFrameRef.current = null; pendingNodesRef.current = null; dragRef.current = null; cancelConnection();
+          }}
           onClick={(e) => { if (e.target === canvasRef.current) cancelConnection(); }}
           style={{
-            position: "relative", flex: 1, minWidth: 480, height: "calc(100vh - 360px)", minHeight: 560,
+            position: "relative", flex: 1, minWidth: 0, height: "calc(100vh - 360px)", minHeight: 560,
             background: colors.bgDeep,
             backgroundImage: `radial-gradient(${colors.border} 1px, transparent 1px)`,
             backgroundSize: "22px 22px",
-            border: `1px solid ${colors.border}`, borderRadius: 14, overflow: "hidden",
+            border: `1px solid ${colors.border}`, borderRadius: 14, overflow: "auto",
           }}
         >
           {nodes.length === 0 && (
@@ -543,6 +649,7 @@ export default function ArchBoard() {
             const isSource = connectFrom === n.id;
             const axisHandle = (side: string) => (
               <button
+                className={styles.handle}
                 onPointerDown={(ev) => {
                   ev.stopPropagation();
                   if (ev.shiftKey) startConnectionDrag(ev, n);
@@ -561,18 +668,22 @@ export default function ArchBoard() {
                     suppressClickRef.current = false;
                     return;
                   }
-                  setConnectFrom(isSource ? null : n.id);
+                  const next = activateConnection(connectFrom, n.id);
+                  if (next.edge) addEdge(next.edge.from, next.edge.to);
+                  setConnectFrom(next.sourceId);
                 }}
+                aria-label={isSource ? `Cancel connection from ${spec.label}` : `Connect ${spec.label}`}
                 title={isSource ? "Cancel connection" : "Connect from here, or hold Shift and drag to another node axis"}
                 style={{
                   position: "absolute",
-                  [side]: -9,
-                  top: NODE_H / 2 - 9,
-                  width: 18,
-                  height: 18,
+                  [side]: -16,
+                  top: NODE_H / 2 - 16,
+                  width: 32,
+                  height: 32,
                   borderRadius: "50%",
-                  border: `2px solid ${colors.bgDeep}`,
-                  background: color,
+                  border: "none",
+                  background: "transparent",
+                  ["--node-color" as string]: color,
                   cursor: "crosshair",
                   padding: 0,
                 }}
@@ -581,10 +692,25 @@ export default function ArchBoard() {
             return (
               <div
                 key={n.id}
+                className={styles.node}
                 onPointerDown={(e) => onNodePointerDown(e, n)}
                 onPointerMove={onNodePointerMove}
                 onPointerUp={onNodePointerUp}
                 onClick={() => onNodeClick(n)}
+                tabIndex={0}
+                role="group"
+                aria-label={`${spec.label} node`}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") { event.preventDefault(); onNodeClick(n); }
+                  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+                    event.preventDefault();
+                    const step = event.shiftKey ? 1 : 10;
+                    const dx = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
+                    const dy = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
+                    commit({ ...snapshot(), nodes: nodes.map((node) => node.id === n.id ? { ...node, x: Math.max(0, node.x + dx), y: Math.max(0, node.y + dy) } : node) });
+                  }
+                  if (event.key === "Delete" || event.key === "Backspace") { event.preventDefault(); removeNode(n.id); }
+                }}
                 style={{
                   position: "absolute", left: n.x, top: n.y, width: NODE_W, height: NODE_H,
                   boxSizing: "border-box",
@@ -621,7 +747,7 @@ export default function ArchBoard() {
                     }}
                     title={t("node.inspect")}
                     style={{
-                      position: "absolute", bottom: -8, right: -8, width: 18, height: 18,
+                      position: "absolute", bottom: -16, right: -16, width: 32, height: 32,
                       borderRadius: "50%", border: "none",
                       background: inspectingId === n.id ? colors.accent : colors.border,
                       cursor: "pointer", padding: 0,
@@ -640,7 +766,7 @@ export default function ArchBoard() {
                   onClick={(ev) => { ev.stopPropagation(); removeNode(n.id); }}
                   title={t("board.remove")}
                   style={{
-                    position: "absolute", top: -8, right: -8, width: 18, height: 18,
+                    position: "absolute", top: -16, right: -16, width: 32, height: 32,
                     borderRadius: "50%", border: "none", background: colors.border,
                     cursor: "pointer", padding: 0,
                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -683,12 +809,10 @@ export default function ArchBoard() {
           sections={talkSections}
           rating={talkRating}
           onChangeSection={(id, value) => {
-            setTalkSections((prev) => ({ ...prev, [id]: value }));
-            setTalkGrade(null);
+            commit({ ...snapshot(), talkSections: { ...talkSections, [id]: value }, talkGrade: null });
           }}
           onChangeRating={(value) => {
-            setTalkRating(value);
-            setTalkGrade(null);
+            commit({ ...snapshot(), talkRating: value, talkGrade: null });
           }}
         />
       )}

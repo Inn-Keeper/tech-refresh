@@ -75,6 +75,7 @@ export default function App() {
   };
 
   const selectPage = (id: string) => {
+    if (!window.dispatchEvent(new CustomEvent("grip:navigate", { cancelable: true }))) return;
     setPage(id);
     window.localStorage.setItem(ACTIVE_PAGE_KEY, id);
     window.history.pushState({ page: id }, "", `/${id}`);

@@ -20,7 +20,7 @@ describe("date mapping", () => {
  */
 function fakeSupabase(tables = {}, authUser = null, options = {}) {
   const serverCap = options.serverCap ?? Infinity;
-  const calls = { inserts: [], updates: [], deletes: [], rpcs: [], orders: [], ranges: [] };
+  const calls = { inserts: [], updates: [], deletes: [], rpcs: [], orders: [], ranges: [], selects: [] };
   const client = {
     auth: {
       getUser: async () => ({ data: { user: authUser }, error: null }),
@@ -29,7 +29,7 @@ function fakeSupabase(tables = {}, authUser = null, options = {}) {
       const tableRows = tables[table] ?? [];
       const result = { data: tableRows.slice(0, serverCap), error: null };
       const query = {
-        select: () => query,
+        select: (columns = "*") => { calls.selects.push({ table, columns }); return query; },
         order: (column, orderOptions) => {
           calls.orders.push({ table, column, options: orderOptions });
           return query;
@@ -88,6 +88,17 @@ function fakeSupabase(tables = {}, authUser = null, options = {}) {
 }
 
 describe("createApi", () => {
+  it("lists board summaries without graph payloads", async () => {
+    const { client, calls } = fakeSupabase({ arch_boards: [{ id: "b", title: "Board", scenario_id: "s", share_token: null, created_at: "c", updated_at: "u" }] });
+    const summaries = await createApi(client).listBoardSummaries();
+    expect(calls.selects.at(-1).columns).toBe("id,title,scenario_id,share_token,created_at,updated_at");
+    expect(summaries[0]).toEqual({ id: "b", title: "Board", scenarioId: "s", shareToken: null, createdAt: "c", updatedAt: "u" });
+  });
+
+  it("gets one full board by id", async () => {
+    const { client } = fakeSupabase({ arch_boards: [{ id: "b", title: "Board", scenario_id: "s", nodes: [], edges: [] }] });
+    await expect(createApi(client).getBoard("b")).resolves.toMatchObject({ id: "b", scenarioId: "s", nodes: [], edges: [] });
+  });
   it("aggregates answer events into per-tech scores", async () => {
     const { client } = fakeSupabase({
       profiles: [{ xp: 120 }],

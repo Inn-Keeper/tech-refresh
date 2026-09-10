@@ -48,4 +48,12 @@ export type SavedBoard = {
   talkTrack?: TalkTrackData;
   talkGrade?: number | null;
   shareToken?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type BoardSummary = Pick<SavedBoard, "id" | "title" | "scenarioId" | "shareToken"> & {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
 };

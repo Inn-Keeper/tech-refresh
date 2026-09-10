@@ -76,6 +76,16 @@ const QUESTION_FETCH_CAP = 500;
  */
 
 /**
+ * @typedef {object} BoardSummary
+ * @property {string} id
+ * @property {string} title
+ * @property {string} scenarioId
+ * @property {string | null} shareToken
+ * @property {string} createdAt
+ * @property {string} updatedAt
+ */
+
+/**
  * @typedef {object} User
  * @property {string} id
  * @property {string} displayName
@@ -134,6 +144,8 @@ const fail = (error) => {
  *   addXp(points: number): Promise<void>,
  *   resetScores(): Promise<Scores>,
  *   listBoards(): Promise<SavedBoard[]>,
+ *   listBoardSummaries(): Promise<BoardSummary[]>,
+ *   getBoard(id: string): Promise<SavedBoard>,
  *   upsertBoard(board: SavedBoard): Promise<SavedBoard>,
  *   deleteBoard(id: string | undefined): Promise<void>,
  *   setBoardSharing(id: string, enable: boolean): Promise<string | null>,
@@ -291,6 +303,30 @@ export function createApi(supabase) {
       ? Math.round(b.talkGrade)
       : null,
   });
+
+  const boardSummaryToUi = (r) => ({
+    id: r.id,
+    title: r.title,
+    scenarioId: r.scenario_id,
+    shareToken: r.share_token ?? null,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  });
+
+  async function listBoardSummaries() {
+    const { data, error } = await supabase
+      .from("arch_boards")
+      .select("id,title,scenario_id,share_token,created_at,updated_at")
+      .order("updated_at", { ascending: false });
+    if (error) fail(error);
+    return data.map(boardSummaryToUi);
+  }
+
+  async function getBoard(id) {
+    const { data, error } = await supabase.from("arch_boards").select("*").eq("id", id).single();
+    if (error) fail(error);
+    return boardToUi(data);
+  }
 
   async function listBoards() {
     const { data, error } = await supabase.from("arch_boards").select("*").order("updated_at", { ascending: false });
@@ -567,5 +603,5 @@ export function createApi(supabase) {
     return profileToUi(data, auth.data.user);
   }
 
-  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, upsertBoard, deleteBoard, setBoardSharing, getSharedBoard, listCustomScenarios, upsertCustomScenario, deleteCustomScenario, listStatusEvents, getScores, getAccuracyTimeline, getReviewQueue, getQuestions, recordAnswer, addXp, resetScores, getUser, updateProfile };
+  return { listContacts, upsertContact, deleteContact, addRetro, deleteRetro, listStories, upsertStory, deleteStory, listBoards, listBoardSummaries, getBoard, upsertBoard, deleteBoard, setBoardSharing, getSharedBoard, listCustomScenarios, upsertCustomScenario, deleteCustomScenario, listStatusEvents, getScores, getAccuracyTimeline, getReviewQueue, getQuestions, recordAnswer, addXp, resetScores, getUser, updateProfile };
 }
